@@ -387,11 +387,11 @@ test('Spooky cues use Web Audio and SHOUT plays a human recording respecting mut
 test('Clock starts at five minutes and counts down during gameplay',async({page})=>{
  await page.goto('/');
  await page.locator('#playBtn').click();
- await expect(page.locator('#timerStat')).toHaveText('⏱️ 5:00');
- await expect(page.locator('#timerTrack')).toHaveAttribute('aria-valuemax','300');
- await expect(page.locator('#timerTrack')).toHaveAttribute('aria-valuenow',/29[8-9]|300/);
- await page.evaluate(()=>{timerDeadline=Date.now()+184000;tickTimer();});
- await expect(page.locator('#timerStat')).toHaveText('⏱️ 3:04');
+ await expect(page.locator('#timerStat')).toHaveText('⏱️ 3:00');
+ await expect(page.locator('#timerTrack')).toHaveAttribute('aria-valuemax','180');
+ await expect(page.locator('#timerTrack')).toHaveAttribute('aria-valuenow',/17[8-9]|180/);
+ await page.evaluate(()=>{timerDeadline=Date.now()+124000;tickTimer();});
+ await expect(page.locator('#timerStat')).toHaveText('⏱️ 2:04');
 });
 
 test('Clock expires at zero and freezes movement until retry resets it',async({page})=>{
@@ -399,15 +399,15 @@ test('Clock expires at zero and freezes movement until retry resets it',async({p
  await page.locator('#playBtn').click();
  await page.evaluate(()=>{timerDeadline=Date.now()-10;tickTimer();});
  await expect(page.locator('#timerStat')).toHaveText('⏱️ 0:00');
- await expect(page.locator('#resultTitle')).toContainText('TIME IS UP');
- await expect(page.locator('#message')).toContainText('Time is up');
+ await expect(page.locator('#resultTitle')).toContainText('COYOTE INVASION');
+ await expect(page.locator('#message')).toContainText('COYOTE INVASION');
  await expect(page.locator('#shout')).toBeDisabled();
  const steps=await page.locator('#stepStat').textContent();
  await page.getByRole('button',{name:'Move up'}).click();
  await expect(page.locator('#stepStat')).toHaveText(steps);
  await page.locator('#retry').click();
  await expect(page.locator('#result')).toBeHidden();
- await expect(page.locator('#timerStat')).toHaveText('⏱️ 5:00');
+ await expect(page.locator('#timerStat')).toHaveText('⏱️ 3:00');
  await page.getByRole('button',{name:'Move up'}).click();
  await expect(page.locator('#stepStat')).toContainText('1');
 });
@@ -415,7 +415,7 @@ test('Clock expires at zero and freezes movement until retry resets it',async({p
 test('The timer pauses on the map and resumes when game is shown again',async({page})=>{
  await page.goto('/');
  await page.locator('#playBtn').click();
- await page.evaluate(()=>{timerDeadline=Date.now()+152000;tickTimer();});
+ await page.evaluate(()=>{timerDeadline=Date.now()+122000;tickTimer();});
  await page.locator('#gameScreen button').filter({hasText:'Mountain Map'}).first().click();
  const paused=await page.evaluate(()=>({running:timerRunning,remaining:timeRemainingMs}));
  expect(paused.running).toBe(false);
@@ -439,7 +439,7 @@ test('A victory stops the timer and does not erase saved progress',async({page})
  await expect(page.evaluate(()=>localStorage.getItem('gray-sentinel-mountain-cleared-v1'))).resolves.toBe('1');
  await page.locator('#next').click();
  await expect(page.locator('#subtitle')).toHaveText('Sycamore Crossing');
- await expect(page.locator('#timerStat')).toHaveText('⏱️ 5:00');
+ await expect(page.locator('#timerStat')).toHaveText('⏱️ 3:00');
 });
 
 test('Thirty-second warning is visible, with accessible progress and reduced time',async({page})=>{
@@ -519,4 +519,121 @@ test('Human shout audio is locally hosted and SHOUT triggers the recorded human 
  await page.locator('#shout').click();
  expect(await page.evaluate(()=>humanShoutCount)).toBe(before+1);
  await expect(page.locator('#shout')).toBeDisabled();
+});
+
+test('Three randomized accessible treasure boxes populate each regular level but not secrets',async({page})=>{
+ await page.addInitScript(()=>{
+  localStorage.setItem('gray-sentinel-mountain-unlocked-v1','10');
+  localStorage.setItem('gray-sentinel-mountain-cleared-v1','9');
+  localStorage.setItem('gray-coyote-mountains-secret-found-v1','true');
+  localStorage.setItem('gray-coyote-mountains-extra-secrets-v1',JSON.stringify({unlocked:[true,true],cleared:[false,false]}));
+ });
+ await page.goto('/');await page.locator('#playBtn').click();
+ const report=await page.evaluate(()=>{
+  return LEVELS.map((cfg,i)=>{
+   loadLevel(i);
+   return {level:i,count:chests.size,shown:document.querySelectorAll('#field .chest').length,
+    valid:[...chests].every(([position])=>{
+     const [x,y]=position.split(',').map(Number);
+     return !blocked(x,y)&&connected(START,{x,y})&&!SPAWNS.some(p=>p.x===x&&p.y===y);
+    })};
+  });
+ });
+ for(const r of report){
+  expect(r.count).toBe(r.level<10?3:0);
+  expect(r.shown).toBe(r.count);
+  expect(r.valid).toBe(true);
+ }
+});
+
+test('Collecting a treasure box removes it and saves a collectible',async({page})=>{
+ await page.goto('/');await page.locator('#playBtn').click();
+ await page.evaluate(()=>{chests=new Map([[key(17,12),'acorn']]);coyotes=[];draw();});
+ await page.getByRole('button',{name:'Move up'}).click();
+ await expect(page.locator('#message')).toContainText('Golden Acorn');
+ await expect(page.locator('#field .chest')).toHaveCount(0);
+ await expect(page.locator('#treasureStat')).toContainText('1/3');
+ await expect(page.evaluate(()=>JSON.parse(localStorage.getItem(TREASURE_KEY)).acorn)).resolves.toBe(1);
+ await page.reload();await page.locator('#playBtn').click();
+ await expect(page.locator('#treasureStat')).toContainText('🎒 1');
+});
+
+test('Time Crystal adds twenty seconds without passing three minute maximum',async({page})=>{
+ await page.goto('/');await page.locator('#playBtn').click();
+ await page.evaluate(()=>{
+  chests=new Map([[key(17,12),'crystal']]);coyotes=[];
+  timeRemainingMs=100000;timerDeadline=Date.now()+timeRemainingMs;draw();
+ });
+ await page.getByRole('button',{name:'Move up'}).click();
+ expect(await page.evaluate(()=>timeRemainingMs)).toBeGreaterThan(119000);
+ expect(await page.evaluate(()=>timeRemainingMs)).toBeLessThanOrEqual(180000);
+ await expect(page.locator('#message')).toContainText('+20 seconds');
+});
+
+test('Heart Berry heals and Coyote Bell resets shout and frightens the pack',async({page})=>{
+ await page.goto('/');await page.locator('#playBtn').click();
+ await page.evaluate(()=>{lives=2;chests=new Map([[key(17,12),'berry']]);coyotes=[];draw();});
+ await page.getByRole('button',{name:'Move up'}).click();
+ await expect(page.locator('#lifeStat')).toHaveText('❤️❤️❤️');
+ await page.evaluate(()=>{
+  runner={...START};cooldown=4;
+  chests=new Map([[key(17,12),'bell']]);
+  coyotes=[{x:10,y:10,scared:0}];draw();
+ });
+ await page.getByRole('button',{name:'Move up'}).click();
+ await expect(page.locator('#shout')).toBeEnabled();
+ expect(await page.evaluate(()=>coyotes[0].scared)).toBe(3);
+});
+
+test('Portals on mountains 7 and 9 unlock separate secret worlds and persist',async({page})=>{
+ await page.addInitScript(()=>{
+  localStorage.setItem('gray-sentinel-mountain-unlocked-v1','10');
+  localStorage.setItem('gray-sentinel-mountain-cleared-v1','9');
+ });
+ await page.goto('/');await page.locator('#playBtn').click();
+ for(const [mountain,world,name] of [[6,11,'The Whispering Woods'],[8,12,'The Phantom Crater']]){
+  await page.evaluate(i=>loadLevel(i),mountain);
+  const direction=await page.evaluate(()=>{
+   const from=neighbors(extraDoor)[0];runner={...from};draw();
+   return [extraDoor.x-from.x,extraDoor.y-from.y];
+  });
+  await page.evaluate(d=>move(...d),direction);
+  await expect(page.locator('#subtitle')).toHaveText(name);
+  await expect(page.locator('#field .chest')).toHaveCount(0);
+ }
+ await page.locator('#gameScreen button').filter({hasText:'Mountain Map'}).first().click();
+ await expect(page.locator('.mountain')).toHaveCount(12);
+ expect(await page.evaluate(()=>JSON.parse(localStorage.getItem(EXTRA_KEY)).unlocked)).toEqual([true,true]);
+ await page.reload();
+ await page.locator('#homeScreen button').filter({hasText:'Mountain Map'}).click();
+ await expect(page.locator('.mountain')).toHaveCount(12);
+});
+
+test('Timeout launches 25 coyote invasion and retry clears the event',async({page})=>{
+ await page.goto('/');await page.locator('#playBtn').click();
+ await page.evaluate(()=>{timerDeadline=Date.now()-10;tickTimer();});
+ await expect(page.locator('#resultTitle')).toContainText('COYOTE INVASION');
+ await expect(page.locator('#gameFrame')).toHaveClass(/invasion-mode/);
+ await expect(page.locator('#coyoteStat')).toHaveText('🐺 25');
+ await expect(page.locator('#field .coyote')).toHaveCount(25);
+ await page.locator('#retry').click();
+ await expect(page.locator('#gameFrame')).not.toHaveClass(/invasion-mode/);
+ await expect(page.locator('#timerStat')).toHaveText('⏱️ 3:00');
+ await expect(page.locator('#field .chest')).toHaveCount(3);
+});
+
+test('Original Hollow Mountain, secret trail and old save files still work',async({page})=>{
+ await page.addInitScript(()=>{
+  localStorage.setItem('gray-sentinel-mountain-unlocked-v1','5');
+  localStorage.setItem('gray-sentinel-mountain-cleared-v1','4');
+  localStorage.setItem('gray-coyote-mountains-secret-found-v1','true');
+ });
+ await page.goto('/');await page.locator('#playBtn').click();
+ await page.evaluate(()=>loadLevel(SECRET_LEVEL));
+ await expect(page.locator('#field .chest')).toHaveCount(0);
+ await page.evaluate(()=>{runner={x:1,y:0};draw();});
+ await page.getByRole('button',{name:'Move left'}).click();
+ await expect(page.locator('#resultTitle')).toContainText('HIDDEN HEART');
+ await expect(page.locator('#secretNext')).toBeVisible();
+ await expect(page.evaluate(()=>localStorage.getItem(SUMMIT_TRAIL_KEY))).resolves.toBe('true');
 });
