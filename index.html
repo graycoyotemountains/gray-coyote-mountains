@@ -116,6 +116,9 @@ p{line-height:1.5}
 }
 .tile{min-width:0;aspect-ratio:1;display:grid;place-items:center;background:#6b8952;border-radius:3px;font-size:clamp(11px,2.5vw,25px);line-height:1}
 .tile:nth-child(4n){background:#729154}.tile.trail{background:#998461}.tile.tree{background:#34553d}.tile.rock{background:#72716b}.tile.runner{background:#b4de79}.tile.coyote{background:#c39d71}.tile.exit{background:#e9c46b}
+.tile.chest{background:#dcae61;box-shadow:inset 0 0 0 2px #ffeba7;animation:glimmer 1.6s infinite alternate}
+.game-frame.invasion-mode{border-color:#ff7777;box-shadow:0 0 28px #e4434380}
+.game-frame.invasion-mode .tile.coyote{background:#e85047;animation:glimmer .35s infinite alternate}
 .tile.secret-door{background:#735182;box-shadow:inset 0 0 0 2px #ffdfa1;animation:glimmer 1.6s ease-in-out infinite alternate}
 @keyframes glimmer{from{filter:brightness(1)}to{filter:brightness(1.5)}}
 .game-frame.secret-zone{background:#272c4c;border-color:#9b90c5}
@@ -123,7 +126,7 @@ p{line-height:1.5}
 .game-frame.secret-zone .tile.trail{background:#8a7797}
 .game-frame.secret-zone .tile.rock{background:#555268}
 .game-frame.secret-zone .tile.tree{background:#344c5a}
-@media(prefers-reduced-motion:reduce){.tile.secret-door{animation:none}}
+@media(prefers-reduced-motion:reduce){.tile.secret-door,.tile.chest,.game-frame.invasion-mode .tile.coyote{animation:none}}
 #message{min-height:44px;color:#f6d998;font-weight:750;text-align:center;margin:11px auto;max-width:690px}
 .controls{text-align:center;line-height:1}
 .controls .btn{padding:10px 13px;min-width:56px;min-height:48px;font-size:1.23rem;margin:3px}
@@ -158,9 +161,9 @@ p{line-height:1.5}
         <path d="M248 530Q285 475 390 469T590 400" stroke="#d6bc8f" stroke-width="27" fill="none" stroke-linecap="round" stroke-dasharray="2 45" opacity=".6"/>
       </svg>
       <div class="hero-inner">
-        <div class="pill">🎮 TEN PEAKS · ONE HIDDEN WORLD</div>
+        <div class="pill">🎮 TEN PEAKS · THREE SECRET WORLDS</div>
         <h1>GRAY COYOTE<br>MOUNTAINS</h1>
-        <p class="subtitle">Ten mountains, one hidden passage, and a growing pack of coyotes. Can you discover the secret eleventh level?</p>
+        <p class="subtitle">Ten mountains, three hidden worlds, randomized treasures, and a coyote invasion!</p>
         <div class="hero-buttons">
           <button id="playBtn" class="btn primary" onclick="continueAdventure()">▶ Start Adventure</button>
           <button class="btn secondary" onclick="showScreen('map')">🗺️ Mountain Map</button>
@@ -174,12 +177,12 @@ p{line-height:1.5}
       <strong>How to play</strong>
       <p>🏃 Move with the arrow keys, WASD, or the touch buttons. Reach the 🏁 flag to win each mountain.</p>
       <p>🌲 Trees and 🪨 rocks block your path AND the coyotes. Navigate around them.</p>
-      <p>📣 Press Space or SHOUT to frighten nearby coyotes away. You have 3 hearts and <strong>5 minutes per level</strong>. The clock pauses when the game is hidden or you return to the map.</p>
+      <p>📣 Press Space or SHOUT to frighten nearby coyotes away. You have 3 hearts and <strong>3 minutes per level</strong>. The clock pauses when the game is hidden or you return to the map.</p>
       <p>🐺 Every new level you complete adds one coyote to <strong>every</strong> mountain, including earlier ones!</p>
-      <p>🚪 The door on Mountain 5 hides in a new square every visit, even after discovery! Listen for spooky sounds when it appears. Press SHOUT for a loud yell that scares coyotes away.</p>
+      <p>🚪 Search Mountains 5, 7 and 9 for secret doors. Find 🧰 treasure chests in every regular mountain. Running out of time starts a coyote invasion!</p>
     </div>
     <div class="quick-cards">
-      <div class="quick-card"><strong>⛰️ Ten peaks + a secret</strong>Explore ten mountains and discover a shortcut to Skyfire Summit.</div>
+      <div class="quick-card"><strong>⛰️ Ten peaks + 3 secrets</strong>Collect treasures and explore three hidden worlds, including a shortcut to Skyfire Summit.</div>
       <div class="quick-card"><strong>🐺 Growing coyote pack</strong>Every new victory adds one coyote to all the levels.</div>
       <div class="quick-card"><strong>🌲 Real obstacles</strong>Use trees and rocks as cover while you find a safe path.</div>
     </div>
@@ -191,7 +194,7 @@ p{line-height:1.5}
   <div class="shell">
     <div class="topbar"><button class="btn secondary small" onclick="showScreen('home')">← Home</button><div class="brand">🗺️ MOUNTAIN TRAIL MAP</div><button type="button" class="btn secondary small sound-toggle" onclick="toggleSound()" aria-label="Mute game sounds" aria-pressed="true">🔊 Sound on</button></div>
     <div class="map-intro">
-      <div><div class="eyebrow">Choose your next climb</div><h2>Ten peaks. One secret.</h2><p>Reach each 🏁 flag to unlock the next mountain. The hidden 🚪 on Mountain 5 separately unlocks a secret level.</p></div>
+      <div><div class="eyebrow">Choose your next climb</div><h2>Ten peaks. Three secrets.</h2><p>Reach each 🏁 flag, and find hidden 🚪 entrances on Mountains 5, 7 and 9.</p></div>
       <div id="progress" class="progress" aria-live="polite">🔓 1 of 10 unlocked</div>
     </div>
     <div class="map-scene"><div id="mountainGrid" class="route" aria-label="Mountain levels and any discovered secret level"></div>
@@ -210,9 +213,9 @@ p{line-height:1.5}
     <div class="topbar"><button class="btn secondary small" onclick="showScreen('map')">← Mountain Map</button><div class="brand">🐺 GRAY COYOTE MOUNTAINS</div><button class="btn secondary small sound-toggle" type="button" onclick="toggleSound()" aria-label="Mute game sounds" aria-pressed="true">🔊 Sound on</button><button class="btn secondary small" onclick="showScreen('home')">⌂ Home</button></div>
     <div id="gameFrame" class="game-frame">
       <div class="game-head"><p class="eyebrow" id="mountainLabel">Mountain 1 / 10</p><h2 id="subtitle">Amphitheater Ridge</h2></div>
-      <div class="stats"><span id="levelStat"></span><span id="lifeStat"></span><span id="coyoteStat"></span><span id="stepStat"></span><span id="timerStat" aria-label="Time remaining">⏱️ 5:00</span></div>
-      <div id="timerTrack" class="timer-track" role="progressbar" aria-label="Time remaining in seconds" aria-valuemin="0" aria-valuemax="300" aria-valuenow="300"><div id="timerFill" class="timer-fill"></div></div>
-      <p class="timer-hint">⏳ Reach the flag before time runs out. 5 minutes per mountain.</p>
+      <div class="stats"><span id="levelStat"></span><span id="lifeStat"></span><span id="coyoteStat"></span><span id="stepStat"></span><span id="treasureStat" aria-label="Collected treasures">🧰 0/3</span><span id="timerStat" aria-label="Time remaining">⏱️ 3:00</span></div>
+      <div id="timerTrack" class="timer-track" role="progressbar" aria-label="Time remaining in seconds" aria-valuemin="0" aria-valuemax="180" aria-valuenow="180"><div id="timerFill" class="timer-fill"></div></div>
+      <p class="timer-hint">⏳ Three minutes per mountain! Open 🧰 treasure chests.</p>
       <div class="play-layout">
         <div class="board-panel">
           <div class="board-toolbar"><span>🧭 18 × 14 hillside</span><button id="zoomBtn" class="btn secondary" onclick="toggleZoom()" aria-pressed="false">🔍 Zoom in</button></div>
@@ -261,11 +264,17 @@ const LEVELS=[
  {name:'Redwood Crest',trees:44,rocks:23,alert:7,speed:2,sky1:'#6aafaa',sky2:'#c6d8a5',peak:'#4a876f',shade:'#275b48',snow:'#d5eadb',icon:'🌲',desc:'Ancient giants guard the trail'},
  {name:'Sunstone Canyon',trees:18,rocks:52,alert:8,speed:2,sky1:'#e4b58a',sky2:'#f1d49c',peak:'#c18a65',shade:'#87594c',snow:'#f0d1ae',icon:'🏜️',desc:'Golden canyons and rocky mazes'},
  {name:'Skyfire Summit',trees:31,rocks:43,alert:8,speed:2,sky1:'#98627a',sky2:'#dda18d',peak:'#9f6473',shade:'#623e5d',snow:'#ffe3cb',icon:'🌋',desc:'The final and fiercest peak'},
- {name:'The Hollow Mountain',trees:22,rocks:43,alert:8,speed:2,sky1:'#6b5b96',sky2:'#b69bc9',peak:'#77719d',shade:'#3c466e',snow:'#e6b8fa',icon:'💎',desc:'Secret cave beneath the mountains'}
+ {name:'The Hollow Mountain',trees:22,rocks:43,alert:8,speed:2,sky1:'#6b5b96',sky2:'#b69bc9',peak:'#77719d',shade:'#3c466e',snow:'#e6b8fa',icon:'💎',desc:'Secret cave beneath the mountains'},
+ {name:'The Whispering Woods',trees:42,rocks:21,alert:8,speed:2,sky1:'#394f72',sky2:'#647f8a',peak:'#456776',shade:'#223f4c',snow:'#a0c5cb',icon:'🦉',desc:'A secret forest of whispers'},
+ {name:'The Phantom Crater',trees:16,rocks:55,alert:9,speed:2,sky1:'#473051',sky2:'#99637b',peak:'#76516d',shade:'#37273e',snow:'#edabbd',icon:'👻',desc:'Haunted crater of shifting shadows'}
 ];
 const MAIN_MOUNTAINS=10;
 const SECRET_LEVEL=MAIN_MOUNTAINS;
 const SECRET_DOOR_MOUNTAIN=4;
+const EXTRA_PORTALS=[{mountain:6,level:11},{mountain:8,level:12}];
+const EXTRA_KEY='gray-coyote-mountains-extra-secrets-v1';
+const TREASURE_KEY='gray-coyote-mountains-treasure-v1';
+const TREASURES=[{id:'crystal',icon:'⌛',name:'Time Crystal'},{id:'berry',icon:'🍓',name:'Heart Berry'},{id:'bell',icon:'🔔',name:'Coyote Bell'},{id:'acorn',icon:'🌰',name:'Golden Acorn'}];
 // Keep the old progress keys so people upgrading the game do not lose their saves.
 const STORAGE_KEY='gray-sentinel-mountain-unlocked-v1';
 const CLEARED_KEY='gray-sentinel-mountain-cleared-v1';
@@ -277,6 +286,7 @@ const SOUND_KEY='gray-coyote-mountains-sounds-v1';
 const DOOR_LAST_KEY='gray-coyote-mountains-last-secret-door-v1';
 let unlocked=1,cleared=0,secretUnlocked=false,secretCleared=false;
 let summitTrailUnlocked=false,summitShortcutCleared=false,soundEnabled=true;
+let extraUnlocked=[false,false],extraCleared=[false,false],inventory={crystal:0,berry:0,bell:0,acorn:0};
 try{
  const saved=Number(localStorage.getItem(STORAGE_KEY));
  if(Number.isInteger(saved)&&saved>=1&&saved<=MAIN_MOUNTAINS)unlocked=saved;
@@ -291,6 +301,12 @@ try{
  summitTrailUnlocked=secretCleared||localStorage.getItem(SUMMIT_TRAIL_KEY)==='true';
  summitShortcutCleared=localStorage.getItem(SUMMIT_CLEARED_KEY)==='true';
  soundEnabled=localStorage.getItem(SOUND_KEY)!=='false';
+ const se=JSON.parse(localStorage.getItem(EXTRA_KEY)||'{}');
+ extraUnlocked=[Boolean(se.unlocked?.[0]),Boolean(se.unlocked?.[1])];
+ extraCleared=[Boolean(se.cleared?.[0]),Boolean(se.cleared?.[1])];
+ extraCleared.forEach((b,i)=>{if(b)extraUnlocked[i]=true;});
+ const savedItems=JSON.parse(localStorage.getItem(TREASURE_KEY)||'{}');
+ for(const t of TREASURES)if(Number.isInteger(savedItems[t.id])&&savedItems[t.id]>=0)inventory[t.id]=savedItems[t.id];
 }catch(e){}
 // A new victory adds one coyote to EVERY level (including replays).
 function coyoteCount(){return Math.min(SPAWNS.length,1+cleared+(secretCleared?1:0)+(summitShortcutCleared&&cleared<MAIN_MOUNTAINS?1:0));}
@@ -303,11 +319,13 @@ function saveProgress(){
   localStorage.setItem(SECRET_CLEARED_KEY,String(secretCleared));
   localStorage.setItem(SUMMIT_TRAIL_KEY,String(summitTrailUnlocked));
   localStorage.setItem(SUMMIT_CLEARED_KEY,String(summitShortcutCleared));
+  localStorage.setItem(EXTRA_KEY,JSON.stringify({unlocked:extraUnlocked,cleared:extraCleared}));
+  localStorage.setItem(TREASURE_KEY,JSON.stringify(inventory));
  }catch(e){}
 }
-let levelIndex=0,trees=new Set(),rocks=new Set(),coyotes=[];
+let levelIndex=0,trees=new Set(),rocks=new Set(),coyotes=[],chests=new Map(),chestsOpened=0,extraDoor=null,extraDoorHinted=false;
 let runner={...START},steps=0,lives=3,cooldown=0,mode='playing',screen='home';
-const LEVEL_TIME_MS=5*60*1000;
+const LEVEL_TIME_MS=3*60*1000;
 let timeRemainingMs=LEVEL_TIME_MS,timerDeadline=0,timerInterval=null,timerRunning=false,timeWarningGiven=false;
 // Time is measured against a deadline, not interval counts, so it stays
 // accurate when browsers throttle timers. Backgrounded tabs pause fairly.
@@ -340,10 +358,14 @@ function resetTimer(){
  updateTimerDisplay();
 }
 function endTimeLimit(){
- pauseTimer();
- timeRemainingMs=0;mode='timedout';
- syncSecretAmbience();
- say('⏰ Time is up! The mountain wins this round. Retry to start a fresh 5-minute clock.');
+ pauseTimer();timeRemainingMs=0;mode='timedout';syncSecretAmbience();
+ const available=[];
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(!blocked(x,y)&&!(runner.x===x&&runner.y===y)&&!(GOAL.x===x&&GOAL.y===y))available.push({x,y});
+ for(let i=available.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[available[i],available[j]]=[available[j],available[i]];}
+ coyotes=available.slice(0,25).map(p=>({...p,scared:0}));
+ el('gameFrame').classList.add('invasion-mode');
+ playCoyote(true);note(120,0,1,{end:60,type:'sawtooth',volume:.10});
+ say('🐺 COYOTE INVASION! The countdown reached zero and a pack stormed the mountain!');
  draw();
 }
 function tickTimer(){
@@ -579,7 +601,7 @@ function stopSecretAmbience(){
  }
 }
 function syncSecretAmbience(){
- if(soundEnabled&&screen==='game'&&levelIndex===SECRET_LEVEL&&mode==='playing'&&!document.hidden)startSecretAmbience();
+ if(soundEnabled&&screen==='game'&&levelIndex>=SECRET_LEVEL&&mode==='playing'&&!document.hidden)startSecretAmbience();
  else stopSecretAmbience();
 }
 function playVictory(){
@@ -687,10 +709,12 @@ function mountainSVG(i){
   {back:'M0 165 41 95 86 143 147 48 203 122 270 58 280 174V185H0Z',front:'M0 185 57 119 96 157 155 77 201 146 265 93 280 163V185Z',snow:'M147 48 125 89 146 82 160 98 174 86Z'},
   {back:'M0 166 38 127 99 42 140 133 203 49 268 124 280 185H0Z',front:'M0 185 59 151 110 62 160 151 226 89 280 169V185Z',snow:'M99 42 74 85 101 77 116 91 130 84Z'},
   {back:'M0 159 39 113 90 65 139 120 188 15 240 99 280 143V185H0Z',front:'M0 185 55 144 106 165 187 49 240 139 280 103V185Z',snow:'M188 15 155 68 188 54 205 74 221 65Z'},
-  {back:'M0 177 55 95 102 135 158 42 216 138 263 83 280 150V185H0Z',front:'M0 185 59 149 121 164 173 77 233 160 280 123V185Z',snow:'M158 42 131 90 158 78 174 102 190 95Z'}
+  {back:'M0 177 55 95 102 135 158 42 216 138 263 83 280 150V185H0Z',front:'M0 185 59 149 121 164 173 77 233 160 280 123V185Z',snow:'M158 42 131 90 158 78 174 102 190 95Z'},
+  {back:'M0 180 51 125 98 55 154 121 222 39 280 142V185H0Z',front:'M0 185 63 105 128 153 211 59 280 135V185Z',snow:'M211 59 184 91 214 83 230 103 245 92Z'},
+  {back:'M0 181 45 114 104 74 164 29 222 102 280 61V185H0Z',front:'M0 185 52 149 110 89 182 56 245 143 280 101V185Z',snow:'M164 29 139 63 164 56 181 76 198 67Z'}
  ][i];
- const stars=([3,6,9,SECRET_LEVEL].includes(i))?'<circle cx="45" cy="30" r="1.8" fill="white"/><circle cx="83" cy="19" r="2" fill="white"/><circle cx="250" cy="43" r="2" fill="white"/><circle cx="228" cy="17" r="1.5" fill="white"/>':'';
- const sun=([3,6,9,SECRET_LEVEL].includes(i))?'<circle cx="242" cy="31" r="18" fill="#f2f0ce"/>':'<circle cx="236" cy="37" r="22" fill="#f7e5a6" opacity=".85"/>';
+ const stars=([3,6,9,SECRET_LEVEL,11,12].includes(i))?'<circle cx="45" cy="30" r="1.8" fill="white"/><circle cx="83" cy="19" r="2" fill="white"/><circle cx="250" cy="43" r="2" fill="white"/><circle cx="228" cy="17" r="1.5" fill="white"/>':'';
+ const sun=([3,6,9,SECRET_LEVEL,11,12].includes(i))?'<circle cx="242" cy="31" r="18" fill="#f2f0ce"/>':'<circle cx="236" cy="37" r="22" fill="#f7e5a6" opacity=".85"/>';
  const grove=(i===1||i===7)?'<g fill="#245946"><path d="m23 184 18-54 18 54Zm38 0 13-48 13 48Zm182 0 15-52 15 52Z"/></g>':'';
  const stones=(i===2||i===8)?'<g fill="#a99585"><path d="m13 184 21-25 25 25Zm209 0 26-29 27 29Zm-27 0 14-17 16 17Z"/></g>':'';
  const ice=(i===4||i===9)?'<path d="M0 178q30-10 50 0t60-2 60 1 55-3 55 5v10H0Z" fill="#e8edeb" opacity=".8"/>':'';
