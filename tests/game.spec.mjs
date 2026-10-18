@@ -302,6 +302,8 @@ test('Approaching the door plays the spooky whisper once, opening it plays the f
  await page.evaluate(()=>{
    window.__secretSounds=[];
    playSecret=(full=false)=>window.__secretSounds.push(full?'open':'near');
+   // Avoid randomized coyote spawns interfering with an audio-only cue test.
+   coyotes=[];
    // Make a safe step into discovery range, without reaching the door.
    const spots=neighbors(SECRET_DOOR);
    const one=spots.find(p=>neighbors(p).some(q=>distance(q,SECRET_DOOR)===2));
