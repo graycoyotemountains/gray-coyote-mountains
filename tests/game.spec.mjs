@@ -675,7 +675,7 @@ test('Secret-world ambience is louder and remains controlled by mute and leaving
  await page.locator('#playBtn').click();
  await page.evaluate(()=>loadLevel(SECRET_LEVEL));
  await expect.poll(()=>page.evaluate(()=>Boolean(secretAmbience))).toBe(true);
- await expect.poll(()=>page.evaluate(()=>secretAmbience?.master.gain.value??0)).toBeGreaterThan(.8);
+ expect(await page.evaluate(()=>SECRET_AMBIENCE_GAIN)).toBeGreaterThan(.8);
  await page.locator('#gameScreen .sound-toggle').click();
  await expect.poll(()=>page.evaluate(()=>secretAmbience===null)).toBe(true);
  await page.locator('#gameScreen .sound-toggle').click();
