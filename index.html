@@ -168,7 +168,7 @@ p{line-height:1.5}
       <p>🌲 Trees and 🪨 rocks block your path AND the coyotes. Navigate around them.</p>
       <p>📣 Press Space or SHOUT to frighten nearby coyotes away. You have 3 hearts per level.</p>
       <p>🐺 Every new level you complete adds one coyote to <strong>every</strong> mountain, including earlier ones!</p>
-      <p>🚪 On Mountain 5, the 🏁 flag unlocks Mountain 6, but the 🚪 door unlocks the secret Hollow Mountain. Beat Hollow Mountain to open a secret trail straight to Skyfire Summit!</p>
+      <p>🚪 The door on Mountain 5 hides in a new square every visit, even after discovery! The 🏁 flag unlocks Mountain 6, while the secret door leads to Hollow Mountain and then Skyfire Summit.</p>
     </div>
     <div class="quick-cards">
       <div class="quick-card"><strong>⛰️ Ten peaks + a secret</strong>Explore ten mountains and discover a shortcut to Skyfire Summit.</div>
@@ -236,7 +236,9 @@ p{line-height:1.5}
 <script>
 'use strict';
 const W=18,H=14;
-const START={x:17,y:13},GOAL={x:0,y:0},SECRET_DOOR={x:12,y:3};
+const START={x:17,y:13},GOAL={x:0,y:0};
+// The door stays put during an attempt but moves between visits to Mountain 5.
+let SECRET_DOOR={x:12,y:3};
 const SPAWNS=[{x:11,y:6},{x:5,y:9},{x:4,y:3},{x:14,y:5},{x:9,y:12},{x:2,y:10},{x:16,y:7},{x:7,y:2},{x:3,y:11},{x:9,y:4},{x:13,y:10},{x:6,y:5}];
 const LEVELS=[
  {name:'Amphitheater Ridge',trees:18,rocks:10,alert:5,speed:3,sky1:'#8bc5d0',sky2:'#d8e4a5',peak:'#6f8761',shade:'#3e6650',snow:'#ecf1d6',icon:'☀️',desc:'The first wild hillside'},
@@ -262,6 +264,7 @@ const SECRET_CLEARED_KEY='gray-coyote-mountains-secret-cleared-v1';
 const SUMMIT_TRAIL_KEY='gray-coyote-mountains-summit-trail-v1';
 const SUMMIT_CLEARED_KEY='gray-coyote-mountains-summit-shortcut-cleared-v1';
 const SOUND_KEY='gray-coyote-mountains-sounds-v1';
+const DOOR_LAST_KEY='gray-coyote-mountains-last-secret-door-v1';
 let unlocked=1,cleared=0,secretUnlocked=false,secretCleared=false;
 let summitTrailUnlocked=false,summitShortcutCleared=false,soundEnabled=true;
 try{
@@ -294,7 +297,7 @@ function saveProgress(){
 }
 let levelIndex=0,trees=new Set(),rocks=new Set(),coyotes=[];
 let runner={...START},steps=0,lives=3,cooldown=0,mode='playing',screen='home';
-let secretHintPlayed=false,confettiTimer=null;
+let secretHintPlayed=false,confettiTimer=null,lastDoorSpot='';
 let audioContext=null,lastCoyoteCall=-100,noiseBuffer=null;
 function audio(){
  if(!soundEnabled)return null;
@@ -421,14 +424,39 @@ function connected(from,to){
  }return false;
 }
 function makeTerrain(i){
- const cfg=LEVELS[i],reserved=new Set([START,GOAL,SECRET_DOOR,...SPAWNS].map(p=>key(p.x,p.y)));
+ const cfg=LEVELS[i],reserved=new Set([START,GOAL,...SPAWNS].map(p=>key(p.x,p.y)));
  for(let attempt=0;attempt<200;attempt++){
   trees=new Set();rocks=new Set();const random=rng(20261018+i*991+attempt*71);
   const put=(set,count)=>{let tries=0;while(set.size<count&&tries++<3000){const x=1+Math.floor(random()*(W-1)),y=1+Math.floor(random()*(H-1)),k=key(x,y);if(!reserved.has(k)&&!trees.has(k)&&!rocks.has(k))set.add(k);}};
   put(trees,cfg.trees);put(rocks,cfg.rocks);
-  if(connected(START,GOAL)&&(i!==4||connected(START,SECRET_DOOR))&&SPAWNS.slice(0,coyoteCount()).every(p=>connected(START,p)))return;
+  if(connected(START,GOAL)&&SPAWNS.slice(0,coyoteCount()).every(p=>connected(START,p)))return;
  }
  trees=new Set();rocks=new Set();
+}
+function relocateSecretDoor(){
+ // Pick only reachable, unblocked interior squares, away from both the start
+ // and the flag. A new visit or retry always relocates the door.
+ const candidates=[];
+ for(let y=2;y<=9;y++)for(let x=2;x<W-2;x++){
+  const p={x,y};
+  if(blocked(x,y)||SPAWNS.some(spawn=>same(spawn,p)))continue;
+  if(distance(p,START)<7||distance(p,GOAL)<6)continue;
+  if(connected(START,p))candidates.push(p);
+ }
+ let previous=lastDoorSpot;
+ if(!previous){try{previous=localStorage.getItem(DOOR_LAST_KEY)||'';}catch(e){}}
+ const choices=candidates.filter(p=>key(p.x,p.y)!==previous);
+ const pool=choices.length?choices:candidates;
+ // Normally there are dozens of choices. Keep a valid safe fallback if
+ // future level layouts become more crowded.
+ if(!pool.length){
+  SECRET_DOOR={x:12,y:3};
+  if(blocked(SECRET_DOOR.x,SECRET_DOOR.y))SECRET_DOOR={...START};
+ }else{
+  SECRET_DOOR={...pool[Math.floor(Math.random()*pool.length)]};
+ }
+ lastDoorSpot=key(SECRET_DOOR.x,SECRET_DOOR.y);
+ try{localStorage.setItem(DOOR_LAST_KEY,lastDoorSpot);}catch(e){}
 }
 function mountainSVG(i){
  const a=LEVELS[i];
@@ -497,10 +525,11 @@ function toggleZoom(){
 function loadLevel(i){
  if(!Number.isInteger(i)||i<0||i>=LEVELS.length||(i===SECRET_LEVEL?!secretUnlocked:i>=unlocked&&!(i===MAIN_MOUNTAINS-1&&summitTrailUnlocked)))return;
  levelIndex=i;steps=0;lives=3;cooldown=0;mode='playing';runner={...START};secretHintPlayed=false;makeTerrain(i);
+ if(i===SECRET_DOOR_MOUNTAIN)relocateSecretDoor();
  coyotes=spawnCoyotes();
- say(i===SECRET_DOOR_MOUNTAIN?'❄️ The wind whispers of a secret door somewhere near the upper slopes…':i===SECRET_LEVEL?'💎 You found the Hollow Mountain! Follow the glowing crystals to the flag.':'Reach 🏁! Trees and rocks are solid. Stay clear of the coyotes!');
+ say(i===SECRET_DOOR_MOUNTAIN?'❄️ The secret door has vanished again! Search the upper slopes for its new hiding place…':i===SECRET_LEVEL?'💎 You found the Hollow Mountain! Follow the glowing crystals to the flag.':'Reach 🏁! Trees and rocks are solid. Stay clear of the coyotes!');
  el('gameFrame').classList.toggle('secret-zone',i===SECRET_LEVEL);
- el('gameHint').textContent=i===SECRET_DOOR_MOUNTAIN?'❄️ Mountain 5 has two paths! The 🏁 flag unlocks Mountain 6. Walk onto the hidden 🚪 to unlock the secret level.':i===SECRET_LEVEL?'💎 Secret cave! The crystals sparkle, but rocks and trees still block you. Find 🏁.':'🏁 Reach the upper-left flag. 🌲 Trees and 🪨 rocks are solid. Arrow keys / WASD to move; Space to shout.';
+ el('gameHint').textContent=i===SECRET_DOOR_MOUNTAIN?'❄️ The secret door changes squares each time you visit or retry Mountain 5. It stays hidden until you get close. The 🏁 flag unlocks Mountain 6.':i===SECRET_LEVEL?'💎 Secret cave! The crystals sparkle, but rocks and trees still block you. Find 🏁.':'🏁 Reach the upper-left flag. 🌲 Trees and 🪨 rocks are solid. Arrow keys / WASD to move; Space to shout.';
  showScreen('game');draw();if(i!==SECRET_LEVEL)playCoyote();
 }
 function draw(){
@@ -530,7 +559,7 @@ function draw(){
   else if(rocks.has(k)){tile.textContent='🪨';tile.classList.add('rock');}
   else if(x===runner.x&&y===runner.y){tile.textContent='🏃';tile.classList.add('runner');}
   else if(coyotes.some(c=>c.x===x&&c.y===y)){tile.textContent='🐺';tile.classList.add('coyote');}
-  else if(levelIndex===SECRET_DOOR_MOUNTAIN&&x===SECRET_DOOR.x&&y===SECRET_DOOR.y&&(secretUnlocked||distance(runner,SECRET_DOOR)<=3)){tile.textContent='🚪';tile.classList.add('secret-door');}
+  else if(levelIndex===SECRET_DOOR_MOUNTAIN&&x===SECRET_DOOR.x&&y===SECRET_DOOR.y&&distance(runner,SECRET_DOOR)<=3){tile.textContent='🚪';tile.classList.add('secret-door');}
   else if(x===GOAL.x&&y===GOAL.y){tile.textContent='🏁';tile.classList.add('exit');}
   else if(levelIndex===SECRET_LEVEL&&(x*3+y*7)%23===0)tile.textContent='💎';
   else if((x*3+y*7)%23===0)tile.textContent='🌾';

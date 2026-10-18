@@ -9,7 +9,7 @@ On phones and tablets, use touch arrows. On computers, use arrow keys or WASD. S
 ## Level rules
 
 - Reach the 🏁 flag in each mountain to unlock the next regular mountain. In particular, **the flag on Mountain 5 unlocks Mountain 6**.
-- The secret level is separate: **only walking onto the 🚪 door on Mountain 5 unlocks The Hollow Mountain**. Entering it immediately opens the secret level and saves your discovery. You can later revisit the secret level from the map.
+- The secret level is separate: **only walking onto the 🚪 door on Mountain 5 unlocks The Hollow Mountain**. Entering it immediately opens the secret level and saves your discovery. The door randomly relocates to a different reachable square whenever you enter or retry Mountain 5, including across reloads. It is hidden again until you get within three squares, even after you have unlocked the secret level. Discoveries stay saved.
 - **Secret trail:** Clearing Hollow Mountain opens a shortcut to **Skyfire Summit** (Mountain 10), visible on the map and via a button after Hollow's flag. It does **not** unlock Mountains 6–9, and finishing Skyfire via the shortcut does not mark the earlier mountains complete.
 - Every newly cleared mountain adds a coyote to the entire game, including earlier mountains. You have three hearts per climb.
 - **Sound effects:** Synthetic coyote calls during normal gameplay, crunching when caught, mysterious door chimes, and victory fanfare with falling confetti. Sounds use the Web Audio API and activate after user interaction. Use the Sound toggle to mute; your preference is saved.

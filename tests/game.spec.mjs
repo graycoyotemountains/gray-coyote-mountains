@@ -225,3 +225,69 @@ test('Secret door plays its special sound and coyote collision plays munch', asy
   await page.getByRole('button',{name:'Move up'}).click();
   expect(await page.evaluate(()=>window.__munchCall)).toBe(1);
 });
+
+test('Mountain 5 door relocates on every visit and retry and stays reachable', async ({page}) => {
+  await page.addInitScript(()=>{
+    localStorage.setItem('gray-sentinel-mountain-unlocked-v1','5');
+    localStorage.setItem('gray-sentinel-mountain-cleared-v1','4');
+  });
+  await page.goto('/');
+  await page.locator('#playBtn').click();
+  const positions=[];
+  for(let attempt=0;attempt<5;attempt++){
+    const state=await page.evaluate(()=>({
+      location:{...SECRET_DOOR},
+      possible:!blocked(SECRET_DOOR.x,SECRET_DOOR.y)&&connected(START,SECRET_DOOR),
+      previousSave:localStorage.getItem(DOOR_LAST_KEY),
+      distanceFromStart:distance(START,SECRET_DOOR)
+    }));
+    expect(state.possible).toBe(true);
+    expect(state.distanceFromStart).toBeGreaterThan(3);
+    expect(state.previousSave).toBe(state.location.x+','+state.location.y);
+    if(attempt)expect(state.location).not.toEqual(positions[attempt-1]);
+    positions.push(state.location);
+    await page.locator('#retry').click();
+    await expect(page.locator('#subtitle')).toHaveText('The Gray Sentinel');
+  }
+});
+
+test('Discovered secret door is hidden again after revisiting Mountain 5', async ({page}) => {
+  await page.addInitScript(()=>{
+    localStorage.setItem('gray-sentinel-mountain-unlocked-v1','5');
+    localStorage.setItem('gray-sentinel-mountain-cleared-v1','4');
+    localStorage.setItem('gray-coyote-mountains-secret-found-v1','true');
+  });
+  await page.goto('/');
+  await page.locator('#playBtn').click();
+  const location=await page.evaluate(()=>({...SECRET_DOOR}));
+  await expect(page.locator('#field .secret-door')).toHaveCount(0);
+  await expect(page.locator('#gameHint')).toContainText('hidden until you get close');
+  await page.evaluate(()=>{
+    // Stand beside the door and make it visible, without entering it.
+    const p=neighbors(SECRET_DOOR)[0];
+    runner={...p};draw();
+  });
+  await expect(page.locator('#field .secret-door')).toHaveCount(1);
+  await page.locator('#retry').click();
+  await expect(page.locator('#field .secret-door')).toHaveCount(0);
+  expect(await page.evaluate(()=>({...SECRET_DOOR}))).not.toEqual(location);
+  await expect(page.evaluate(()=>localStorage.getItem('gray-coyote-mountains-secret-found-v1'))).resolves.toBe('true');
+});
+
+test('Door location changes even after leaving Mountain 5 or reloading the browser', async ({page}) => {
+  await page.addInitScript(()=>{
+    localStorage.setItem('gray-sentinel-mountain-unlocked-v1','5');
+    localStorage.setItem('gray-sentinel-mountain-cleared-v1','4');
+  });
+  await page.goto('/');
+  await page.locator('#playBtn').click();
+  const first=await page.evaluate(()=>({...SECRET_DOOR}));
+  await page.locator('#gameScreen button').filter({hasText:'Mountain Map'}).first().click();
+  await page.locator('.mountain').nth(4).click();
+  const second=await page.evaluate(()=>({...SECRET_DOOR}));
+  expect(second).not.toEqual(first);
+  await page.reload();
+  await page.locator('#playBtn').click();
+  const third=await page.evaluate(()=>({...SECRET_DOOR}));
+  expect(third).not.toEqual(second);
+});
