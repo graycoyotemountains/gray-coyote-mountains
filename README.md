@@ -1,22 +1,39 @@
 # Gray Coyote Mountains 🐺
 
-A browser adventure with five mountains, one hidden sixth level, and an expanding coyote pack.
+A browser mountain adventure with **ten regular levels and a hidden eleventh level**.
 
 **Play online:** https://graycoyotemountains.github.io/gray-coyote-mountains/
 
-On phones and tablets, use the touch arrows. On a computer, use arrow keys or WASD. SHOUT (or Space) scares away nearby coyotes. Progress saves in your browser.
+On phones and tablets, use touch arrows. On computers, use arrow keys or WASD. SHOUT (Space) frightens nearby coyotes. Progress is saved in your browser.
 
-## Publishing
-The `.github/workflows/game.yml` workflow tests the game in desktop Chrome, iPad Safari, and iPhone Safari, then publishes to GitHub Pages.
+## Level rules
 
-If automatic Pages activation fails, go to [Settings → Pages](https://github.com/graycoyotemountains/gray-coyote-mountains/settings/pages), set **Source** to **GitHub Actions**, then rerun the workflow under the Actions tab.
+- Reach the 🏁 flag in each mountain to unlock the next regular mountain. In particular, **the flag on Mountain 5 unlocks Mountain 6**.
+- The secret level is separate: **only walking onto the 🚪 door on Mountain 5 unlocks The Hollow Mountain**. Entering it immediately opens the secret level and saves your discovery. You can later revisit the secret level from the map.
+- Every newly cleared mountain adds a coyote to the entire game, including earlier mountains. You have three hearts per climb.
+- Existing progress from the original five-level game is preserved. Players who already completed Mountain 5 continue at Mountain 6.
 
-## Features
-- Clear a mountain to unlock the next and add one coyote to **every** level.
-- Find the secret door in Mountain 5 to enter the sixth level.
-- Avoid trees, rocks, and coyotes. You have three hearts.
-- When caught, the game says: **The coyote ate your lunch.**
-- All game code is in `index.html`; no build step required.
+## Mountains
 
-## Local browser tests
-`npm install`, `npx playwright install chromium webkit`, then `npm test`.
+1. Amphitheater Ridge
+2. Sycamore Crossing
+3. Rockfall Pass
+4. Moonlit Switchbacks
+5. The Gray Sentinel (flag and secret door)
+6. Dawnmist Valley
+7. Thundercloud Ridge
+8. Redwood Crest
+9. Sunstone Canyon
+10. Skyfire Summit
+
+**Secret:** The Hollow Mountain 💎
+
+## Publishing and tests
+
+The `.github/workflows/game.yml` workflow tests the game using Playwright in desktop Chrome, iPad Safari and iPhone Safari before publishing to GitHub Pages.
+
+If Pages ever needs to be configured, see [Settings → Pages](https://github.com/graycoyotemountains/gray-coyote-mountains/settings/pages) and set Source to GitHub Actions.
+
+Run locally: `npm install`, `npx playwright install chromium webkit`, `npm test`.
+
+The whole game runs from the standalone `index.html` file. No build or server APIs are needed.
