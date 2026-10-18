@@ -683,3 +683,18 @@ test('Secret-world ambience is louder and remains controlled by mute and leaving
  await page.locator('#gameScreen button').filter({hasText:'Mountain Map'}).first().click();
  expect(await page.evaluate(()=>secretAmbience)).toBeNull();
 });
+
+test('Louder haunted ambience starts in both additional secret worlds',async({page})=>{
+ await page.addInitScript(()=>{
+  localStorage.setItem('gray-coyote-mountains-extra-secrets-v1',JSON.stringify({unlocked:[true,true],cleared:[false,false]}));
+ });
+ await page.goto('/');
+ await page.locator('#playBtn').click();
+ for(const secretIndex of [11,12]){
+  await page.evaluate(i=>loadLevel(i),secretIndex);
+  await expect.poll(()=>page.evaluate(()=>Boolean(secretAmbience))).toBe(true);
+  expect(await page.evaluate(()=>secretAmbience.master.gain.value)).toBeGreaterThan(.8);
+  await page.locator('#gameScreen button').filter({hasText:'Mountain Map'}).first().click();
+  expect(await page.evaluate(()=>secretAmbience)).toBeNull();
+ }
+});

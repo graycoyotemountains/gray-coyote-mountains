@@ -582,7 +582,7 @@ function playHollowEcho(){
  note(center*1.48,.42,1.8,{end:center*.72,type:'sine',volume:.042});
 }
 function startSecretAmbience(){
- if(secretAmbience||!soundEnabled||screen!=='game'||levelIndex!==SECRET_LEVEL||mode!=='playing'||document.hidden)return;
+ if(secretAmbience||!soundEnabled||screen!=='game'||levelIndex<MAIN_MOUNTAINS||mode!=='playing'||document.hidden)return;
  const ctx=audio();
  if(!ctx)return;
  const sources=[];
