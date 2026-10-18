@@ -168,7 +168,7 @@ p{line-height:1.5}
       <p>🌲 Trees and 🪨 rocks block your path AND the coyotes. Navigate around them.</p>
       <p>📣 Press Space or SHOUT to frighten nearby coyotes away. You have 3 hearts per level.</p>
       <p>🐺 Every new level you complete adds one coyote to <strong>every</strong> mountain, including earlier ones!</p>
-      <p>🚪 The door on Mountain 5 hides in a new square every visit, even after discovery! The 🏁 flag unlocks Mountain 6, while the secret door leads to Hollow Mountain and then Skyfire Summit.</p>
+      <p>🚪 The door on Mountain 5 hides in a new square every visit, even after discovery! Listen for spooky sounds when it appears. Press SHOUT for a loud yell that scares coyotes away.</p>
     </div>
     <div class="quick-cards">
       <div class="quick-card"><strong>⛰️ Ten peaks + a secret</strong>Explore ten mountains and discover a shortcut to Skyfire Summit.</div>
@@ -347,6 +347,32 @@ function crunch(after,volume=.2){
   source.start(time);source.stop(time+.15);
  }catch(e){}
 }
+// Reusable filtered-noise layer for eerie wind and breathy shouts.
+// Generated locally by Web Audio: no files or external requests.
+let effectNoiseBuffer=null;
+function effectNoise(after,duration,{volume=.06,center=850,end=center,type='bandpass'}={}){
+ try{
+  const ctx=audio();if(!ctx)return;
+  if(!effectNoiseBuffer){
+   effectNoiseBuffer=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*2),ctx.sampleRate);
+   const samples=effectNoiseBuffer.getChannelData(0);
+   for(let i=0;i<samples.length;i++)samples[i]=Math.random()*2-1;
+  }
+  const time=ctx.currentTime+after;
+  const source=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),gain=ctx.createGain();
+  const length=Math.min(1.9,Math.max(.04,duration));
+  source.buffer=effectNoiseBuffer;
+  filter.type=type;
+  filter.frequency.setValueAtTime(Math.max(40,center),time);
+  filter.frequency.exponentialRampToValueAtTime(Math.max(40,end),time+length);
+  if(type==='bandpass')filter.Q.value=.65;
+  gain.gain.setValueAtTime(.0001,time);
+  gain.gain.linearRampToValueAtTime(volume,time+Math.min(.055,length*.24));
+  gain.gain.exponentialRampToValueAtTime(.0001,time+length);
+  source.connect(filter);filter.connect(gain);gain.connect(ctx.destination);
+  source.start(time);source.stop(time+length+.01);
+ }catch(e){}
+}
 function playCoyote(force=false){
  const ctx=audio();if(!ctx||(!force&&ctx.currentTime-lastCoyoteCall<4.5))return;
  lastCoyoteCall=ctx.currentTime;
@@ -362,10 +388,32 @@ function playMunch(){
  note(120,.18,.16,{end:65,type:'triangle',volume:.10});
 }
 function playSecret(full=false){
- note(310,0,.42,{end:420,type:'sine',volume:.09});
- note(460,.16,.65,{end:740,type:'sine',volume:.10});
- note(620,.42,.8,{end:1040,type:'triangle',volume:.08});
- if(full){note(920,.85,.65,{end:540,type:'sine',volume:.13});note(1100,1.05,.67,{end:1500,type:'sine',volume:.09});}
+ if(!audio())return;
+ // Door nearby: ghostly wind, a low descending moan and two detuned bells.
+ effectNoise(0,1.05,{volume:.055,center:550,end:175,type:'lowpass'});
+ note(170,0,.93,{end:85,type:'sawtooth',volume:.042});
+ note(176,.07,.89,{end:94,type:'triangle',volume:.06});
+ note(752,.13,.70,{end:418,type:'sine',volume:.075});
+ note(705,.23,.82,{end:396,type:'sine',volume:.065});
+ if(full){
+  // Door opened: a deeper rumble and an eerie falling echo.
+  effectNoise(.43,1.15,{volume:.08,center:920,end:135,type:'lowpass'});
+  note(115,.45,1.1,{end:56,type:'sawtooth',volume:.075});
+  note(960,.56,.95,{end:190,type:'triangle',volume:.075});
+  note(610,.87,.83,{end:132,type:'sine',volume:.08});
+ }
+}
+function playShout(){
+ if(!audio())return;
+ // Breathy two-part cartoon yell, distinct from the coyotes' howls.
+ effectNoise(0,.34,{volume:.085,center:1200,end:700});
+ note(210,.055,.40,{end:370,type:'sawtooth',volume:.105});
+ note(425,.09,.35,{end:340,type:'triangle',volume:.055});
+ effectNoise(.15,.31,{volume:.058,center:900,end:1600});
+ note(295,.47,.34,{end:160,type:'sawtooth',volume:.11});
+ note(580,.50,.29,{end:330,type:'triangle',volume:.060});
+ effectNoise(.50,.33,{volume:.08,center:1350,end:620});
+ note(135,.74,.16,{end:80,type:'triangle',volume:.055});
 }
 function playVictory(){
  // Bright ascending chimes and celebratory little pops.
@@ -653,6 +701,8 @@ function shout(){
   }
  }
  cooldown=5;
+ playShout();
+ // Coyotes may answer the shout with a startled yip.
  if(count)playCoyote(true);
  say(count?`📣 HEY COYOTES! ${count} retreat${count===1?'s':''}!`:'📣 Your shout echoes across the hillside.');
  draw();

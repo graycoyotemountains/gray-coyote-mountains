@@ -291,3 +291,98 @@ test('Door location changes even after leaving Mountain 5 or reloading the brows
   const third=await page.evaluate(()=>({...SECRET_DOOR}));
   expect(third).not.toEqual(second);
 });
+
+test('Approaching the door plays the spooky whisper once, opening it plays the full haunting effect', async ({page}) => {
+ await page.addInitScript(()=>{
+  localStorage.setItem('gray-sentinel-mountain-unlocked-v1','5');
+  localStorage.setItem('gray-sentinel-mountain-cleared-v1','4');
+ });
+ await page.goto('/');
+ await page.locator('#playBtn').click();
+ await page.evaluate(()=>{
+   window.__secretSounds=[];
+   playSecret=(full=false)=>window.__secretSounds.push(full?'open':'near');
+   // Make a safe step into discovery range, without reaching the door.
+   const spots=neighbors(SECRET_DOOR);
+   const one=spots.find(p=>neighbors(p).some(q=>distance(q,SECRET_DOOR)===2));
+   const from=neighbors(one).find(q=>distance(q,SECRET_DOOR)===2);
+   const dx=one.x-from.x,dy=one.y-from.y;
+   runner={...from};
+   window.__doorStep={dx,dy};
+   draw();
+ });
+ const step=await page.evaluate(()=>window.__doorStep);
+ await page.evaluate(([dx,dy])=>move(dx,dy),[step.dx,step.dy]);
+ await expect.poll(()=>page.evaluate(()=>window.__secretSounds.length)).toBe(1);
+ expect(await page.evaluate(()=>window.__secretSounds)).toEqual(['near']);
+ // Entering the door triggers the more dramatic effect.
+ await page.evaluate(()=>{
+   const p=neighbors(SECRET_DOOR)[0];
+   runner={...p};
+   const dx=SECRET_DOOR.x-p.x,dy=SECRET_DOOR.y-p.y;
+   move(dx,dy);
+ });
+ await expect(page.locator('#subtitle')).toHaveText('The Hollow Mountain');
+ expect(await page.evaluate(()=>window.__secretSounds)).toEqual(['near','open']);
+});
+
+test('SHOUT plays a shout on tap even with no coyotes nearby, once per cooldown', async ({page}) => {
+ await page.goto('/');
+ await page.locator('#playBtn').click();
+ await page.evaluate(()=>{
+   window.__shouts=0;
+   playShout=()=>window.__shouts++;
+   coyotes=[];draw();
+ });
+ await page.locator('#shout').click();
+ expect(await page.evaluate(()=>window.__shouts)).toBe(1);
+ await expect(page.locator('#shout')).toBeDisabled();
+ await page.evaluate(()=>shout());
+ expect(await page.evaluate(()=>window.__shouts)).toBe(1);
+});
+
+test('Spacebar SHOUT also plays the yell and still scares nearby coyotes', async ({page}) => {
+ await page.goto('/');
+ await page.locator('#playBtn').click();
+ await page.evaluate(()=>{
+   window.__shouts=0; playShout=()=>window.__shouts++;
+   coyotes=[{x:17,y:10,scared:0}];
+   draw();
+ });
+ await page.keyboard.press('Space');
+ expect(await page.evaluate(()=>window.__shouts)).toBe(1);
+ await expect(page.locator('#message')).toContainText('HEY COYOTES');
+ await expect(page.locator('#shout')).toBeDisabled();
+});
+
+test('Spooky and shouting cues use Web Audio and gracefully respect mute', async ({page}) => {
+ await page.goto('/');
+ const sounds=await page.evaluate(()=>{
+   const events=[];
+   const originalNote=note,originalNoise=effectNoise;
+   note=(...args)=>events.push(['note',args[0]]);
+   effectNoise=(...args)=>events.push(['noise',args[0]]);
+   // A real audio context exists in browser environments after user tap.
+   playSecret(false);
+   const eerie=events.splice(0);
+   playSecret(true);
+   const doorway=events.splice(0);
+   playShout();
+   const yell=events.splice(0);
+   note=originalNote;effectNoise=originalNoise;
+   return {eerie,doorway,yell};
+ });
+ expect(sounds.eerie.some(s=>s[0]==='noise')).toBe(true);
+ expect(sounds.eerie.some(s=>s[0]==='note')).toBe(true);
+ expect(sounds.doorway.length).toBeGreaterThan(sounds.eerie.length);
+ expect(sounds.yell.filter(s=>s[0]==='noise').length).toBeGreaterThanOrEqual(2);
+ // Muting the game should prevent new cue scheduling, including a shout.
+ await page.locator('#homeScreen .sound-toggle').click();
+ expect(await page.evaluate(()=>{
+   const calls=[];
+   note=(...args)=>calls.push('note');
+   effectNoise=(...args)=>calls.push('noise');
+   playSecret(true);playShout();
+   return calls;
+ })).toEqual([]);
+});
