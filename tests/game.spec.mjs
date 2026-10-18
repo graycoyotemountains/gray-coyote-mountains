@@ -57,7 +57,7 @@ test('Mountain 5 flag unlocks Mountain 6 without unlocking the secret', async ({
   await expect(page.locator('.mountain')).toHaveCount(10);
   await expect(page.locator('.mountain:not(:disabled)')).toHaveCount(6);
   await expect(page.locator('#progress')).toContainText('5/10');
-  await expect(page.evaluate(()=>localStorage.getItem('gray-coyote-mountains-secret-found-v1'))).resolves.toBeNull();
+  await expect(page.evaluate(()=>localStorage.getItem('gray-coyote-mountains-secret-found-v1'))).resolves.toBe('false');
 });
 
 test('Mountain 5 door unlocks the secret level without unlocking Mountain 6', async ({page}) => {
