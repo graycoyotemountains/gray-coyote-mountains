@@ -342,6 +342,7 @@ function resetTimer(){
 function endTimeLimit(){
  pauseTimer();
  timeRemainingMs=0;mode='timedout';
+ syncSecretAmbience();
  say('⏰ Time is up! The mountain wins this round. Retry to start a fresh 5-minute clock.');
  draw();
 }
@@ -380,9 +381,23 @@ function audio(){
   return audioContext;
  }catch(e){return null;}
 }
+// CC0 real human vocal recording. Local asset, so SHOUT works without
+// connecting to another website while playing.
+let humanShoutBuffer=null,humanShoutPromise=null,humanShoutCount=0;
+function prepareHumanShout(){
+ if(!soundEnabled||humanShoutBuffer||humanShoutPromise)return;
+ const ctx=audio();
+ if(!ctx)return;
+ humanShoutPromise=fetch('assets/human-shout.wav')
+  .then(response=>{if(!response.ok)throw Error('Human shout unavailable');return response.arrayBuffer();})
+  .then(data=>ctx.decodeAudioData(data))
+  .then(buffer=>{humanShoutBuffer=buffer;return buffer;})
+  .catch(()=>{humanShoutPromise=null;return null;});
+}
 function unlockAudio(){
- // Audio is activated only by a user tap/key press, as required on mobile Safari.
+ // User gesture unlocks Web Audio on mobile Safari.
  audio();
+ prepareHumanShout();
 }
 function note(freq,after,duration,{end=freq,type='sine',volume=.12}={}){
  try{
@@ -474,17 +489,98 @@ function playSecret(full=false){
   note(610,.87,.83,{end:132,type:'sine',volume:.08});
  }
 }
-function playShout(){
- if(!audio())return;
- // Breathy two-part cartoon yell, distinct from the coyotes' howls.
+function playSyntheticShout(){
+ // A fallback only if the human recording has not loaded.
  effectNoise(0,.34,{volume:.085,center:1200,end:700});
- note(210,.055,.40,{end:370,type:'sawtooth',volume:.105});
+ note(210,.055,.40,{end:370,type:'sawtooth',volume:.095});
  note(425,.09,.35,{end:340,type:'triangle',volume:.055});
- effectNoise(.15,.31,{volume:.058,center:900,end:1600});
- note(295,.47,.34,{end:160,type:'sawtooth',volume:.11});
- note(580,.50,.29,{end:330,type:'triangle',volume:.060});
- effectNoise(.50,.33,{volume:.08,center:1350,end:620});
- note(135,.74,.16,{end:80,type:'triangle',volume:.055});
+ note(295,.47,.34,{end:160,type:'sawtooth',volume:.10});
+ effectNoise(.50,.33,{volume:.065,center:1350,end:620});
+}
+function playShout(){
+ const ctx=audio();
+ if(!ctx)return;
+ if(!humanShoutBuffer){prepareHumanShout();playSyntheticShout();return;}
+ try{
+  const voice=ctx.createBufferSource(),gain=ctx.createGain();
+  voice.buffer=humanShoutBuffer;
+  voice.playbackRate.value=1.08;
+  const start=ctx.currentTime,length=voice.buffer.duration/voice.playbackRate.value;
+  gain.gain.setValueAtTime(.0001,start);
+  gain.gain.linearRampToValueAtTime(.43,start+.025);
+  gain.gain.setValueAtTime(.43,start+Math.max(.05,length-.16));
+  gain.gain.exponentialRampToValueAtTime(.0001,start+length);
+  voice.connect(gain);gain.connect(ctx.destination);
+  voice.start(start);
+  humanShoutCount++;
+ }catch(e){playSyntheticShout();}
+}
+// Hollow Mountain has a continuous, very soft haunted soundscape.
+let secretAmbience=null,secretAmbienceInterval=null,secretAmbienceStarts=0;
+function playHollowEcho(){
+ if(!secretAmbience||!soundEnabled||screen!=='game'||mode!=='playing'||document.hidden)return;
+ // Distant descending chimes echo through the cave.
+ const center=360+Math.random()*110;
+ note(center,0,2.0,{end:center*.59,type:'sine',volume:.027});
+ note(center*1.48,.42,1.8,{end:center*.72,type:'sine',volume:.022});
+}
+function startSecretAmbience(){
+ if(secretAmbience||!soundEnabled||screen!=='game'||levelIndex!==SECRET_LEVEL||mode!=='playing'||document.hidden)return;
+ const ctx=audio();
+ if(!ctx)return;
+ const sources=[];
+ let master=null;
+ try{
+  const start=ctx.currentTime;
+  master=ctx.createGain();
+  master.gain.setValueAtTime(.0001,start);
+  master.gain.linearRampToValueAtTime(.60,start+1.3);
+  master.connect(ctx.destination);
+  // A pair of detuned, low moans beneath a slowly moving wind.
+  for(const [freq,type,volume] of [[73,'sine',.055],[109,'triangle',.018],[148,'sine',.018]]){
+   const oscillator=ctx.createOscillator(),gain=ctx.createGain();
+   oscillator.type=type;oscillator.frequency.value=freq;
+   gain.gain.value=volume;
+   oscillator.connect(gain);gain.connect(master);
+   oscillator.start(start);sources.push(oscillator);
+  }
+  const windBuffer=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*2),ctx.sampleRate);
+  const samples=windBuffer.getChannelData(0);
+  for(let i=0;i<samples.length;i++)samples[i]=Math.random()*2-1;
+  const wind=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),windGain=ctx.createGain();
+  wind.buffer=windBuffer;wind.loop=true;
+  filter.type='lowpass';filter.frequency.value=390;
+  windGain.gain.value=.035;
+  wind.connect(filter);filter.connect(windGain);windGain.connect(master);
+  wind.start(start);sources.push(wind);
+  const sway=ctx.createOscillator(),depth=ctx.createGain();
+  sway.frequency.value=.12;depth.gain.value=140;
+  sway.connect(depth);depth.connect(filter.frequency);
+  sway.start(start);sources.push(sway);
+  secretAmbience={master,sources};
+  secretAmbienceStarts++;
+  secretAmbienceInterval=setInterval(playHollowEcho,9000);
+ }catch(e){
+  for(const node of sources)try{node.stop();}catch(e){}
+  if(master)try{master.disconnect();}catch(e){}
+ }
+}
+function stopSecretAmbience(){
+ if(secretAmbienceInterval!==null){clearInterval(secretAmbienceInterval);secretAmbienceInterval=null;}
+ if(!secretAmbience)return;
+ const current=secretAmbience;secretAmbience=null;
+ try{
+  const now=audioContext.currentTime;
+  current.master.gain.cancelScheduledValues(now);
+  current.master.gain.setTargetAtTime(.0001,now,.12);
+  for(const node of current.sources)try{node.stop(now+.70);}catch(e){}
+ }catch(e){
+  for(const node of current.sources)try{node.stop();}catch(e){}
+ }
+}
+function syncSecretAmbience(){
+ if(soundEnabled&&screen==='game'&&levelIndex===SECRET_LEVEL&&mode==='playing'&&!document.hidden)startSecretAmbience();
+ else stopSecretAmbience();
 }
 function playVictory(){
  // Bright ascending chimes and celebratory little pops.
@@ -526,6 +622,7 @@ function toggleSound(){
  try{localStorage.setItem(SOUND_KEY,String(soundEnabled));}catch(e){}
  syncSoundButtons();
  if(soundEnabled){unlockAudio();note(650,0,.17,{end:830,volume:.08});}
+ syncSecretAmbience();
 }
 const el=id=>document.getElementById(id);
 const key=(x,y)=>x+','+y;
@@ -624,6 +721,7 @@ function showScreen(name){
  for(const type of ['home','map','game'])el(type+'Screen').classList.toggle('active',type===name);
  if(name==='map'||name==='home')renderMap();
  if(name==='game')resumeTimer();
+ syncSecretAmbience();
  try{window.scrollTo(0,0);}catch(e){}
 }
 function toggleHelp(){const help=el('helpPanel'),expanded=!help.hidden;help.hidden=expanded;el('helpBtn').setAttribute('aria-expanded',String(!expanded));}
@@ -646,13 +744,14 @@ function toggleZoom(){
 function loadLevel(i){
  if(!Number.isInteger(i)||i<0||i>=LEVELS.length||(i===SECRET_LEVEL?!secretUnlocked:i>=unlocked&&!(i===MAIN_MOUNTAINS-1&&summitTrailUnlocked)))return;
  pauseTimer();
+ stopSecretAmbience();
  levelIndex=i;steps=0;lives=3;cooldown=0;mode='playing';runner={...START};secretHintPlayed=false;makeTerrain(i);
  resetTimer();
  if(i===SECRET_DOOR_MOUNTAIN)relocateSecretDoor();
  coyotes=spawnCoyotes();
  say(i===SECRET_DOOR_MOUNTAIN?'❄️ The secret door has vanished again! Search the upper slopes for its new hiding place…':i===SECRET_LEVEL?'💎 You found the Hollow Mountain! Follow the glowing crystals to the flag.':'Reach 🏁! Trees and rocks are solid. Stay clear of the coyotes!');
  el('gameFrame').classList.toggle('secret-zone',i===SECRET_LEVEL);
- el('gameHint').textContent=i===SECRET_DOOR_MOUNTAIN?'❄️ The secret door changes squares each time you visit or retry Mountain 5. It stays hidden until you get close. The 🏁 flag unlocks Mountain 6.':i===SECRET_LEVEL?'💎 Secret cave! The crystals sparkle, but rocks and trees still block you. Find 🏁.':'🏁 Reach the upper-left flag. 🌲 Trees and 🪨 rocks are solid. Arrow keys / WASD to move; Space to shout.';
+ el('gameHint').textContent=i===SECRET_DOOR_MOUNTAIN?'❄️ The secret door changes squares each time you visit or retry Mountain 5. It stays hidden until you get close. The 🏁 flag unlocks Mountain 6.':i===SECRET_LEVEL?'💎 Listen to the haunted wind and echoes as you explore Hollow Mountain. Reach the 🏁 flag!':'🏁 Reach the upper-left flag. 🌲 Trees and 🪨 rocks are solid. Arrow keys / WASD to move; Space to shout.';
  showScreen('game');draw();if(i!==SECRET_LEVEL)playCoyote();
 }
 function draw(){
@@ -726,7 +825,7 @@ function moveCoyotes(){
 function tagged(){
  playMunch();
  lives--;
- if(lives===0){mode='lost';pauseTimer();say('🐺 The coyote ate your lunch. No hearts left! Retry this mountain.');}
+ if(lives===0){mode='lost';pauseTimer();syncSecretAmbience();say('🐺 The coyote ate your lunch. No hearts left! Retry this mountain.');}
  else{
   runner={...START};cooldown=0;
   coyotes=spawnCoyotes();
@@ -744,7 +843,7 @@ function move(dx,dy){
   return;
  }
  if(same(runner,GOAL)){
-  mode='won';pauseTimer();
+  mode='won';pauseTimer();syncSecretAmbience();
   if(levelIndex===SECRET_LEVEL){
    secretCleared=true;summitTrailUnlocked=true;
   }else if(levelIndex===MAIN_MOUNTAINS-1){
@@ -790,6 +889,7 @@ function advance(){if(mode==='won'&&levelIndex<MAIN_MOUNTAINS-1)loadLevel(levelI
 document.addEventListener('visibilitychange',()=>{
  if(document.hidden)pauseTimer();
  else resumeTimer();
+ syncSecretAmbience();
 });
 document.addEventListener('pointerdown',unlockAudio,{passive:true});
 document.addEventListener('keydown',unlockAudio,{passive:true});

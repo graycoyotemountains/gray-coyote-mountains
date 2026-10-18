@@ -355,36 +355,33 @@ test('Spacebar SHOUT also plays the yell and still scares nearby coyotes', async
  await expect(page.locator('#shout')).toBeDisabled();
 });
 
-test('Spooky and shouting cues use Web Audio and gracefully respect mute', async ({page}) => {
+test('Spooky cues use Web Audio and SHOUT plays a human recording respecting mute', async ({page}) => {
  await page.goto('/');
+ await page.locator('#playBtn').click();
+ await expect.poll(()=>page.evaluate(()=>Boolean(humanShoutBuffer))).toBe(true);
  const sounds=await page.evaluate(()=>{
-   const events=[];
-   const originalNote=note,originalNoise=effectNoise;
-   note=(...args)=>events.push(['note',args[0]]);
-   effectNoise=(...args)=>events.push(['noise',args[0]]);
-   // A real audio context exists in browser environments after user tap.
-   playSecret(false);
-   const eerie=events.splice(0);
-   playSecret(true);
-   const doorway=events.splice(0);
-   playShout();
-   const yell=events.splice(0);
-   note=originalNote;effectNoise=originalNoise;
-   return {eerie,doorway,yell};
+  const events=[];
+  const originalNote=note,originalNoise=effectNoise;
+  note=(...args)=>events.push(['note',args[0]]);
+  effectNoise=(...args)=>events.push(['noise',args[0]]);
+  playSecret(false);const eerie=events.splice(0);
+  playSecret(true);const doorway=events.splice(0);
+  note=originalNote;effectNoise=originalNoise;
+  const before=humanShoutCount;playShout();
+  return {eerie,doorway,humanPlayed:humanShoutCount-before,recordingDuration:humanShoutBuffer.duration};
  });
  expect(sounds.eerie.some(s=>s[0]==='noise')).toBe(true);
  expect(sounds.eerie.some(s=>s[0]==='note')).toBe(true);
  expect(sounds.doorway.length).toBeGreaterThan(sounds.eerie.length);
- expect(sounds.yell.filter(s=>s[0]==='noise').length).toBeGreaterThanOrEqual(2);
- // Muting the game should prevent new cue scheduling, including a shout.
+ expect(sounds.humanPlayed).toBe(1);
+ expect(sounds.recordingDuration).toBeGreaterThan(0.5);
+ await page.evaluate(()=>showScreen('home'));
  await page.locator('#homeScreen .sound-toggle').click();
  expect(await page.evaluate(()=>{
-   const calls=[];
-   note=(...args)=>calls.push('note');
-   effectNoise=(...args)=>calls.push('noise');
-   playSecret(true);playShout();
-   return calls;
- })).toEqual([]);
+  const before=humanShoutCount;
+  playSecret(true);playShout();
+  return humanShoutCount-before;
+ })).toBe(0);
 });
 
 test('Clock starts at five minutes and counts down during gameplay',async({page})=>{
@@ -453,4 +450,73 @@ test('Thirty-second warning is visible, with accessible progress and reduced tim
  await expect(page.locator('#timerStat')).toHaveClass(/urgent/);
  await expect(page.locator('#message')).toContainText('30 seconds');
  await expect(page.locator('#timerTrack')).toHaveAttribute('aria-valuenow',/2[89]|30/);
+});
+
+test('Secret Hollow Mountain plays a continuous haunted ambience, but regular levels do not',async({page})=>{
+ await page.addInitScript(()=>{
+  localStorage.setItem('gray-sentinel-mountain-unlocked-v1','5');
+  localStorage.setItem('gray-sentinel-mountain-cleared-v1','4');
+  localStorage.setItem('gray-coyote-mountains-secret-found-v1','true');
+ });
+ await page.goto('/');
+ await page.locator('#playBtn').click();
+ expect(await page.evaluate(()=>secretAmbience)).toBeNull();
+ await page.evaluate(()=>loadLevel(SECRET_LEVEL));
+ await expect(page.locator('#subtitle')).toHaveText('The Hollow Mountain');
+ await expect.poll(()=>page.evaluate(()=>Boolean(secretAmbience))).toBe(true);
+ const count=await page.evaluate(()=>secretAmbienceStarts);
+ await page.evaluate(()=>{runner={x:17,y:12};draw();});
+ expect(await page.evaluate(()=>secretAmbienceStarts)).toBe(count);
+ await page.locator('#gameScreen button').filter({hasText:'Mountain Map'}).first().click();
+ await expect.poll(()=>page.evaluate(()=>secretAmbience===null&&secretAmbienceInterval===null)).toBe(true);
+});
+
+test('Hollow ambience stops on mute and returns when unmuted',async({page})=>{
+ await page.addInitScript(()=>{
+  localStorage.setItem('gray-coyote-mountains-secret-found-v1','true');
+ });
+ await page.goto('/');
+ await page.locator('#playBtn').click();
+ await page.evaluate(()=>loadLevel(SECRET_LEVEL));
+ await expect.poll(()=>page.evaluate(()=>Boolean(secretAmbience))).toBe(true);
+ await page.locator('#gameScreen .sound-toggle').click();
+ await expect.poll(()=>page.evaluate(()=>secretAmbience===null)).toBe(true);
+ await expect(page.locator('#gameScreen .sound-toggle')).toContainText('Sound off');
+ await page.locator('#gameScreen .sound-toggle').click();
+ await expect.poll(()=>page.evaluate(()=>Boolean(secretAmbience))).toBe(true);
+});
+
+test('The haunted atmosphere pauses in the background and stops on victory',async({page})=>{
+ await page.addInitScript(()=>localStorage.setItem('gray-coyote-mountains-secret-found-v1','true'));
+ await page.goto('/');
+ await page.locator('#playBtn').click();
+ await page.evaluate(()=>loadLevel(SECRET_LEVEL));
+ await expect.poll(()=>page.evaluate(()=>Boolean(secretAmbience))).toBe(true);
+ await page.evaluate(()=>{
+  Object.defineProperty(document,'hidden',{configurable:true,get:()=>true});
+  document.dispatchEvent(new Event('visibilitychange'));
+ });
+ await expect.poll(()=>page.evaluate(()=>secretAmbience===null)).toBe(true);
+ await page.evaluate(()=>{
+  Object.defineProperty(document,'hidden',{configurable:true,get:()=>false});
+  document.dispatchEvent(new Event('visibilitychange'));
+ });
+ await expect.poll(()=>page.evaluate(()=>Boolean(secretAmbience))).toBe(true);
+ await page.evaluate(()=>{runner={x:1,y:0};draw();});
+ await page.getByRole('button',{name:'Move left'}).click();
+ await expect(page.locator('#resultTitle')).toContainText('HIDDEN HEART');
+ expect(await page.evaluate(()=>secretAmbience)).toBeNull();
+});
+
+test('Human shout audio is locally hosted and SHOUT triggers the recorded human voice',async({page})=>{
+ await page.goto('/');
+ const asset=await page.request.get('/assets/human-shout.wav');
+ expect(asset.ok()).toBe(true);
+ expect((await asset.body()).byteLength).toBeGreaterThan(50000);
+ await page.locator('#playBtn').click();
+ await expect.poll(()=>page.evaluate(()=>humanShoutBuffer?.duration||0)).toBeGreaterThan(1);
+ const before=await page.evaluate(()=>humanShoutCount);
+ await page.locator('#shout').click();
+ expect(await page.evaluate(()=>humanShoutCount)).toBe(before+1);
+ await expect(page.locator('#shout')).toBeDisabled();
 });
