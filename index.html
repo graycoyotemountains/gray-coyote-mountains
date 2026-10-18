@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#172e2e">
+<title>Gray Coyote Mountains | Mountain Adventure</title>
+<style>
+:root{color-scheme:dark;--cream:#f9f0d8;--muted:#d3decb;--gold:#f4c66e;--mint:#c4eb9a;--forest:#18352f;--border:#61786b}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 45% 0%,#31554a 0%,#172e2e 60%,#0e1f20 100%);color:var(--cream);font-family:ui-rounded,system-ui,-apple-system,"Segoe UI",sans-serif}
+button{font:inherit;cursor:pointer;touch-action:manipulation}
+button:focus-visible{outline:3px solid #ffe396;outline-offset:4px}
+button:disabled{cursor:not-allowed;opacity:.72}
+.screen{display:none;min-height:100vh;padding:20px max(16px,env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.screen.active{display:block}
+.shell{width:min(100%,1080px);margin:0 auto}
+.eyebrow{text-transform:uppercase;letter-spacing:.22em;font-weight:800;color:var(--mint);font-size:.76rem}
+h1,h2,h3,p{margin-top:0}
+h1{font-size:clamp(2.9rem,9vw,6.4rem);letter-spacing:-.055em;line-height:.97;margin-bottom:15px;text-shadow:0 5px 0 #15322f}
+h2{font-size:clamp(1.7rem,5vw,3rem);letter-spacing:-.035em;margin-bottom:7px}
+p{line-height:1.5}
+.btn{border:1px solid #ffffff40;border-radius:16px;padding:13px 19px;min-height:48px;font-weight:850;background:#e7e9d7;color:#21352a;box-shadow:0 5px 0 #102c24;transition:transform .12s,box-shadow .12s}
+.btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 7px 0 #102c24}
+.btn:active:not(:disabled){transform:translateY(3px);box-shadow:0 2px 0 #102c24}
+.btn.primary{background:var(--gold);color:#28351d}
+.btn.secondary{background:#3f6656;color:#fff5d8;border-color:#8cad89}
+.btn.success{background:var(--mint)}
+.btn.small{padding:9px 14px;min-height:42px;font-size:.9rem}
+.topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:20px}
+.brand{font-weight:950;letter-spacing:.02em;color:#f7dc98}
+.hero{position:relative;overflow:hidden;isolation:isolate;border-radius:29px;border:2px solid #8da68a88;background:linear-gradient(180deg,#668b94 0%,#a6bdae 45%,#a3a976 46%,#365d4b 100%);min-height:510px;box-shadow:0 19px 50px #061d1e80}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#143329ba 0%,#14332975 55%,transparent 100%);z-index:-1;pointer-events:none}
+.hero-art{position:absolute;z-index:-2;width:100%;height:100%;inset:0;object-fit:cover}
+.hero-inner{position:relative;z-index:1;width:min(590px,100%);padding:clamp(27px,6vw,65px);padding-top:75px}
+.hero .subtitle{max-width:430px;color:#f0f1d8;font-size:1.13rem;margin:0 0 25px}
+.hero-buttons{display:flex;gap:12px;flex-wrap:wrap}
+.pill{display:inline-block;border-radius:999px;background:#16352fba;border:1px solid #d0e3b85e;padding:8px 14px;font-size:.78rem;font-weight:800;letter-spacing:.08em;margin-bottom:25px}
+.hero-wolf{position:absolute;right:7%;bottom:10%;font-size:clamp(54px,12vw,116px);filter:drop-shadow(0 14px 6px #18382d50);transform:rotate(-8deg)}
+.help{margin:16px 0 0;padding:19px 24px;border:1px solid #658a7a;border-radius:18px;background:#183a36;max-width:780px}
+.help[hidden]{display:none}
+.help strong{color:var(--gold)}
+.help p{margin-bottom:5px}
+.quick-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin-top:18px}
+.quick-card{border-radius:16px;background:#ffffff0c;border:1px solid #ffffff1c;padding:16px;color:var(--muted);font-size:.88rem}
+.quick-card strong{display:block;color:var(--cream);font-size:.98rem;margin-bottom:3px}
+.map-intro{display:flex;justify-content:space-between;align-items:flex-end;gap:15px;flex-wrap:wrap;margin-bottom:20px}
+.map-intro p{margin:0;color:var(--muted)}
+.progress{padding:9px 13px;border-radius:12px;background:#29483c;border:1px solid #547364;color:#fbe4ad;font-weight:750}
+.map-scene{position:relative;overflow:hidden;background:linear-gradient(180deg,#c1d0c2 0%,#8baa99 26%,#527a61 70%,#254d41 100%);border:2px solid #819a86;border-radius:25px;padding:28px 20px;box-shadow:0 16px 45px #001a1854}
+.map-scene::before{content:"";position:absolute;width:170%;height:200px;left:-35%;top:-105px;border-radius:50%;background:#f5e4a861;filter:blur(12px);pointer-events:none}
+.map-scene::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(15deg,transparent,transparent 48px,#133b2b08 49px,#133b2b08 51px);pointer-events:none}
+.route{position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:21px 20px}
+.route::before{content:"";position:absolute;z-index:-1;left:8%;right:8%;top:45%;border-top:8px dotted #f6db9380;transform:rotate(10deg);pointer-events:none}
+.mountain{position:relative;min-width:0;display:block;text-align:left;padding:0;border-radius:19px;overflow:hidden;color:#243a32;background:#eceddd;border:3px solid #ffffffa0;box-shadow:0 8px 0 #153f3770,0 18px 19px #143f3a50;transition:transform .15s, box-shadow .15s}
+.mountain:hover:not(:disabled){transform:translateY(-5px);box-shadow:0 13px 0 #153f3770,0 23px 19px #143f3a50}
+.mountain:active:not(:disabled){transform:translateY(2px)}
+.mountain.locked{filter:saturate(.57);border-color:#ced1cbaa;box-shadow:0 7px 0 #24403770}
+.mountain.done{border-color:#ffe49b}
+.mountain-art{display:block;position:relative;overflow:hidden;height:clamp(125px,16vw,185px);background:linear-gradient(var(--sky1),var(--sky2));}
+.mountain-art svg{position:absolute;width:100%;height:100%;inset:0}
+.mountain-no{position:absolute;z-index:2;left:12px;top:11px;background:#183b39e8;color:#fce9be;border:2px solid #f6e8c7ad;border-radius:14px;min-width:40px;height:39px;padding:7px;text-align:center;font-weight:950;font-size:1.05rem}
+.mountain-badge{position:absolute;top:13px;right:12px;border-radius:999px;padding:5px 10px;background:#152e31da;color:#fff2da;font-size:.72rem;font-weight:900}
+.mountain-caption{display:block;padding:12px 13px 14px;background:#f5edda;min-height:85px}
+.mountain-caption strong{display:block;font-size:1.05rem;margin-bottom:4px}
+.mountain-caption small{display:block;color:#526359;font-size:.8rem;font-weight:700}
+.mountain-icon{position:absolute;right:13px;bottom:11px;font-size:29px;filter:drop-shadow(0 3px 3px #16332267)}
+.map-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:18px;font-weight:700;color:#f1eccd}
+.legend{font-size:.85rem}
+.game-frame{border-radius:22px;border:1px solid #829c82;background:#203b34;padding:13px;box-shadow:0 10px 30px #0005}
+.game-head{text-align:center}
+.game-head .eyebrow{margin:5px 0}
+.game-head h2{color:#f8d48a;margin:4px 0 10px}
+.stats{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0 12px}
+.stats span{border:1px solid #577363;background:#335244;border-radius:9px;padding:7px 11px;font-weight:750;font-size:.87rem}
+#field{width:100%;max-width:826px;margin:10px auto;display:grid;grid-template-columns:repeat(18,minmax(0,1fr));gap:2px;padding:5px;border:3px solid #ab9168;border-radius:11px;background:#415a40;user-select:none}
+.play-layout{display:block}
+.board-panel,.game-side{min-width:0}
+.board-viewport{overflow-x:auto;overflow-y:hidden;max-width:826px;margin:0 auto;border-radius:11px;scrollbar-color:#e4bf74 #365446;overscroll-behavior-x:contain}
+.board-viewport #field{margin:0 auto}
+.board-toolbar{display:flex;justify-content:space-between;align-items:center;max-width:826px;margin:8px auto;color:#e4e8c7;font-size:.78rem;font-weight:750}
+.board-toolbar .btn{display:none;min-height:36px;padding:6px 12px;font-size:.78rem}
+@media(max-width:600px){.board-toolbar .btn{display:inline-block}.board-viewport.zoomed #field{width:576px;max-width:none}.board-viewport.zoomed .tile{font-size:21px}}
+@media(min-width:920px), (orientation:landscape) and (min-width:650px){
+ .play-layout{display:grid;grid-template-columns:minmax(0,1fr) 218px;gap:17px;align-items:start}
+ .game-side{position:sticky;top:12px}
+ .game-side .game-actions{flex-direction:column;gap:8px}
+ .game-side .game-actions .btn{width:100%}
+ .game-side .hint{line-height:1.45}
+ .game-side .controls .btn{min-width:48px;padding:10px 8px;margin:2px}
+ .game-side .controls #shout{min-width:100px}
+}
+@media(orientation:landscape) and (min-width:650px) and (max-height:600px){
+ .screen{padding:8px 12px}.topbar{margin-bottom:5px}.game-frame{padding:8px}.game-head h2{font-size:1.25rem;margin-bottom:3px}
+ .game-head .eyebrow{font-size:.65rem;margin:2px}.stats{margin:4px 0 6px}.stats span{padding:4px 7px;font-size:.72rem}
+ .play-layout{grid-template-columns:minmax(0,1fr) 218px;gap:9px}
+ .controls .btn{min-height:42px}.game-side .hint{font-size:.7rem}
+}
+.tile{min-width:0;aspect-ratio:1;display:grid;place-items:center;background:#6b8952;border-radius:3px;font-size:clamp(11px,2.5vw,25px);line-height:1}
+.tile:nth-child(4n){background:#729154}.tile.trail{background:#998461}.tile.tree{background:#34553d}.tile.rock{background:#72716b}.tile.runner{background:#b4de79}.tile.coyote{background:#c39d71}.tile.exit{background:#e9c46b}
+.tile.secret-door{background:#735182;box-shadow:inset 0 0 0 2px #ffdfa1;animation:glimmer 1.6s ease-in-out infinite alternate}
+@keyframes glimmer{from{filter:brightness(1)}to{filter:brightness(1.5)}}
+.game-frame.secret-zone{background:#272c4c;border-color:#9b90c5}
+.game-frame.secret-zone .tile:not(.tree):not(.rock):not(.runner):not(.coyote):not(.exit){background:#596182}
+.game-frame.secret-zone .tile.trail{background:#8a7797}
+.game-frame.secret-zone .tile.rock{background:#555268}
+.game-frame.secret-zone .tile.tree{background:#344c5a}
+@media(prefers-reduced-motion:reduce){.tile.secret-door{animation:none}}
+#message{min-height:44px;color:#f6d998;font-weight:750;text-align:center;margin:11px auto;max-width:690px}
+.controls{text-align:center;line-height:1}
+.controls .btn{padding:10px 13px;min-width:56px;min-height:48px;font-size:1.23rem;margin:3px}
+.controls #shout{min-width:112px;background:#f4c368;font-size:.87rem;letter-spacing:.02em}
+.game-actions{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:17px 0 0}
+.hint{font-size:.78rem;color:#c5d6c2;text-align:center;margin:12px 0}
+#result{display:none;margin:14px auto 0;max-width:660px;background:#3d6654;border:1px solid #d8c487;border-radius:16px;padding:17px;text-align:center}
+#result.visible{display:block}
+#result strong{font-size:1.2rem;color:#ffe59b}
+#result p{margin:5px 0 0;color:#f0eed5}
+.footer{text-align:center;color:#9cbaa7;font-size:.74rem;margin:24px 0 6px}
+@media(max-width:730px){.route{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.route::before{display:none}.map-scene{padding:16px 13px}.hero{min-height:500px}.hero-wolf{right:7%;bottom:5%;font-size:75px}.quick-cards{grid-template-columns:1fr}.hero-inner{padding-top:50px}}
+@media(max-width:410px){.screen{padding:12px 9px 25px}.route{gap:11px}.mountain-caption{min-height:99px;padding:9px}.mountain-caption strong{font-size:.92rem}.mountain-caption small{font-size:.72rem}.mountain-art{height:120px}.mountain-no{left:7px;top:8px;min-width:32px;height:33px;padding:4px}.mountain-badge{top:9px;right:6px;font-size:.63rem;padding:4px 7px}.hero-inner{padding-left:22px;padding-right:22px}.hero-buttons{gap:9px}.btn{padding:11px 14px}.controls .btn{min-width:51px;padding:9px}.controls #shout{min-width:94px}}
+@media(max-width:560px){.hero h1{font-size:clamp(2.35rem,10.5vw,3.8rem)}.hero-inner{padding-left:22px;padding-right:22px}.hero .subtitle{max-width:300px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<section id="homeScreen" class="screen active" aria-label="Home screen">
+  <div class="shell">
+    <div class="topbar"><div class="brand">🐺 GRAY COYOTE MOUNTAINS</div><div class="eyebrow">Shoreline Adventure</div></div>
+    <div class="hero">
+      <svg class="hero-art" viewBox="0 0 1000 530" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <circle cx="765" cy="106" r="69" fill="#f9df9b" opacity=".82"/>
+        <path d="M0 420 146 204 252 344 430 99 622 368 780 154 1000 400V530H0Z" fill="#728e7d"/>
+        <path d="M0 470 177 286 323 420 547 163 761 448 887 262 1000 412V530H0Z" fill="#436c61"/>
+        <path d="m430 99-61 96 57-16 54 26Zm117 64-52 75 46-13 41 14Zm233-9-39 57 39-13 39 21Z" fill="#eff4e9" opacity=".8"/>
+        <path d="M0 525Q220 405 446 479T1000 462V530H0Z" fill="#2e5746"/>
+        <path d="M0 508Q314 462 525 511T1000 490V530H0Z" fill="#1b4038"/>
+        <g fill="#214d3c"><path d="m660 480 25-83 25 83Zm-40 0 19-66 19 66Zm271 0 29-99 29 99Zm42 0 21-74 21 74Z"/></g>
+        <path d="M248 530Q285 475 390 469T590 400" stroke="#d6bc8f" stroke-width="27" fill="none" stroke-linecap="round" stroke-dasharray="2 45" opacity=".6"/>
+      </svg>
+      <div class="hero-inner">
+        <div class="pill">🎮 FIVE PEAKS · ONE HIDDEN WORLD</div>
+        <h1>GRAY COYOTE<br>MOUNTAINS</h1>
+        <p class="subtitle">Five mountains, one hidden passage, and a growing pack of coyotes. Can you find the secret sixth level?</p>
+        <div class="hero-buttons">
+          <button id="playBtn" class="btn primary" onclick="continueAdventure()">▶ Start Adventure</button>
+          <button class="btn secondary" onclick="showScreen('map')">🗺️ Mountain Map</button>
+          <button id="helpBtn" class="btn secondary" onclick="toggleHelp()" aria-expanded="false" aria-controls="helpPanel">❔ How to Play</button>
+        </div>
+      </div>
+      <div class="hero-wolf" aria-hidden="true">🐺</div>
+    </div>
+    <div id="helpPanel" class="help" hidden>
+      <strong>How to play</strong>
+      <p>🏃 Move with the arrow keys, WASD, or the touch buttons. Reach the 🏁 flag to win each mountain.</p>
+      <p>🌲 Trees and 🪨 rocks block your path AND the coyotes. Navigate around them.</p>
+      <p>📣 Press Space or SHOUT to frighten nearby coyotes away. You have 3 hearts per level.</p>
+      <p>🐺 Every new level you complete adds one coyote to <strong>every</strong> mountain, including earlier ones!</p>
+      <p>🚪 Somewhere on Mountain 5, a secret door leads to a hidden sixth level. Your discoveries are saved in this browser.</p>
+    </div>
+    <div class="quick-cards">
+      <div class="quick-card"><strong>⛰️ Five peaks + a secret</strong>Explore sunny slopes, forests, rockfalls, and a hidden world.</div>
+      <div class="quick-card"><strong>🐺 Growing coyote pack</strong>Every new victory adds one coyote to all the levels.</div>
+      <div class="quick-card"><strong>🌲 Real obstacles</strong>Use trees and rocks as cover while you find a safe path.</div>
+    </div>
+    <div class="footer">Inspired by a real coyote encounter on the Shoreline hills.</div>
+  </div>
+</section>
+
+<section id="mapScreen" class="screen" aria-label="Mountain level map">
+  <div class="shell">
+    <div class="topbar"><button class="btn secondary small" onclick="showScreen('home')">← Home</button><div class="brand">🗺️ MOUNTAIN TRAIL MAP</div></div>
+    <div class="map-intro">
+      <div><div class="eyebrow">Choose your next climb</div><h2>Five peaks. One secret.</h2><p>Beat mountains to advance. Search Mountain 5 carefully for a secret door.</p></div>
+      <div id="progress" class="progress" aria-live="polite">🔓 1 of 5 unlocked</div>
+    </div>
+    <div class="map-scene"><div id="mountainGrid" class="route" aria-label="Mountain levels and any discovered secret level"></div></div>
+    <div class="map-foot"><div class="legend">🏁 Completed &nbsp; • &nbsp; 🔓 Available &nbsp; • &nbsp; 🔒 Locked</div><button class="btn primary small" onclick="continueAdventure()">▶ Continue Adventure</button></div>
+    <div class="footer">Your level progress is saved on this device, in this browser.</div>
+  </div>
+</section>
+
+<section id="gameScreen" class="screen" aria-label="Play level">
+  <div class="shell">
+    <div class="topbar"><button class="btn secondary small" onclick="showScreen('map')">← Mountain Map</button><div class="brand">🐺 GRAY COYOTE MOUNTAINS</div><button class="btn secondary small" onclick="showScreen('home')">⌂ Home</button></div>
+    <div id="gameFrame" class="game-frame">
+      <div class="game-head"><p class="eyebrow" id="mountainLabel">Mountain 1 / 5</p><h2 id="subtitle">Amphitheater Ridge</h2></div>
+      <div class="stats"><span id="levelStat"></span><span id="lifeStat"></span><span id="coyoteStat"></span><span id="stepStat"></span></div>
+      <div class="play-layout">
+        <div class="board-panel">
+          <div class="board-toolbar"><span>🧭 18 × 14 hillside</span><button id="zoomBtn" class="btn secondary" onclick="toggleZoom()" aria-pressed="false">🔍 Zoom in</button></div>
+          <div id="boardViewport" class="board-viewport"><div id="field" role="img" aria-label="18-column by 14-row game board. Navigate with the direction buttons or arrow keys."></div></div>
+          <p id="message" role="status" aria-live="polite"></p>
+        </div>
+        <div class="game-side">
+          <div class="controls" aria-label="Movement controls">
+            <button class="btn" onclick="move(0,-1)" aria-label="Move up">⬆️</button><br>
+            <button class="btn" onclick="move(-1,0)" aria-label="Move left">⬅️</button>
+            <button class="btn" id="shout" onclick="shout()">📣 SHOUT</button>
+            <button class="btn" onclick="move(1,0)" aria-label="Move right">➡️</button><br>
+            <button class="btn" onclick="move(0,1)" aria-label="Move down">⬇️</button>
+          </div>
+          <div id="result" role="status"><strong id="resultTitle"></strong><p id="resultBody"></p></div>
+          <div class="game-actions">
+            <button id="next" class="btn success" onclick="advance()" style="display:none">NEXT MOUNTAIN →</button>
+            <button id="retry" class="btn secondary small" onclick="loadLevel(levelIndex)">↻ Retry Mountain</button>
+            <button class="btn secondary small" onclick="showScreen('map')">🗺️ Choose Mountain</button>
+          </div>
+          <p class="hint" id="gameHint">🏁 Reach the upper-left flag. 🌲 Trees and 🪨 rocks are solid. Arrow keys / WASD to move; Space to shout.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+<script>
+'use strict';
+const W=18,H=14;
+const START={x:17,y:13},GOAL={x:0,y:0},SECRET_DOOR={x:12,y:3};
+const SPAWNS=[{x:11,y:6},{x:5,y:9},{x:4,y:3},{x:14,y:5},{x:9,y:12},{x:2,y:10},{x:16,y:7},{x:7,y:2},{x:3,y:11}];
+const LEVELS=[
+ {name:'Amphitheater Ridge',trees:18,rocks:10,alert:5,speed:3,sky1:'#8bc5d0',sky2:'#d8e4a5',peak:'#6f8761',shade:'#3e6650',snow:'#ecf1d6',icon:'☀️',desc:'The first wild hillside'},
+ {name:'Sycamore Crossing',trees:25,rocks:15,alert:6,speed:3,sky1:'#a5c7b7',sky2:'#e1df9b',peak:'#4e8266',shade:'#2b5a48',snow:'#c5dcaf',icon:'🌳',desc:'A mountain of tall trees'},
+ {name:'Rockfall Pass',trees:25,rocks:28,alert:6,speed:2,sky1:'#a8bac0',sky2:'#e6c69d',peak:'#95796c',shade:'#6c5854',snow:'#dbcdb8',icon:'🪨',desc:'Rugged boulder country'},
+ {name:'Moonlit Switchbacks',trees:32,rocks:27,alert:7,speed:2,sky1:'#334c76',sky2:'#777e98',peak:'#63748c',shade:'#314866',snow:'#cfd9e4',icon:'🌙',desc:'A winding path at night'},
+ {name:'The Gray Sentinel',trees:35,rocks:31,alert:7,speed:2,sky1:'#7a9bb2',sky2:'#d0d6d4',peak:'#8a9ea6',shade:'#546c7b',snow:'#f8fcfa',icon:'❄️',desc:'A summit hiding a secret door'},
+ {name:'The Hollow Mountain',trees:22,rocks:43,alert:8,speed:2,sky1:'#6b5b96',sky2:'#b69bc9',peak:'#77719d',shade:'#3c466e',snow:'#e6b8fa',icon:'💎',desc:'Secret cave beneath the mountains'}
+];
+const MAIN_MOUNTAINS=5;
+// Keep the old progress keys so people upgrading the game do not lose their saves.
+const STORAGE_KEY='gray-sentinel-mountain-unlocked-v1';
+const CLEARED_KEY='gray-sentinel-mountain-cleared-v1';
+const SECRET_UNLOCK_KEY='gray-coyote-mountains-secret-found-v1';
+const SECRET_CLEARED_KEY='gray-coyote-mountains-secret-cleared-v1';
+let unlocked=1,cleared=0,secretUnlocked=false,secretCleared=false;
+try{
+ const saved=Number(localStorage.getItem(STORAGE_KEY));
+ if(Number.isInteger(saved)&&saved>=1&&saved<=MAIN_MOUNTAINS)unlocked=saved;
+ const completed=localStorage.getItem(CLEARED_KEY);
+ if(completed!==null){const n=Number(completed);if(Number.isInteger(n)&&n>=0&&n<=MAIN_MOUNTAINS)cleared=n;}
+ else cleared=unlocked-1;
+ unlocked=Math.max(unlocked,Math.min(MAIN_MOUNTAINS,cleared+1));
+ secretUnlocked=localStorage.getItem(SECRET_UNLOCK_KEY)==='true';
+ secretCleared=localStorage.getItem(SECRET_CLEARED_KEY)==='true';
+ if(secretCleared)secretUnlocked=true;
+}catch(e){}
+// A new victory adds one coyote to EVERY level (including replays).
+function coyoteCount(){return Math.min(SPAWNS.length,1+cleared+(secretCleared?1:0));}
+function spawnCoyotes(){return SPAWNS.slice(0,coyoteCount()).map(p=>({...p,scared:0}));}
+function saveProgress(){
+ try{
+  localStorage.setItem(STORAGE_KEY,String(unlocked));
+  localStorage.setItem(CLEARED_KEY,String(cleared));
+  localStorage.setItem(SECRET_UNLOCK_KEY,String(secretUnlocked));
+  localStorage.setItem(SECRET_CLEARED_KEY,String(secretCleared));
+ }catch(e){}
+}
+let levelIndex=0,trees=new Set(),rocks=new Set(),coyotes=[];
+let runner={...START},steps=0,lives=3,cooldown=0,mode='playing',screen='home';
+const el=id=>document.getElementById(id);
+const key=(x,y)=>x+','+y;
+const same=(a,b)=>a.x===b.x&&a.y===b.y;
+const inside=(x,y)=>x>=0&&x<W&&y>=0&&y<H;
+const blocked=(x,y)=>!inside(x,y)||trees.has(key(x,y))||rocks.has(key(x,y));
+const distance=(a,b)=>Math.abs(a.x-b.x)+Math.abs(a.y-b.y);
+const neighbors=p=>[{x:p.x+1,y:p.y},{x:p.x-1,y:p.y},{x:p.x,y:p.y+1},{x:p.x,y:p.y-1}].filter(p=>!blocked(p.x,p.y));
+function rng(seed){return()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};}
+function connected(from,to){
+ const queue=[from],visited=new Set([key(from.x,from.y)]);
+ for(let i=0;i<queue.length;i++){
+  const p=queue[i];if(same(p,to))return true;
+  for(const n of neighbors(p))if(!visited.has(key(n.x,n.y))){visited.add(key(n.x,n.y));queue.push(n);}
+ }return false;
+}
+function makeTerrain(i){
+ const cfg=LEVELS[i],reserved=new Set([START,GOAL,SECRET_DOOR,...SPAWNS].map(p=>key(p.x,p.y)));
+ for(let attempt=0;attempt<200;attempt++){
+  trees=new Set();rocks=new Set();const random=rng(20261018+i*991+attempt*71);
+  const put=(set,count)=>{let tries=0;while(set.size<count&&tries++<3000){const x=1+Math.floor(random()*(W-1)),y=1+Math.floor(random()*(H-1)),k=key(x,y);if(!reserved.has(k)&&!trees.has(k)&&!rocks.has(k))set.add(k);}};
+  put(trees,cfg.trees);put(rocks,cfg.rocks);
+  if(connected(START,GOAL)&&(i!==4||connected(START,SECRET_DOOR))&&SPAWNS.slice(0,coyoteCount()).every(p=>connected(START,p)))return;
+ }
+ trees=new Set();rocks=new Set();
+}
+function mountainSVG(i){
+ const a=LEVELS[i];
+ const silhouettes=[
+  {back:'M0 155 30 92 73 130 133 30 197 117 244 79 270 142V185H0Z',front:'M0 185 59 109 97 143 137 47 216 160 252 129 280 185Z',snow:'M133 30 101 87 128 75 140 91 160 69Z'},
+  {back:'M0 150 68 66 117 124 170 47 224 120 280 83V185H0Z',front:'M0 185 63 90 97 134 176 38 266 185Z',snow:'M176 38 150 81 176 73 190 92 208 90Z'},
+  {back:'M0 155 48 113 95 43 145 111 214 28 280 120V185H0Z',front:'M0 185 49 118 85 139 132 58 194 127 233 77 280 173V185Z',snow:'M132 58 112 94 132 86 145 104 159 103Z'},
+  {back:'M0 169 35 118 103 77 138 127 201 27 270 112 280 185H0Z',front:'M0 185 50 121 108 159 195 57 255 143 280 114V185Z',snow:'M195 57 173 92 196 85 205 100 220 93Z'},
+  {back:'M0 175 42 125 107 44 167 120 222 62 280 140V185H0Z',front:'M0 185 52 121 92 146 154 21 224 141 265 100 280 163V185Z',snow:'M154 21 110 94 146 75 160 93 176 79 204 114Z'},
+  {back:'M0 177 55 95 102 135 158 42 216 138 263 83 280 150V185H0Z',front:'M0 185 59 149 121 164 173 77 233 160 280 123V185Z',snow:'M158 42 131 90 158 78 174 102 190 95Z'}
+ ][i];
+ const stars=(i===3||i===5)?'<circle cx="45" cy="30" r="1.8" fill="white"/><circle cx="83" cy="19" r="2" fill="white"/><circle cx="250" cy="43" r="2" fill="white"/><circle cx="228" cy="17" r="1.5" fill="white"/>':'';
+ const sun=(i===3||i===5)?'<circle cx="242" cy="31" r="18" fill="#f2f0ce"/>':'<circle cx="236" cy="37" r="22" fill="#f7e5a6" opacity=".85"/>';
+ const grove=i===1?'<g fill="#245946"><path d="m23 184 18-54 18 54Zm38 0 13-48 13 48Zm182 0 15-52 15 52Z"/></g>':'';
+ const stones=i===2?'<g fill="#a99585"><path d="m13 184 21-25 25 25Zm209 0 26-29 27 29Zm-27 0 14-17 16 17Z"/></g>':'';
+ const ice=i===4?'<path d="M0 178q30-10 50 0t60-2 60 1 55-3 55 5v10H0Z" fill="#e8edeb" opacity=".8"/>':'';
+ return `<svg viewBox="0 0 280 185" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${sun}${stars}<path d="${silhouettes.back}" fill="${a.peak}"/><path d="${silhouettes.front}" fill="${a.shade}"/><path d="${silhouettes.snow}" fill="${a.snow}"/>${grove}${stones}${ice}<path d="M0 185Q75 158 140 175T280 166V185Z" fill="#284b42" opacity=".68"/></svg>`;
+}
+function renderMap(){
+ el('mountainGrid').replaceChildren();
+ for(let i=0;i<LEVELS.length;i++){
+  if(i===5&&!secretUnlocked)continue;
+  const cfg=LEVELS[i],canPlay=i===5?secretUnlocked:i<unlocked,done=i===5?secretCleared:i<cleared;
+  const b=document.createElement('button');
+  b.type='button';b.className='mountain'+(!canPlay?' locked':'')+(done?' done':'');
+  b.disabled=!canPlay;
+  b.setAttribute('aria-label',`${i===5?'Secret level':`Mountain ${i+1}`}, ${cfg.name}, ${done?'completed':canPlay?'unlocked':'locked'}. ${coyoteCount()} coyotes.`);
+  b.style.setProperty('--sky1',cfg.sky1);b.style.setProperty('--sky2',cfg.sky2);
+  const status=done?'🏁 Cleared':i===5?'✨ Discovered':canPlay?'🔓 Play':'🔒 Locked';
+  b.innerHTML=`<span class="mountain-art">${mountainSVG(i)}<span class="mountain-no">${i===5?'★':i+1}</span><span class="mountain-badge">${status}</span><span class="mountain-icon" aria-hidden="true">${cfg.icon}</span></span><span class="mountain-caption"><strong>${cfg.name}</strong><small>${cfg.desc} · 🐺 ${coyoteCount()}</small></span>`;
+  if(canPlay)b.addEventListener('click',()=>loadLevel(i));
+  el('mountainGrid').appendChild(b);
+ }
+ el('progress').textContent=`⛰️ ${cleared}/${MAIN_MOUNTAINS} cleared · 🐺 ${coyoteCount()} in every level${secretUnlocked?' · 💎 Secret found':''}`;
+ el('playBtn').textContent=secretCleared?'▶ Replay Adventure':unlocked>1?'▶ Continue Adventure':'▶ Start Adventure';
+}
+function showScreen(name){
+ screen=name;
+ for(const type of ['home','map','game'])el(type+'Screen').classList.toggle('active',type===name);
+ if(name==='map'||name==='home')renderMap();
+ window.scrollTo({top:0,behavior:'instant'});
+}
+function toggleHelp(){const help=el('helpPanel'),expanded=!help.hidden;help.hidden=expanded;el('helpBtn').setAttribute('aria-expanded',String(!expanded));}
+function continueAdventure(){loadLevel(secretUnlocked&&cleared===MAIN_MOUNTAINS&&!secretCleared?5:Math.min(unlocked-1,MAIN_MOUNTAINS-1));}
+function say(s){el('message').textContent=s;}
+function centerRunnerInZoom(){
+ const view=el('boardViewport');
+ if(!view.classList.contains('zoomed'))return;
+ const field=el('field'),cellWidth=field.scrollWidth/W;
+ view.scrollLeft=Math.max(0,Math.min(field.scrollWidth-view.clientWidth,(runner.x+0.5)*cellWidth-view.clientWidth/2));
+}
+function toggleZoom(){
+ const view=el('boardViewport'),zoomed=view.classList.toggle('zoomed'),btn=el('zoomBtn');
+ btn.textContent=zoomed?'🔎 Fit whole map':'🔍 Zoom in';
+ btn.setAttribute('aria-pressed',String(zoomed));
+ if(!zoomed)view.scrollLeft=0;
+ else centerRunnerInZoom();
+}
+function loadLevel(i){
+ if(!Number.isInteger(i)||i<0||i>=LEVELS.length||(i===5?!secretUnlocked:i>=unlocked))return;
+ levelIndex=i;steps=0;lives=3;cooldown=0;mode='playing';runner={...START};makeTerrain(i);
+ coyotes=spawnCoyotes();
+ say(i===4?'❄️ The wind whispers of a secret door somewhere near the upper slopes…':i===5?'💎 You found the Hollow Mountain! Follow the glowing crystals to the flag.':'Reach 🏁! Trees and rocks are solid. Stay clear of the coyotes!');
+ el('gameFrame').classList.toggle('secret-zone',i===5);
+ el('gameHint').textContent=i===4?'❄️ The final mountain hides a door. Search away from the flag! Walk onto 🚪 to explore it.':i===5?'💎 Secret cave! The crystals sparkle, but rocks and trees still block you. Find 🏁.':'🏁 Reach the upper-left flag. 🌲 Trees and 🪨 rocks are solid. Arrow keys / WASD to move; Space to shout.';
+ showScreen('game');draw();
+}
+function draw(){
+ el('subtitle').textContent=LEVELS[levelIndex].name;
+ el('mountainLabel').textContent=levelIndex===5?'✨ SECRET LEVEL · 💎':`Mountain ${levelIndex+1} / ${MAIN_MOUNTAINS} · ${LEVELS[levelIndex].icon}`;
+ el('levelStat').textContent=levelIndex===5?'✨ Secret Level':`Level ${levelIndex+1}/${MAIN_MOUNTAINS}`;
+ el('lifeStat').textContent='❤️'.repeat(lives)||'💔';
+ el('coyoteStat').textContent=`🐺 ${coyotes.length}`;
+ el('stepStat').textContent=`👟 ${steps}`;
+ el('next').style.display=mode==='won'&&(levelIndex<MAIN_MOUNTAINS-1||(levelIndex===4&&secretUnlocked))?'inline-block':'none';
+ el('next').textContent=levelIndex===4?'✨ ENTER SECRET LEVEL →':'NEXT MOUNTAIN →';
+ const sh=el('shout');sh.disabled=mode!=='playing'||cooldown>0;sh.textContent=cooldown?`📣 ${cooldown} steps`:'📣 SHOUT';
+ const result=el('result');result.classList.toggle('visible',mode!=='playing');
+ if(mode==='won'){
+  el('resultTitle').textContent=levelIndex===5?'🏆 THE HIDDEN HEART OF THE MOUNTAINS!':levelIndex===4?'🏆 ALL FIVE PEAKS CONQUERED!':'🏁 MOUNTAIN CLEARED!';
+  el('resultBody').textContent=levelIndex===5?'You discovered and escaped the secret sixth level. The entire mountain range is yours!':levelIndex===4?(secretUnlocked?'Your secret cavern awaits! Tap NEXT or choose it from the map.':'Five summits cleared! But did you find the secret doorway on this mountain?'):'Your victory adds one coyote to EVERY mountain. A new peak awaits!';
+ }else if(mode==='lost'){
+  el('resultTitle').textContent='🐺 THE COYOTES GOT TOO CLOSE!';
+  el('resultBody').textContent='Try again. Use rocks, trees and your shout to stay safe.';
+ }
+ const field=el('field');field.replaceChildren();const frag=document.createDocumentFragment();
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+  const tile=document.createElement('div');tile.className='tile';const k=key(x,y);
+  if(x===0||y===0)tile.classList.add('trail');
+  if(trees.has(k)){tile.textContent='🌲';tile.classList.add('tree');}
+  else if(rocks.has(k)){tile.textContent='🪨';tile.classList.add('rock');}
+  else if(x===runner.x&&y===runner.y){tile.textContent='🏃';tile.classList.add('runner');}
+  else if(coyotes.some(c=>c.x===x&&c.y===y)){tile.textContent='🐺';tile.classList.add('coyote');}
+  else if(levelIndex===4&&x===SECRET_DOOR.x&&y===SECRET_DOOR.y&&(secretUnlocked||distance(runner,SECRET_DOOR)<=3)){tile.textContent='🚪';tile.classList.add('secret-door');}
+  else if(x===GOAL.x&&y===GOAL.y){tile.textContent='🏁';tile.classList.add('exit');}
+  else if(levelIndex===5&&(x*3+y*7)%23===0)tile.textContent='💎';
+  else if((x*3+y*7)%23===0)tile.textContent='🌾';
+  frag.appendChild(tile);
+ }
+ field.appendChild(frag);
+ centerRunnerInZoom();
+}
+function firstStepToward(from,to,self){
+ const queue=[{...from}],seen=new Set([key(from.x,from.y)]),parent=new Map(),destination=key(to.x,to.y);
+ for(let i=0;i<queue.length;i++){
+  const p=queue[i];if(key(p.x,p.y)===destination)break;
+  for(const n of neighbors(p)){
+   const k=key(n.x,n.y);if(seen.has(k)||coyotes.some(c=>c!==self&&same(c,n)))continue;
+   seen.add(k);parent.set(k,p);queue.push(n);
+  }
+ }
+ if(!seen.has(destination))return null;
+ let next={...to};while(parent.has(key(next.x,next.y))&&!same(parent.get(key(next.x,next.y)),from))next=parent.get(key(next.x,next.y));
+ return next;
+}
+function possibleMoves(c){return neighbors(c).filter(n=>!coyotes.some(other=>other!==c&&same(n,other)));}
+function moveCoyotes(){
+ const cfg=LEVELS[levelIndex];
+ for(const c of coyotes){
+  const opts=possibleMoves(c);if(!opts.length)continue;let next=null;
+  if(c.scared>0){const farthest=Math.max(...opts.map(n=>distance(n,runner)));const away=opts.filter(n=>distance(n,runner)===farthest);next=away[Math.floor(Math.random()*away.length)];c.scared--;}
+  else if(distance(c,runner)<=cfg.alert)next=firstStepToward(c,runner,c);
+  else if(Math.random()<.65)next=opts[Math.floor(Math.random()*opts.length)];
+  if(next){c.x=next.x;c.y=next.y;}
+  if(same(c,runner)){tagged();return;}
+ }
+ const close=coyotes.filter(c=>distance(c,runner)<=4).length;
+ say(close?`⚠️ ${close} coyote(s) close! Shout to make them retreat.`:'🌿 Keep moving. The flag is at the upper left!');
+}
+function tagged(){
+ lives--;
+ if(lives===0){mode='lost';say('🐺 The coyotes blocked your escape! Retry this mountain.');}
+ else{
+  runner={...START};cooldown=0;
+  coyotes=spawnCoyotes();
+  say(`🐺 Too close! You lost a heart. ${lives} remaining. Back to the trailhead!`);
+ }
+}
+function move(dx,dy){
+ if(screen!=='game'||mode!=='playing')return;
+ const nx=runner.x+dx,ny=runner.y+dy;
+ if(blocked(nx,ny)){say('🚧 Blocked! Go around the tree or rock.');return;}
+ runner={x:nx,y:ny};steps++;cooldown=Math.max(0,cooldown-1);
+ if(levelIndex===4&&same(runner,SECRET_DOOR)){
+  secretUnlocked=true;saveProgress();loadLevel(5);
+  say('✨ SECRET DOOR OPENED! Welcome to the Hollow Mountain. The coyotes followed you inside!');
+  return;
+ }
+ if(same(runner,GOAL)){
+  mode='won';
+  if(levelIndex===5)secretCleared=true;
+  else{
+   const nextUnlocked=Math.min(MAIN_MOUNTAINS,levelIndex+2);
+   unlocked=Math.max(unlocked,nextUnlocked);
+   cleared=Math.max(cleared,levelIndex+1);
+  }
+  saveProgress();
+  say(levelIndex===5?'🏆 SECRET LEVEL CONQUERED!':levelIndex===4?'🏆 ALL FIVE MOUNTAINS CLEARED!':'🏁 Peak cleared! A coyote joins the pack across every mountain!');
+ }else if(coyotes.some(c=>same(c,runner)))tagged();
+ else if(steps%LEVELS[levelIndex].speed===0)moveCoyotes();
+ else if(levelIndex===4&&distance(runner,SECRET_DOOR)<=3)say('✨ Something shimmers through the snow... a secret door!');
+ else say('🌿 Move carefully. Coyotes patrol nearby.');
+ draw();
+}
+function shout(){
+ if(screen!=='game'||mode!=='playing'||cooldown>0)return;
+ let count=0;
+ for(const c of coyotes)if(distance(c,runner)<=7){
+  c.scared=3;count++;
+  for(let i=0;i<2;i++){
+   const opts=possibleMoves(c);if(!opts.length)break;
+   const far=Math.max(...opts.map(n=>distance(n,runner)));
+   const choices=opts.filter(n=>distance(n,runner)===far),next=choices[Math.floor(Math.random()*choices.length)];
+   c.x=next.x;c.y=next.y;
+  }
+ }
+ cooldown=5;
+ say(count?`📣 HEY COYOTES! ${count} retreat${count===1?'s':''}!`:'📣 Your shout echoes across the hillside.');
+ draw();
+}
+function advance(){if(mode==='won'&&(levelIndex<MAIN_MOUNTAINS-1||(levelIndex===4&&secretUnlocked)))loadLevel(levelIndex+1);}
+document.addEventListener('keydown',e=>{
+ if(screen!=='game')return;
+ const keys={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],a:[-1,0],s:[0,1],d:[1,0],W:[0,-1],A:[-1,0],S:[0,1],D:[1,0]};
+ if(keys[e.key]){e.preventDefault();move(...keys[e.key]);}
+ else if(e.code==='Space'){e.preventDefault();shout();}
+ else if(e.key==='Enter'&&mode==='won'){e.preventDefault();advance();}
+ else if(e.key==='Escape')showScreen('map');
+});
+renderMap();showScreen('home');
+</script>
+</body>
+</html>
