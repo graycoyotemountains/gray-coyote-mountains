@@ -31,7 +31,7 @@ jobs:
       - uses: actions/configure-pages@v5
         with:
           enablement: true
-      - run: mkdir -p dist && cp index.html dist/index.html
+      - run: mkdir -p dist && cp index.html dist/index.html && cp -R assets dist/assets
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
