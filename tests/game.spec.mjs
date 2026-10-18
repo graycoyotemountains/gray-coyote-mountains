@@ -553,6 +553,7 @@ test('Collecting a chest grants loot and permanently saves the inventory',async(
    lives=1;
    collectTreasure(1);
    collectTreasure(2);
+   draw();
    return {seconds,lives,counts:[...treasureInventory],boxesLeft:treasureBoxes.size};
  });
  expect(output.seconds).toBeGreaterThan(70000);
