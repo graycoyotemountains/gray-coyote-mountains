@@ -214,6 +214,7 @@ p{line-height:1.5}
   </div>
 </section>
 </main>
+<noscript><p style="text-align:center;padding:15px">JavaScript is required to play Gray Coyote Mountains.</p></noscript>
 <script>
 'use strict';
 const W=18,H=14;
@@ -322,7 +323,7 @@ function showScreen(name){
  screen=name;
  for(const type of ['home','map','game'])el(type+'Screen').classList.toggle('active',type===name);
  if(name==='map'||name==='home')renderMap();
- window.scrollTo({top:0,behavior:'instant'});
+ try{window.scrollTo(0,0);}catch(e){}
 }
 function toggleHelp(){const help=el('helpPanel'),expanded=!help.hidden;help.hidden=expanded;el('helpBtn').setAttribute('aria-expanded',String(!expanded));}
 function continueAdventure(){loadLevel(secretUnlocked&&cleared===MAIN_MOUNTAINS&&!secretCleared?5:Math.min(unlocked-1,MAIN_MOUNTAINS-1));}
@@ -364,7 +365,7 @@ function draw(){
   el('resultTitle').textContent=levelIndex===5?'🏆 THE HIDDEN HEART OF THE MOUNTAINS!':levelIndex===4?'🏆 ALL FIVE PEAKS CONQUERED!':'🏁 MOUNTAIN CLEARED!';
   el('resultBody').textContent=levelIndex===5?'You discovered and escaped the secret sixth level. The entire mountain range is yours!':levelIndex===4?(secretUnlocked?'Your secret cavern awaits! Tap NEXT or choose it from the map.':'Five summits cleared! But did you find the secret doorway on this mountain?'):'Your victory adds one coyote to EVERY mountain. A new peak awaits!';
  }else if(mode==='lost'){
-  el('resultTitle').textContent='🐺 THE COYOTES GOT TOO CLOSE!';
+  el('resultTitle').textContent='🐺 THE COYOTE ATE YOUR LUNCH!';
   el('resultBody').textContent='Try again. Use rocks, trees and your shout to stay safe.';
  }
  const field=el('field');field.replaceChildren();const frag=document.createDocumentFragment();
@@ -413,11 +414,11 @@ function moveCoyotes(){
 }
 function tagged(){
  lives--;
- if(lives===0){mode='lost';say('🐺 The coyotes blocked your escape! Retry this mountain.');}
+ if(lives===0){mode='lost';say('🐺 The coyote ate your lunch. No hearts left! Retry this mountain.');}
  else{
   runner={...START};cooldown=0;
   coyotes=spawnCoyotes();
-  say(`🐺 Too close! You lost a heart. ${lives} remaining. Back to the trailhead!`);
+  say(`🐺 The coyote ate your lunch. You lost a heart. ${lives} remaining. Back to the trailhead!`);
  }
 }
 function move(dx,dy){
