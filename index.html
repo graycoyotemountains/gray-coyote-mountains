@@ -116,14 +116,19 @@ p{line-height:1.5}
 }
 .tile{min-width:0;aspect-ratio:1;display:grid;place-items:center;background:#6b8952;border-radius:3px;font-size:clamp(11px,2.5vw,25px);line-height:1}
 .tile:nth-child(4n){background:#729154}.tile.trail{background:#998461}.tile.tree{background:#34553d}.tile.rock{background:#72716b}.tile.runner{background:#b4de79}.tile.coyote{background:#c39d71}.tile.exit{background:#e9c46b}
+.tile.chest{background:#d69b40;box-shadow:inset 0 0 0 2px #fff0a6}
 .tile.secret-door{background:#735182;box-shadow:inset 0 0 0 2px #ffdfa1;animation:glimmer 1.6s ease-in-out infinite alternate}
 @keyframes glimmer{from{filter:brightness(1)}to{filter:brightness(1.5)}}
+.game-frame.invasion-mode{border-color:#ff665d;box-shadow:0 0 38px #ff3c5370;animation:invasionShake .25s 5}
+.game-frame.invasion-mode .tile.coyote{background:#ed6a59;animation:invasionFlash .4s infinite alternate}
+@keyframes invasionShake{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+@keyframes invasionFlash{to{filter:brightness(1.5)}}
 .game-frame.secret-zone{background:#272c4c;border-color:#9b90c5}
 .game-frame.secret-zone .tile:not(.tree):not(.rock):not(.runner):not(.coyote):not(.exit){background:#596182}
 .game-frame.secret-zone .tile.trail{background:#8a7797}
 .game-frame.secret-zone .tile.rock{background:#555268}
 .game-frame.secret-zone .tile.tree{background:#344c5a}
-@media(prefers-reduced-motion:reduce){.tile.secret-door{animation:none}}
+@media(prefers-reduced-motion:reduce){.tile.secret-door,.game-frame.invasion-mode,.game-frame.invasion-mode .tile.coyote{animation:none}}
 #message{min-height:44px;color:#f6d998;font-weight:750;text-align:center;margin:11px auto;max-width:690px}
 .controls{text-align:center;line-height:1}
 .controls .btn{padding:10px 13px;min-width:56px;min-height:48px;font-size:1.23rem;margin:3px}
@@ -158,9 +163,9 @@ p{line-height:1.5}
         <path d="M248 530Q285 475 390 469T590 400" stroke="#d6bc8f" stroke-width="27" fill="none" stroke-linecap="round" stroke-dasharray="2 45" opacity=".6"/>
       </svg>
       <div class="hero-inner">
-        <div class="pill">🎮 TEN PEAKS · ONE HIDDEN WORLD</div>
+        <div class="pill">🎮 TEN PEAKS · THREE HIDDEN WORLDS</div>
         <h1>GRAY COYOTE<br>MOUNTAINS</h1>
-        <p class="subtitle">Ten mountains, one hidden passage, and a growing pack of coyotes. Can you discover the secret eleventh level?</p>
+        <p class="subtitle">Ten mountains, three hidden worlds and treasure chests. Can you beat the coyote invasion?</p>
         <div class="hero-buttons">
           <button id="playBtn" class="btn primary" onclick="continueAdventure()">▶ Start Adventure</button>
           <button class="btn secondary" onclick="showScreen('map')">🗺️ Mountain Map</button>
@@ -174,14 +179,14 @@ p{line-height:1.5}
       <strong>How to play</strong>
       <p>🏃 Move with the arrow keys, WASD, or the touch buttons. Reach the 🏁 flag to win each mountain.</p>
       <p>🌲 Trees and 🪨 rocks block your path AND the coyotes. Navigate around them.</p>
-      <p>📣 Press Space or SHOUT to frighten nearby coyotes away. You have 3 hearts and <strong>5 minutes per level</strong>. The clock pauses when the game is hidden or you return to the map.</p>
+      <p>📣 Press Space or SHOUT to frighten nearby coyotes away. You have 3 hearts and <strong>3 minutes per level</strong>. At zero, coyotes invade! The clock pauses when the game is hidden or you return to the map.</p>
       <p>🐺 Every new level you complete adds one coyote to <strong>every</strong> mountain, including earlier ones!</p>
-      <p>🚪 The door on Mountain 5 hides in a new square every visit, even after discovery! Listen for spooky sounds when it appears. Press SHOUT for a loud yell that scares coyotes away.</p>
+      <p>🚪 Hidden portals on Mountains 5, 7 and 9 unlock secret worlds. 🧰 Every regular mountain has three randomized treasure chests. Secret worlds have no chests.</p>
     </div>
     <div class="quick-cards">
-      <div class="quick-card"><strong>⛰️ Ten peaks + a secret</strong>Explore ten mountains and discover a shortcut to Skyfire Summit.</div>
+      <div class="quick-card"><strong>⛰️ Ten peaks + three secrets</strong>Explore hidden worlds and the shortcut to Skyfire Summit.</div>
       <div class="quick-card"><strong>🐺 Growing coyote pack</strong>Every new victory adds one coyote to all the levels.</div>
-      <div class="quick-card"><strong>🌲 Real obstacles</strong>Use trees and rocks as cover while you find a safe path.</div>
+      <div class="quick-card"><strong>🧰 Treasure hunt!</strong>Find three randomized chests per normal mountain.</div>
     </div>
     <div class="footer">Inspired by a real coyote encounter on the Shoreline hills.</div>
   </div>
@@ -191,7 +196,7 @@ p{line-height:1.5}
   <div class="shell">
     <div class="topbar"><button class="btn secondary small" onclick="showScreen('home')">← Home</button><div class="brand">🗺️ MOUNTAIN TRAIL MAP</div><button type="button" class="btn secondary small sound-toggle" onclick="toggleSound()" aria-label="Mute game sounds" aria-pressed="true">🔊 Sound on</button></div>
     <div class="map-intro">
-      <div><div class="eyebrow">Choose your next climb</div><h2>Ten peaks. One secret.</h2><p>Reach each 🏁 flag to unlock the next mountain. The hidden 🚪 on Mountain 5 separately unlocks a secret level.</p></div>
+      <div><div class="eyebrow">Choose your next climb</div><h2>Ten peaks. Three secrets.</h2><p>Reach 🏁 to unlock the next mountain. Search Mountains 5, 7 and 9 for hidden doors.</p></div>
       <div id="progress" class="progress" aria-live="polite">🔓 1 of 10 unlocked</div>
     </div>
     <div class="map-scene"><div id="mountainGrid" class="route" aria-label="Mountain levels and any discovered secret level"></div>
@@ -210,9 +215,9 @@ p{line-height:1.5}
     <div class="topbar"><button class="btn secondary small" onclick="showScreen('map')">← Mountain Map</button><div class="brand">🐺 GRAY COYOTE MOUNTAINS</div><button class="btn secondary small sound-toggle" type="button" onclick="toggleSound()" aria-label="Mute game sounds" aria-pressed="true">🔊 Sound on</button><button class="btn secondary small" onclick="showScreen('home')">⌂ Home</button></div>
     <div id="gameFrame" class="game-frame">
       <div class="game-head"><p class="eyebrow" id="mountainLabel">Mountain 1 / 10</p><h2 id="subtitle">Amphitheater Ridge</h2></div>
-      <div class="stats"><span id="levelStat"></span><span id="lifeStat"></span><span id="coyoteStat"></span><span id="stepStat"></span><span id="timerStat" aria-label="Time remaining">⏱️ 5:00</span></div>
-      <div id="timerTrack" class="timer-track" role="progressbar" aria-label="Time remaining in seconds" aria-valuemin="0" aria-valuemax="300" aria-valuenow="300"><div id="timerFill" class="timer-fill"></div></div>
-      <p class="timer-hint">⏳ Reach the flag before time runs out. 5 minutes per mountain.</p>
+      <div class="stats"><span id="levelStat"></span><span id="lifeStat"></span><span id="coyoteStat"></span><span id="stepStat"></span><span id="treasureStat">🧰 0/3</span><span id="timerStat" aria-label="Time remaining">⏱️ 3:00</span></div>
+      <div id="timerTrack" class="timer-track" role="progressbar" aria-label="Time remaining in seconds" aria-valuemin="0" aria-valuemax="180" aria-valuenow="180"><div id="timerFill" class="timer-fill"></div></div>
+      <p class="timer-hint">⏳ Three minutes to escape! At zero: COYOTE INVASION!</p>
       <div class="play-layout">
         <div class="board-panel">
           <div class="board-toolbar"><span>🧭 18 × 14 hillside</span><button id="zoomBtn" class="btn secondary" onclick="toggleZoom()" aria-pressed="false">🔍 Zoom in</button></div>
@@ -835,33 +840,34 @@ function loadLevel(i){
  if(i===SECRET_DOOR_MOUNTAIN)relocateSecretDoor();
  placeBonusDoors();generateChests();
  coyotes=spawnCoyotes();
- say(i===SECRET_DOOR_MOUNTAIN?'❄️ The secret door has vanished again! Search the upper slopes for its new hiding place…':i===SECRET_LEVEL?'💎 You found the Hollow Mountain! Follow the glowing crystals to the flag.':'Reach 🏁! Trees and rocks are solid. Stay clear of the coyotes!');
+ say(i>=MAIN_MOUNTAINS?'👻 Haunted secret world: '+LEVELS[i].name+'!':BONUS_SECRETS.some(x=>x.mountain===i)?'🚪 A new hidden portal is here. Search while collecting treasure!':i===SECRET_DOOR_MOUNTAIN?'❄️ The wandering door hides on Mountain 5!':'🧰 Find treasure and reach 🏁 before time runs out!');
  el('gameFrame').classList.toggle('secret-zone',i>=MAIN_MOUNTAINS);
- el('gameHint').textContent=i===SECRET_DOOR_MOUNTAIN?'❄️ The secret door changes squares each time you visit or retry Mountain 5. It stays hidden until you get close. The 🏁 flag unlocks Mountain 6.':i===SECRET_LEVEL?'💎 Listen to the haunted wind and echoes as you explore Hollow Mountain. Reach the 🏁 flag!':'🏁 Reach the upper-left flag. 🌲 Trees and 🪨 rocks are solid. Arrow keys / WASD to move; Space to shout.';
+ el('gameHint').textContent=i>=MAIN_MOUNTAINS?'👻 Secret world: spooky ambience, no treasure chests. Reach 🏁.':BONUS_SECRETS.some(x=>x.mountain===i)||i===SECRET_DOOR_MOUNTAIN?'🚪 Secret doors reveal themselves when nearby. 🧰 Find three treasure chests.':'🧰 Find three chests for rewards and reach 🏁.';
  showScreen('game');draw();if(i!==SECRET_LEVEL)playCoyote();
 }
 function draw(){
  updateTimerDisplay();
  el('subtitle').textContent=LEVELS[levelIndex].name;
- el('mountainLabel').textContent=levelIndex===SECRET_LEVEL?'✨ SECRET LEVEL · 💎':`Mountain ${levelIndex+1} / ${MAIN_MOUNTAINS} · ${LEVELS[levelIndex].icon}`;
- el('levelStat').textContent=levelIndex===SECRET_LEVEL?'✨ Secret Level':`Level ${levelIndex+1}/${MAIN_MOUNTAINS}`;
+ el('mountainLabel').textContent=levelIndex>=MAIN_MOUNTAINS?'✨ SECRET LEVEL · '+LEVELS[levelIndex].icon:`Mountain ${levelIndex+1} / ${MAIN_MOUNTAINS} · ${LEVELS[levelIndex].icon}`;
+ el('levelStat').textContent=levelIndex>=MAIN_MOUNTAINS?'✨ Secret Level':`Level ${levelIndex+1}/${MAIN_MOUNTAINS}`;
  el('lifeStat').textContent='❤️'.repeat(lives)||'💔';
  el('coyoteStat').textContent=`🐺 ${coyotes.length}`;
  el('stepStat').textContent=`👟 ${steps}`;
+ el('treasureStat').textContent=levelIndex>=MAIN_MOUNTAINS?'🧰 No treasure':`🧰 ${foundInLevel}/3 · 🎒 ${totalLoot()}`;
  el('next').style.display=mode==='won'&&levelIndex<MAIN_MOUNTAINS-1?'inline-block':'none';
  el('next').textContent='NEXT MOUNTAIN →';
  el('secretNext').style.display=mode==='won'&&levelIndex===SECRET_LEVEL&&summitTrailUnlocked?'inline-block':'none';
  const sh=el('shout');sh.disabled=mode!=='playing'||cooldown>0;sh.textContent=cooldown?`📣 ${cooldown} steps`:'📣 SHOUT';
  const result=el('result');result.classList.toggle('visible',mode!=='playing');
  if(mode==='won'){
-  el('resultTitle').textContent=levelIndex===SECRET_LEVEL?'🏆 THE HIDDEN HEART OF THE MOUNTAINS!':levelIndex===MAIN_MOUNTAINS-1?(cleared===MAIN_MOUNTAINS?'🏆 ALL TEN PEAKS CONQUERED!':'🔥 SKYFIRE SUMMIT CONQUERED!'):levelIndex===SECRET_DOOR_MOUNTAIN?'🏁 MOUNTAIN 5 CLEARED!':'🏁 MOUNTAIN CLEARED!';
-  el('resultBody').textContent=levelIndex===SECRET_LEVEL?'You found the hidden route from Hollow Mountain to Skyfire Summit! Follow the secret trail or choose Skyfire on the map.':levelIndex===MAIN_MOUNTAINS-1?(cleared===MAIN_MOUNTAINS?'Ten peaks conquered! You can replay any mountain.':'Skyfire conquered using the secret trail! Mountains in between remain locked until you reach their flags.'):levelIndex===SECRET_DOOR_MOUNTAIN?'Mountain 6 is unlocked! The secret level is separate: return to Mountain 5 to find its hidden door.':'Your victory adds one coyote to EVERY mountain. A new peak awaits!';
+  el('resultTitle').textContent=levelIndex===SECRET_LEVEL?'🏆 THE HIDDEN HEART OF THE MOUNTAINS!':levelIndex>SECRET_LEVEL?'👻 SECRET WORLD CONQUERED!':levelIndex===MAIN_MOUNTAINS-1?(cleared===MAIN_MOUNTAINS?'🏆 ALL TEN PEAKS CONQUERED!':'🔥 SKYFIRE SUMMIT CONQUERED!'):levelIndex===SECRET_DOOR_MOUNTAIN?'🏁 MOUNTAIN 5 CLEARED!':'🏁 MOUNTAIN CLEARED!';
+  el('resultBody').textContent=levelIndex===SECRET_LEVEL?'You found the hidden route from Hollow Mountain to Skyfire Summit! Follow the secret trail or choose Skyfire on the map.':levelIndex>SECRET_LEVEL?'You conquered '+LEVELS[levelIndex].name+'!':levelIndex===MAIN_MOUNTAINS-1?(cleared===MAIN_MOUNTAINS?'Ten peaks conquered! You can replay any mountain.':'Skyfire conquered using the secret trail! Mountains in between remain locked until you reach their flags.'):levelIndex===SECRET_DOOR_MOUNTAIN?'Mountain 6 is unlocked! The secret level is separate: return to Mountain 5 to find its hidden door.':'Your victory adds one coyote to EVERY mountain. A new peak awaits!';
  }else if(mode==='lost'){
   el('resultTitle').textContent='🐺 THE COYOTE ATE YOUR LUNCH!';
   el('resultBody').textContent='Try again. Use rocks, trees and your shout to stay safe.';
  }else if(mode==='timedout'){
-  el('resultTitle').textContent='⏰ TIME IS UP!';
-  el('resultBody').textContent='The mountain clock reached zero. Hit Retry Mountain for another 5 minutes. Your completed levels are safe!';
+  el('resultTitle').textContent='🐺 COYOTE INVASION!';
+  el('resultBody').textContent='The clock hit zero: 25 coyotes invaded! Retry for 3 minutes. Saved treasure and cleared peaks are safe.';
  }
  const field=el('field');field.replaceChildren();const frag=document.createDocumentFragment();
  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
@@ -871,7 +877,8 @@ function draw(){
   else if(rocks.has(k)){tile.textContent='🪨';tile.classList.add('rock');}
   else if(x===runner.x&&y===runner.y){tile.textContent='🏃';tile.classList.add('runner');}
   else if(coyotes.some(c=>c.x===x&&c.y===y)){tile.textContent='🐺';tile.classList.add('coyote');}
-  else if(levelIndex===SECRET_DOOR_MOUNTAIN&&x===SECRET_DOOR.x&&y===SECRET_DOOR.y&&distance(runner,SECRET_DOOR)<=3){tile.textContent='🚪';tile.classList.add('secret-door');}
+  else if((levelIndex===SECRET_DOOR_MOUNTAIN&&x===SECRET_DOOR.x&&y===SECRET_DOOR.y&&distance(runner,SECRET_DOOR)<=3)||[...bonusDoors.values()].some(door=>door.x===x&&door.y===y&&distance(runner,door)<=3)){tile.textContent='🚪';tile.classList.add('secret-door');}
+  else if(chests.has(k)){tile.textContent='🧰';tile.classList.add('chest');}
   else if(x===GOAL.x&&y===GOAL.y){tile.textContent='🏁';tile.classList.add('exit');}
   else if(levelIndex===SECRET_LEVEL&&(x*3+y*7)%23===0)tile.textContent='💎';
   else if((x*3+y*7)%23===0)tile.textContent='🌾';
