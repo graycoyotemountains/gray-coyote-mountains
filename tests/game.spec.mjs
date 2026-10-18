@@ -386,3 +386,71 @@ test('Spooky and shouting cues use Web Audio and gracefully respect mute', async
    return calls;
  })).toEqual([]);
 });
+
+test('Clock starts at five minutes and counts down during gameplay',async({page})=>{
+ await page.goto('/');
+ await page.locator('#playBtn').click();
+ await expect(page.locator('#timerStat')).toHaveText('⏱️ 5:00');
+ await expect(page.locator('#timerTrack')).toHaveAttribute('aria-valuemax','300');
+ await expect(page.locator('#timerTrack')).toHaveAttribute('aria-valuenow',/29[8-9]|300/);
+ await page.evaluate(()=>{timerDeadline=Date.now()+184000;tickTimer();});
+ await expect(page.locator('#timerStat')).toHaveText('⏱️ 3:04');
+});
+
+test('Clock expires at zero and freezes movement until retry resets it',async({page})=>{
+ await page.goto('/');
+ await page.locator('#playBtn').click();
+ await page.evaluate(()=>{timerDeadline=Date.now()-10;tickTimer();});
+ await expect(page.locator('#timerStat')).toHaveText('⏱️ 0:00');
+ await expect(page.locator('#resultTitle')).toContainText('TIME IS UP');
+ await expect(page.locator('#message')).toContainText('Time is up');
+ await expect(page.locator('#shout')).toBeDisabled();
+ const steps=await page.locator('#stepStat').textContent();
+ await page.getByRole('button',{name:'Move up'}).click();
+ await expect(page.locator('#stepStat')).toHaveText(steps);
+ await page.locator('#retry').click();
+ await expect(page.locator('#result')).toBeHidden();
+ await expect(page.locator('#timerStat')).toHaveText('⏱️ 5:00');
+ await page.getByRole('button',{name:'Move up'}).click();
+ await expect(page.locator('#stepStat')).toContainText('1');
+});
+
+test('The timer pauses on the map and resumes when game is shown again',async({page})=>{
+ await page.goto('/');
+ await page.locator('#playBtn').click();
+ await page.evaluate(()=>{timerDeadline=Date.now()+152000;tickTimer();});
+ await page.locator('#gameScreen button').filter({hasText:'Mountain Map'}).first().click();
+ const paused=await page.evaluate(()=>({running:timerRunning,remaining:timeRemainingMs}));
+ expect(paused.running).toBe(false);
+ await page.waitForTimeout(250);
+ expect(await page.evaluate(()=>timeRemainingMs)).toBe(paused.remaining);
+ await page.evaluate(()=>showScreen('game'));
+ await expect.poll(()=>page.evaluate(()=>timerRunning)).toBe(true);
+ await expect(page.locator('#timerStat')).toContainText('2:');
+});
+
+test('A victory stops the timer and does not erase saved progress',async({page})=>{
+ await page.goto('/');
+ await page.locator('#playBtn').click();
+ await page.evaluate(()=>{runner={x:1,y:0};draw();});
+ await page.getByRole('button',{name:'Move left'}).click();
+ await expect(page.locator('#resultTitle')).toContainText('MOUNTAIN CLEARED');
+ expect(await page.evaluate(()=>timerRunning)).toBe(false);
+ const remaining=await page.locator('#timerStat').textContent();
+ await page.waitForTimeout(300);
+ await expect(page.locator('#timerStat')).toHaveText(remaining);
+ await expect(page.evaluate(()=>localStorage.getItem('gray-sentinel-mountain-cleared-v1'))).resolves.toBe('1');
+ await page.locator('#next').click();
+ await expect(page.locator('#subtitle')).toHaveText('Sycamore Crossing');
+ await expect(page.locator('#timerStat')).toHaveText('⏱️ 5:00');
+});
+
+test('Thirty-second warning is visible, with accessible progress and reduced time',async({page})=>{
+ await page.goto('/');
+ await page.locator('#playBtn').click();
+ await page.evaluate(()=>{timerDeadline=Date.now()+29500;tickTimer();});
+ await expect(page.locator('#timerStat')).toContainText('0:30');
+ await expect(page.locator('#timerStat')).toHaveClass(/urgent/);
+ await expect(page.locator('#message')).toContainText('30 seconds');
+ await expect(page.locator('#timerTrack')).toHaveAttribute('aria-valuenow',/2[89]|30/);
+});

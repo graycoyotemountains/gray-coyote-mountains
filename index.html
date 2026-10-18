@@ -83,6 +83,14 @@ p{line-height:1.5}
 .game-head h2{color:#f8d48a;margin:4px 0 10px}
 .stats{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0 12px}
 .stats span{border:1px solid #577363;background:#335244;border-radius:9px;padding:7px 11px;font-weight:750;font-size:.87rem}
+.stats #timerStat{font-variant-numeric:tabular-nums;background:#324c45;border-color:#d0be86;min-width:111px;text-align:center}
+.stats #timerStat.warning{background:#795422;border-color:#ffda90;color:#fff3cc}
+.stats #timerStat.urgent{background:#842f2f;border-color:#ffaba4;color:white;animation:timerPulse 1s ease-in-out infinite alternate}
+.timer-track{height:8px;border-radius:99px;background:#0f2524;overflow:hidden;max-width:826px;margin:0 auto 4px;border:1px solid #819782}
+.timer-fill{height:100%;width:100%;background:linear-gradient(90deg,#85cdae,#f1d37b);transition:width .18s linear}
+.timer-hint{text-align:center;color:#d3e4cb;font-size:.76rem;margin:4px 0 8px}
+@keyframes timerPulse{to{filter:brightness(1.4)}}
+@media(prefers-reduced-motion:reduce){.stats #timerStat.urgent{animation:none}}
 #field{width:100%;max-width:826px;margin:10px auto;display:grid;grid-template-columns:repeat(18,minmax(0,1fr));gap:2px;padding:5px;border:3px solid #ab9168;border-radius:11px;background:#415a40;user-select:none}
 .play-layout{display:block}
 .board-panel,.game-side{min-width:0}
@@ -166,7 +174,7 @@ p{line-height:1.5}
       <strong>How to play</strong>
       <p>🏃 Move with the arrow keys, WASD, or the touch buttons. Reach the 🏁 flag to win each mountain.</p>
       <p>🌲 Trees and 🪨 rocks block your path AND the coyotes. Navigate around them.</p>
-      <p>📣 Press Space or SHOUT to frighten nearby coyotes away. You have 3 hearts per level.</p>
+      <p>📣 Press Space or SHOUT to frighten nearby coyotes away. You have 3 hearts and <strong>5 minutes per level</strong>. The clock pauses when the game is hidden or you return to the map.</p>
       <p>🐺 Every new level you complete adds one coyote to <strong>every</strong> mountain, including earlier ones!</p>
       <p>🚪 The door on Mountain 5 hides in a new square every visit, even after discovery! Listen for spooky sounds when it appears. Press SHOUT for a loud yell that scares coyotes away.</p>
     </div>
@@ -202,7 +210,9 @@ p{line-height:1.5}
     <div class="topbar"><button class="btn secondary small" onclick="showScreen('map')">← Mountain Map</button><div class="brand">🐺 GRAY COYOTE MOUNTAINS</div><button class="btn secondary small sound-toggle" type="button" onclick="toggleSound()" aria-label="Mute game sounds" aria-pressed="true">🔊 Sound on</button><button class="btn secondary small" onclick="showScreen('home')">⌂ Home</button></div>
     <div id="gameFrame" class="game-frame">
       <div class="game-head"><p class="eyebrow" id="mountainLabel">Mountain 1 / 10</p><h2 id="subtitle">Amphitheater Ridge</h2></div>
-      <div class="stats"><span id="levelStat"></span><span id="lifeStat"></span><span id="coyoteStat"></span><span id="stepStat"></span></div>
+      <div class="stats"><span id="levelStat"></span><span id="lifeStat"></span><span id="coyoteStat"></span><span id="stepStat"></span><span id="timerStat" aria-label="Time remaining">⏱️ 5:00</span></div>
+      <div id="timerTrack" class="timer-track" role="progressbar" aria-label="Time remaining in seconds" aria-valuemin="0" aria-valuemax="300" aria-valuenow="300"><div id="timerFill" class="timer-fill"></div></div>
+      <p class="timer-hint">⏳ Reach the flag before time runs out. 5 minutes per mountain.</p>
       <div class="play-layout">
         <div class="board-panel">
           <div class="board-toolbar"><span>🧭 18 × 14 hillside</span><button id="zoomBtn" class="btn secondary" onclick="toggleZoom()" aria-pressed="false">🔍 Zoom in</button></div>
@@ -297,6 +307,67 @@ function saveProgress(){
 }
 let levelIndex=0,trees=new Set(),rocks=new Set(),coyotes=[];
 let runner={...START},steps=0,lives=3,cooldown=0,mode='playing',screen='home';
+const LEVEL_TIME_MS=5*60*1000;
+let timeRemainingMs=LEVEL_TIME_MS,timerDeadline=0,timerInterval=null,timerRunning=false,timeWarningGiven=false;
+// Time is measured against a deadline, not interval counts, so it stays
+// accurate when browsers throttle timers. Backgrounded tabs pause fairly.
+function formatTime(ms){
+ const seconds=Math.max(0,Math.ceil(ms/1000));
+ return Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
+}
+function updateTimerDisplay(){
+ const clock=document.getElementById('timerStat');
+ if(!clock)return;
+ const wholeSeconds=Math.ceil(timeRemainingMs/1000);
+ clock.textContent='⏱️ '+formatTime(timeRemainingMs);
+ clock.classList.toggle('warning',timeRemainingMs<=60000&&mode==='playing');
+ clock.classList.toggle('urgent',timeRemainingMs<=30000&&mode==='playing');
+ clock.setAttribute('aria-label',formatTime(timeRemainingMs)+' remaining');
+ document.getElementById('timerFill').style.width=(100*timeRemainingMs/LEVEL_TIME_MS)+'%';
+ document.getElementById('timerTrack').setAttribute('aria-valuenow',String(wholeSeconds));
+}
+function pauseTimer(){
+ if(timerRunning)timeRemainingMs=Math.max(0,timerDeadline-Date.now());
+ timerRunning=false;
+ timerDeadline=0;
+ if(timerInterval!==null){clearInterval(timerInterval);timerInterval=null;}
+ updateTimerDisplay();
+}
+function resetTimer(){
+ pauseTimer();
+ timeRemainingMs=LEVEL_TIME_MS;
+ timeWarningGiven=false;
+ updateTimerDisplay();
+}
+function endTimeLimit(){
+ pauseTimer();
+ timeRemainingMs=0;mode='timedout';
+ say('⏰ Time is up! The mountain wins this round. Retry to start a fresh 5-minute clock.');
+ draw();
+}
+function tickTimer(){
+ if(!timerRunning||mode!=='playing'||screen!=='game')return;
+ timeRemainingMs=Math.max(0,timerDeadline-Date.now());
+ if(timeRemainingMs===0){endTimeLimit();return;}
+ updateTimerDisplay();
+ if(timeRemainingMs<=30000&&!timeWarningGiven){
+  timeWarningGiven=true;
+  say('⏰ Just 30 seconds left! Hurry to the flag!');
+  if(soundEnabled){note(860,0,.16,{end:590,volume:.08});note(740,.2,.17,{end:490,volume:.08});}
+ }
+}
+function resumeTimer(){
+ if(timerRunning||mode!=='playing'||screen!=='game'||document.hidden)return;
+ timerDeadline=Date.now()+timeRemainingMs;
+ timerRunning=true;
+ timerInterval=setInterval(tickTimer,200);
+ tickTimer();
+}
+function canTakeAction(){
+ if(screen!=='game'||mode!=='playing')return false;
+ tickTimer();
+ return mode==='playing';
+}
 let secretHintPlayed=false,confettiTimer=null,lastDoorSpot='';
 let audioContext=null,lastCoyoteCall=-100,noiseBuffer=null;
 function audio(){
@@ -548,9 +619,11 @@ function renderMap(){
  el('playBtn').textContent=cleared===MAIN_MOUNTAINS&&secretCleared?'▶ Replay Adventure':unlocked>1?'▶ Continue Adventure':'▶ Start Adventure';
 }
 function showScreen(name){
+ if(screen==='game'&&name!=='game')pauseTimer();
  screen=name;
  for(const type of ['home','map','game'])el(type+'Screen').classList.toggle('active',type===name);
  if(name==='map'||name==='home')renderMap();
+ if(name==='game')resumeTimer();
  try{window.scrollTo(0,0);}catch(e){}
 }
 function toggleHelp(){const help=el('helpPanel'),expanded=!help.hidden;help.hidden=expanded;el('helpBtn').setAttribute('aria-expanded',String(!expanded));}
@@ -572,7 +645,9 @@ function toggleZoom(){
 }
 function loadLevel(i){
  if(!Number.isInteger(i)||i<0||i>=LEVELS.length||(i===SECRET_LEVEL?!secretUnlocked:i>=unlocked&&!(i===MAIN_MOUNTAINS-1&&summitTrailUnlocked)))return;
+ pauseTimer();
  levelIndex=i;steps=0;lives=3;cooldown=0;mode='playing';runner={...START};secretHintPlayed=false;makeTerrain(i);
+ resetTimer();
  if(i===SECRET_DOOR_MOUNTAIN)relocateSecretDoor();
  coyotes=spawnCoyotes();
  say(i===SECRET_DOOR_MOUNTAIN?'❄️ The secret door has vanished again! Search the upper slopes for its new hiding place…':i===SECRET_LEVEL?'💎 You found the Hollow Mountain! Follow the glowing crystals to the flag.':'Reach 🏁! Trees and rocks are solid. Stay clear of the coyotes!');
@@ -581,6 +656,7 @@ function loadLevel(i){
  showScreen('game');draw();if(i!==SECRET_LEVEL)playCoyote();
 }
 function draw(){
+ updateTimerDisplay();
  el('subtitle').textContent=LEVELS[levelIndex].name;
  el('mountainLabel').textContent=levelIndex===SECRET_LEVEL?'✨ SECRET LEVEL · 💎':`Mountain ${levelIndex+1} / ${MAIN_MOUNTAINS} · ${LEVELS[levelIndex].icon}`;
  el('levelStat').textContent=levelIndex===SECRET_LEVEL?'✨ Secret Level':`Level ${levelIndex+1}/${MAIN_MOUNTAINS}`;
@@ -598,6 +674,9 @@ function draw(){
  }else if(mode==='lost'){
   el('resultTitle').textContent='🐺 THE COYOTE ATE YOUR LUNCH!';
   el('resultBody').textContent='Try again. Use rocks, trees and your shout to stay safe.';
+ }else if(mode==='timedout'){
+  el('resultTitle').textContent='⏰ TIME IS UP!';
+  el('resultBody').textContent='The mountain clock reached zero. Hit Retry Mountain for another 5 minutes. Your completed levels are safe!';
  }
  const field=el('field');field.replaceChildren();const frag=document.createDocumentFragment();
  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
@@ -647,7 +726,7 @@ function moveCoyotes(){
 function tagged(){
  playMunch();
  lives--;
- if(lives===0){mode='lost';say('🐺 The coyote ate your lunch. No hearts left! Retry this mountain.');}
+ if(lives===0){mode='lost';pauseTimer();say('🐺 The coyote ate your lunch. No hearts left! Retry this mountain.');}
  else{
   runner={...START};cooldown=0;
   coyotes=spawnCoyotes();
@@ -655,7 +734,7 @@ function tagged(){
  }
 }
 function move(dx,dy){
- if(screen!=='game'||mode!=='playing')return;
+ if(!canTakeAction())return;
  const nx=runner.x+dx,ny=runner.y+dy;
  if(blocked(nx,ny)){say('🚧 Blocked! Go around the tree or rock.');return;}
  runner={x:nx,y:ny};steps++;cooldown=Math.max(0,cooldown-1);
@@ -665,7 +744,7 @@ function move(dx,dy){
   return;
  }
  if(same(runner,GOAL)){
-  mode='won';
+  mode='won';pauseTimer();
   if(levelIndex===SECRET_LEVEL){
    secretCleared=true;summitTrailUnlocked=true;
   }else if(levelIndex===MAIN_MOUNTAINS-1){
@@ -689,7 +768,7 @@ function move(dx,dy){
  draw();
 }
 function shout(){
- if(screen!=='game'||mode!=='playing'||cooldown>0)return;
+ if(!canTakeAction()||cooldown>0)return;
  let count=0;
  for(const c of coyotes)if(distance(c,runner)<=7){
   c.scared=3;count++;
@@ -708,6 +787,10 @@ function shout(){
  draw();
 }
 function advance(){if(mode==='won'&&levelIndex<MAIN_MOUNTAINS-1)loadLevel(levelIndex+1);}
+document.addEventListener('visibilitychange',()=>{
+ if(document.hidden)pauseTimer();
+ else resumeTimer();
+});
 document.addEventListener('pointerdown',unlockAudio,{passive:true});
 document.addEventListener('keydown',unlockAudio,{passive:true});
 document.addEventListener('keydown',e=>{
