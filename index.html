@@ -406,6 +406,18 @@ function audio(){
 // CC0 real human vocal recording. Local asset, so SHOUT works without
 // connecting to another website while playing.
 let humanShoutBuffer=null,humanShoutPromise=null,humanShoutCount=0;
+let humanMunchBuffer=null,humanMunchPromise=null,humanMunchCount=0;
+// CC0 recording of a person eating, bundled with the game.
+function prepareHumanMunch(){
+ if(!soundEnabled||humanMunchBuffer||humanMunchPromise)return;
+ const ctx=audio();
+ if(!ctx)return;
+ humanMunchPromise=fetch('assets/human-munch.wav')
+  .then(response=>{if(!response.ok)throw Error('Human munch unavailable');return response.arrayBuffer();})
+  .then(data=>ctx.decodeAudioData(data))
+  .then(buffer=>{humanMunchBuffer=buffer;return buffer;})
+  .catch(()=>{humanMunchPromise=null;return null;});
+}
 function prepareHumanShout(){
  if(!soundEnabled||humanShoutBuffer||humanShoutPromise)return;
  const ctx=audio();
@@ -420,6 +432,7 @@ function unlockAudio(){
  // User gesture unlocks Web Audio on mobile Safari.
  audio();
  prepareHumanShout();
+ prepareHumanMunch();
 }
 function note(freq,after,duration,{end=freq,type='sine',volume=.12}={}){
  try{
@@ -491,24 +504,46 @@ function playCoyote(force=false){
  note(650,1.12,.44,{end:310,type:'sine',volume:.11});
 }
 function playMunch(){
- for(const [delay,vol] of [[0,.20],[.14,.16],[.29,.13]])crunch(delay,vol);
- note(170,0,.12,{end:75,type:'triangle',volume:.13});
- note(120,.18,.16,{end:65,type:'triangle',volume:.10});
+ const ctx=audio();if(!ctx)return;
+ if(!humanMunchBuffer){
+  prepareHumanMunch();
+  // Graceful offline/first-load fallback: real chewing is used once decoded.
+  for(const [delay,vol] of [[0,.20],[.14,.16],[.29,.13]])crunch(delay,vol);
+  return;
+ }
+ try{
+  // Two slightly varied human mouthfuls: munch, munch!
+  for(const [delay,rate,level] of [[0,1.00,.48],[.32,.94,.33]]){
+   const source=ctx.createBufferSource(),gain=ctx.createGain();
+   source.buffer=humanMunchBuffer;
+   source.playbackRate.value=rate;
+   const time=ctx.currentTime+delay,duration=source.buffer.duration/rate;
+   gain.gain.setValueAtTime(.0001,time);
+   gain.gain.linearRampToValueAtTime(level,time+.028);
+   gain.gain.setValueAtTime(level,time+Math.max(.04,duration-.10));
+   gain.gain.exponentialRampToValueAtTime(.0001,time+duration);
+   source.connect(gain);gain.connect(ctx.destination);
+   source.start(time);
+  }
+  humanMunchCount++;
+ }catch(e){
+  crunch(0,.15);
+ }
 }
 function playSecret(full=false){
  if(!audio())return;
  // Door nearby: ghostly wind, a low descending moan and two detuned bells.
- effectNoise(0,1.05,{volume:.055,center:550,end:175,type:'lowpass'});
- note(170,0,.93,{end:85,type:'sawtooth',volume:.042});
- note(176,.07,.89,{end:94,type:'triangle',volume:.06});
- note(752,.13,.70,{end:418,type:'sine',volume:.075});
- note(705,.23,.82,{end:396,type:'sine',volume:.065});
+ effectNoise(0,1.05,{volume:.105,center:550,end:175,type:'lowpass'});
+ note(170,0,.93,{end:85,type:'sawtooth',volume:.072});
+ note(176,.07,.89,{end:94,type:'triangle',volume:.095});
+ note(752,.13,.70,{end:418,type:'sine',volume:.115});
+ note(705,.23,.82,{end:396,type:'sine',volume:.105});
  if(full){
   // Door opened: a deeper rumble and an eerie falling echo.
-  effectNoise(.43,1.15,{volume:.08,center:920,end:135,type:'lowpass'});
-  note(115,.45,1.1,{end:56,type:'sawtooth',volume:.075});
-  note(960,.56,.95,{end:190,type:'triangle',volume:.075});
-  note(610,.87,.83,{end:132,type:'sine',volume:.08});
+  effectNoise(.43,1.15,{volume:.13,center:920,end:135,type:'lowpass'});
+  note(115,.45,1.1,{end:56,type:'sawtooth',volume:.105});
+  note(960,.56,.95,{end:190,type:'triangle',volume:.105});
+  note(610,.87,.83,{end:132,type:'sine',volume:.12});
  }
 }
 function playSyntheticShout(){
@@ -537,14 +572,14 @@ function playShout(){
   humanShoutCount++;
  }catch(e){playSyntheticShout();}
 }
-// Hollow Mountain has a continuous, very soft haunted soundscape.
+// A continuous haunted soundscape for every secret world, louder but controlled.
 let secretAmbience=null,secretAmbienceInterval=null,secretAmbienceStarts=0;
 function playHollowEcho(){
  if(!secretAmbience||!soundEnabled||screen!=='game'||mode!=='playing'||document.hidden)return;
  // Distant descending chimes echo through the cave.
  const center=360+Math.random()*110;
- note(center,0,2.0,{end:center*.59,type:'sine',volume:.027});
- note(center*1.48,.42,1.8,{end:center*.72,type:'sine',volume:.022});
+ note(center,0,2.0,{end:center*.59,type:'sine',volume:.048});
+ note(center*1.48,.42,1.8,{end:center*.72,type:'sine',volume:.042});
 }
 function startSecretAmbience(){
  if(secretAmbience||!soundEnabled||screen!=='game'||levelIndex!==SECRET_LEVEL||mode!=='playing'||document.hidden)return;
@@ -556,10 +591,10 @@ function startSecretAmbience(){
   const start=ctx.currentTime;
   master=ctx.createGain();
   master.gain.setValueAtTime(.0001,start);
-  master.gain.linearRampToValueAtTime(.60,start+1.3);
+  master.gain.linearRampToValueAtTime(.85,start+1.3);
   master.connect(ctx.destination);
   // A pair of detuned, low moans beneath a slowly moving wind.
-  for(const [freq,type,volume] of [[73,'sine',.055],[109,'triangle',.018],[148,'sine',.018]]){
+  for(const [freq,type,volume] of [[73,'sine',.070],[109,'triangle',.026],[148,'sine',.026]]){
    const oscillator=ctx.createOscillator(),gain=ctx.createGain();
    oscillator.type=type;oscillator.frequency.value=freq;
    gain.gain.value=volume;
@@ -572,7 +607,7 @@ function startSecretAmbience(){
   const wind=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),windGain=ctx.createGain();
   wind.buffer=windBuffer;wind.loop=true;
   filter.type='lowpass';filter.frequency.value=390;
-  windGain.gain.value=.035;
+  windGain.gain.value=.06;
   wind.connect(filter);filter.connect(windGain);windGain.connect(master);
   wind.start(start);sources.push(wind);
   const sway=ctx.createOscillator(),depth=ctx.createGain();

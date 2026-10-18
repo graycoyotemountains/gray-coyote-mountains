@@ -637,3 +637,47 @@ test('Original Hollow Mountain, secret trail and old save files still work',asyn
  await expect(page.locator('#secretNext')).toBeVisible();
  await expect(page.evaluate(()=>localStorage.getItem(SUMMIT_TRAIL_KEY))).resolves.toBe('true');
 });
+
+test('Coyote catch plays an actual bundled human munch sound rather than synthesis',async({page})=>{
+ await page.goto('/');
+ const asset=await page.request.get('/assets/human-munch.wav');
+ expect(asset.ok()).toBe(true);
+ expect((await asset.body()).byteLength).toBeGreaterThan(100000);
+ await page.locator('#playBtn').click();
+ await expect.poll(()=>page.evaluate(()=>humanMunchBuffer?.duration||0)).toBeGreaterThan(.5);
+ const before=await page.evaluate(()=>humanMunchCount);
+ await page.evaluate(()=>{coyotes=[{x:17,y:12,scared:0}];draw();});
+ await page.getByRole('button',{name:'Move up'}).click();
+ await expect(page.locator('#message')).toContainText('The coyote ate your lunch.');
+ expect(await page.evaluate(()=>humanMunchCount)).toBe(before+1);
+});
+
+test('Muting prevents the human munch recording on a collision',async({page})=>{
+ await page.goto('/');
+ await page.locator('#playBtn').click();
+ await expect.poll(()=>page.evaluate(()=>Boolean(humanMunchBuffer))).toBe(true);
+ await page.locator('#gameScreen .sound-toggle').click();
+ const before=await page.evaluate(()=>humanMunchCount);
+ await page.evaluate(()=>{coyotes=[{x:17,y:12,scared:0}];draw();});
+ await page.getByRole('button',{name:'Move up'}).click();
+ expect(await page.evaluate(()=>humanMunchCount)).toBe(before);
+ await page.locator('#gameScreen .sound-toggle').click();
+ await page.evaluate(()=>{runner={...START};coyotes=[{x:17,y:12,scared:0}];draw();});
+ await page.getByRole('button',{name:'Move up'}).click();
+ expect(await page.evaluate(()=>humanMunchCount)).toBe(before+1);
+});
+
+test('Secret-world ambience is louder and remains controlled by mute and leaving',async({page})=>{
+ await page.addInitScript(()=>localStorage.setItem('gray-coyote-mountains-secret-found-v1','true'));
+ await page.goto('/');
+ await page.locator('#playBtn').click();
+ await page.evaluate(()=>loadLevel(SECRET_LEVEL));
+ await expect.poll(()=>page.evaluate(()=>Boolean(secretAmbience))).toBe(true);
+ expect(await page.evaluate(()=>secretAmbience.master.gain.value)).toBeGreaterThan(.8);
+ await page.locator('#gameScreen .sound-toggle').click();
+ await expect.poll(()=>page.evaluate(()=>secretAmbience===null)).toBe(true);
+ await page.locator('#gameScreen .sound-toggle').click();
+ await expect.poll(()=>page.evaluate(()=>Boolean(secretAmbience))).toBe(true);
+ await page.locator('#gameScreen button').filter({hasText:'Mountain Map'}).first().click();
+ expect(await page.evaluate(()=>secretAmbience)).toBeNull();
+});

@@ -28,3 +28,7 @@ The human voice asset `assets/human-shout.wav` is derived from HaelDB's [Male Gr
 ## Development
 
 GitHub Actions runs browser tests in Desktop Chrome, iPad Safari and iPhone Safari, then publishes to Pages. To run locally: `npm install`, `npx playwright install chromium webkit`, and `npm test`.
+
+## Audio upgrade
+
+When a coyote catches you, the game plays `assets/human-munch.wav`, a short **real human eating recording**, rather than electronic chewing. The recording is from [User391915396's *Eating sound effect*](https://freesound.org/people/User391915396/sounds/570336/), distributed as **CC0**, obtained from the CC0 [WilhelmSFX sound bank](https://github.com/Wh1teDuke/WilhelmSFX). Spooky door sounds and the continuing ambience in all secret worlds have also been increased in volume. Sound toggle, tab-switch pausing, and mobile support remain intact.
