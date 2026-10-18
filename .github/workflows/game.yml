@@ -1,7 +1,7 @@
 name: Test and publish Gray Coyote Mountains
 on:
   push:
-    branches: [main]
+    branches: [main, feature/treasure-secret-invasion]
   workflow_dispatch:
 permissions:
   contents: read
@@ -17,6 +17,7 @@ jobs:
       - run: npx playwright install --with-deps chromium webkit
       - run: npm test
   deploy:
+    if: github.ref == 'refs/heads/main'
     needs: test
     runs-on: ubuntu-latest
     permissions:
