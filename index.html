@@ -329,7 +329,7 @@ function saveProgress(){
 let levelIndex=0,trees=new Set(),rocks=new Set(),coyotes=[],chests=new Map(),foundInLevel=0;
 let bonusDoors=new Map(),doorHints=new Set();
 let runner={...START},steps=0,lives=3,cooldown=0,mode='playing',screen='home';
-const LEVEL_TIME_MS=5*60*1000;
+const LEVEL_TIME_MS=3*60*1000;
 let timeRemainingMs=LEVEL_TIME_MS,timerDeadline=0,timerInterval=null,timerRunning=false,timeWarningGiven=false;
 // Time is measured against a deadline, not interval counts, so it stays
 // accurate when browsers throttle timers. Backgrounded tabs pause fairly.
@@ -361,11 +361,23 @@ function resetTimer(){
  timeWarningGiven=false;
  updateTimerDisplay();
 }
+function invade(){
+ const options=[];
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+  const pos={x,y};
+  if(!blocked(x,y)&&!same(pos,runner)&&!same(pos,GOAL))options.push(pos);
+ }
+ options.sort((a,b)=>distance(a,runner)-distance(b,runner));
+ coyotes=options.slice(0,25).map(p=>({...p,scared:0}));
+ el('gameFrame').classList.add('invasion-mode');
+ playCoyote(true);
+ note(95,0,1.1,{end:55,type:'sawtooth',volume:.10});
+}
 function endTimeLimit(){
  pauseTimer();
  timeRemainingMs=0;mode='timedout';
- syncSecretAmbience();
- say('⏰ Time is up! The mountain wins this round. Retry to start a fresh 5-minute clock.');
+ syncSecretAmbience();invade();
+ say('🐺 COYOTE INVASION! The clock struck zero and 25 coyotes invaded!');
  draw();
 }
 function tickTimer(){
@@ -751,6 +763,54 @@ function showScreen(name){
 function toggleHelp(){const help=el('helpPanel'),expanded=!help.hidden;help.hidden=expanded;el('helpBtn').setAttribute('aria-expanded',String(!expanded));}
 function continueAdventure(){loadLevel(secretUnlocked&&cleared===MAIN_MOUNTAINS&&!secretCleared?SECRET_LEVEL:Math.min(unlocked-1,MAIN_MOUNTAINS-1));}
 function takeSecretTrail(){if(summitTrailUnlocked)loadLevel(MAIN_MOUNTAINS-1);}
+function totalLoot(){return Object.values(treasureBag).reduce((a,b)=>a+b,0);}
+function placeBonusDoors(){
+ bonusDoors=new Map();doorHints=new Set();
+ for(const {mountain,level} of BONUS_SECRETS){
+  if(mountain!==levelIndex)continue;
+  const spots=[];
+  for(let y=2;y<H-2;y++)for(let x=2;x<W-2;x++){
+   const p={x,y};
+   if(blocked(x,y)||distance(p,START)<7||distance(p,GOAL)<6||SPAWNS.some(s=>same(p,s)))continue;
+   if(connected(START,p))spots.push(p);
+  }
+  if(spots.length)bonusDoors.set(level,spots[Math.floor(Math.random()*spots.length)]);
+ }
+}
+function generateChests(){
+ chests=new Map();foundInLevel=0;
+ if(levelIndex>=MAIN_MOUNTAINS)return;
+ const choices=[];
+ for(let y=1;y<H;y++)for(let x=1;x<W;x++){
+  const p={x,y};
+  if(blocked(x,y)||distance(p,START)<3||SPAWNS.some(s=>same(p,s)))continue;
+  if((levelIndex===SECRET_DOOR_MOUNTAIN&&same(p,SECRET_DOOR))||[...bonusDoors.values()].some(s=>same(p,s)))continue;
+  if(connected(START,p))choices.push(p);
+ }
+ for(let n=0;n<3&&choices.length;n++){
+  const p=choices.splice(Math.floor(Math.random()*choices.length),1)[0];
+  chests.set(key(p.x,p.y),TREASURES[Math.floor(Math.random()*TREASURES.length)].id);
+ }
+}
+function openChest(k){
+ const type=chests.get(k);if(!type)return;
+ chests.delete(k);foundInLevel++;
+ treasureBag[type]++;
+ const item=TREASURES.find(t=>t.id===type);
+ let reward='';
+ if(type==='clock'){
+  timeRemainingMs=Math.min(LEVEL_TIME_MS,timeRemainingMs+20000);
+  if(timerRunning)timerDeadline=Date.now()+timeRemainingMs;
+  reward='+20 seconds!';
+ }else if(type==='heart'){lives=Math.min(3,lives+1);reward='Heart restored!';}
+ else if(type==='bell'){
+  cooldown=0;for(const c of coyotes)c.scared=Math.max(3,c.scared);
+  reward='Coyotes frightened and SHOUT recharged!';
+ }else reward='A rare collectible!';
+ saveProgress();
+ note(660,0,.15,{end:990,volume:.08});
+ say(`🧰 Found ${item.icon} ${item.name}! ${reward}`);
+}
 function say(s){el('message').textContent=s;}
 function centerRunnerInZoom(){
  const view=el('boardViewport');
@@ -766,15 +826,17 @@ function toggleZoom(){
  else centerRunnerInZoom();
 }
 function loadLevel(i){
- if(!Number.isInteger(i)||i<0||i>=LEVELS.length||(i===SECRET_LEVEL?!secretUnlocked:i>=unlocked&&!(i===MAIN_MOUNTAINS-1&&summitTrailUnlocked)))return;
+ if(!Number.isInteger(i)||i<0||i>=LEVELS.length||(i>=MAIN_MOUNTAINS?(i===SECRET_LEVEL?!secretUnlocked:!bonusUnlocked[i-SECRET_LEVEL-1]):i>=unlocked&&!(i===MAIN_MOUNTAINS-1&&summitTrailUnlocked)))return;
  pauseTimer();
  stopSecretAmbience();
  levelIndex=i;steps=0;lives=3;cooldown=0;mode='playing';runner={...START};secretHintPlayed=false;makeTerrain(i);
  resetTimer();
+ el('gameFrame').classList.remove('invasion-mode');
  if(i===SECRET_DOOR_MOUNTAIN)relocateSecretDoor();
+ placeBonusDoors();generateChests();
  coyotes=spawnCoyotes();
  say(i===SECRET_DOOR_MOUNTAIN?'❄️ The secret door has vanished again! Search the upper slopes for its new hiding place…':i===SECRET_LEVEL?'💎 You found the Hollow Mountain! Follow the glowing crystals to the flag.':'Reach 🏁! Trees and rocks are solid. Stay clear of the coyotes!');
- el('gameFrame').classList.toggle('secret-zone',i===SECRET_LEVEL);
+ el('gameFrame').classList.toggle('secret-zone',i>=MAIN_MOUNTAINS);
  el('gameHint').textContent=i===SECRET_DOOR_MOUNTAIN?'❄️ The secret door changes squares each time you visit or retry Mountain 5. It stays hidden until you get close. The 🏁 flag unlocks Mountain 6.':i===SECRET_LEVEL?'💎 Listen to the haunted wind and echoes as you explore Hollow Mountain. Reach the 🏁 flag!':'🏁 Reach the upper-left flag. 🌲 Trees and 🪨 rocks are solid. Arrow keys / WASD to move; Space to shout.';
  showScreen('game');draw();if(i!==SECRET_LEVEL)playCoyote();
 }
@@ -863,13 +925,21 @@ function move(dx,dy){
  runner={x:nx,y:ny};steps++;cooldown=Math.max(0,cooldown-1);
  if(levelIndex===SECRET_DOOR_MOUNTAIN&&same(runner,SECRET_DOOR)){
   secretUnlocked=true;saveProgress();playSecret(true);loadLevel(SECRET_LEVEL);
-  say('✨ SECRET DOOR OPENED! Welcome to the Hollow Mountain. The coyotes followed you inside!');
-  return;
+  say('✨ SECRET DOOR OPENED! Welcome to the Hollow Mountain. The coyotes followed you inside!');return;
  }
+ for(const [index,door] of bonusDoors)if(same(runner,door)){
+  bonusUnlocked[index-SECRET_LEVEL-1]=true;
+  saveProgress();playSecret(true);loadLevel(index);
+  say('✨ SECRET PORTAL OPENED! '+LEVELS[index].name+' awaits!');return;
+ }
+ const openedChest=chests.has(key(runner.x,runner.y));
+ if(openedChest)openChest(key(runner.x,runner.y));
  if(same(runner,GOAL)){
   mode='won';pauseTimer();syncSecretAmbience();
   if(levelIndex===SECRET_LEVEL){
    secretCleared=true;summitTrailUnlocked=true;
+  }else if(levelIndex>SECRET_LEVEL){
+   bonusCleared[levelIndex-SECRET_LEVEL-1]=true;
   }else if(levelIndex===MAIN_MOUNTAINS-1){
    // A secret shortcut never completes locked mountains 6–9 for you.
    summitShortcutCleared=true;
@@ -880,14 +950,14 @@ function move(dx,dy){
   }
   saveProgress();
   playVictory();celebrate();
-  say(levelIndex===SECRET_LEVEL?'💎 SECRET TRAIL FOUND! Follow the path to Skyfire Summit!':levelIndex===SECRET_DOOR_MOUNTAIN?'🏁 MOUNTAIN 6 UNLOCKED! The hidden door on Mountain 5 is a separate challenge.':levelIndex===MAIN_MOUNTAINS-1?(cleared===MAIN_MOUNTAINS?'🏆 ALL TEN MOUNTAINS CLEARED!':'🔥 SKYFIRE CONQUERED VIA SECRET TRAIL!'):'🏁 Peak cleared! A coyote joins the pack across every mountain!');
+  say(levelIndex===SECRET_LEVEL?'💎 SECRET TRAIL FOUND! Follow the path to Skyfire Summit!':levelIndex>SECRET_LEVEL?'👻 SECRET WORLD CONQUERED!':levelIndex===SECRET_DOOR_MOUNTAIN?'🏁 MOUNTAIN 6 UNLOCKED! The hidden door on Mountain 5 is a separate challenge.':levelIndex===MAIN_MOUNTAINS-1?(cleared===MAIN_MOUNTAINS?'🏆 ALL TEN MOUNTAINS CLEARED!':'🔥 SKYFIRE CONQUERED VIA SECRET TRAIL!'):'🏁 Peak cleared! A coyote joins the pack across every mountain!');
  }else if(coyotes.some(c=>same(c,runner)))tagged();
  else if(steps%LEVELS[levelIndex].speed===0)moveCoyotes();
- else if(levelIndex===SECRET_DOOR_MOUNTAIN&&distance(runner,SECRET_DOOR)<=3){
-  say('✨ Something shimmers through the snow... a secret door!');
-  if(!secretHintPlayed){secretHintPlayed=true;playSecret(false);}
+ else if((levelIndex===SECRET_DOOR_MOUNTAIN&&distance(runner,SECRET_DOOR)<=3&&!secretHintPlayed)||[...bonusDoors].some(([id,p])=>distance(runner,p)<=3&&!doorHints.has(id))){
+  secretHintPlayed=true;for(const [id,p] of bonusDoors)if(distance(runner,p)<=3)doorHints.add(id);
+  say('✨ An eerie secret door emerges nearby!');playSecret(false);
  }
- else say('🌿 Move carefully. Coyotes patrol nearby.');
+ else if(!openedChest)say('🌿 Treasure and the flag await. Hurry!');
  draw();
 }
 function shout(){
