@@ -263,7 +263,20 @@ const LEVELS=[
  {name:'Skyfire Summit',trees:31,rocks:43,alert:8,speed:2,sky1:'#98627a',sky2:'#dda18d',peak:'#9f6473',shade:'#623e5d',snow:'#ffe3cb',icon:'🌋',desc:'The final and fiercest peak'},
  {name:'The Hollow Mountain',trees:22,rocks:43,alert:8,speed:2,sky1:'#6b5b96',sky2:'#b69bc9',peak:'#77719d',shade:'#3c466e',snow:'#e6b8fa',icon:'💎',desc:'Secret cave beneath the mountains'}
 ];
+LEVELS.push(
+ {name:'The Whispering Woods',trees:41,rocks:20,alert:8,speed:2,sky1:'#374d69',sky2:'#85a6ae',peak:'#486f71',shade:'#294a52',snow:'#c2e0d6',icon:'🦉',desc:'Hidden forest of whispering branches'},
+ {name:'The Phantom Crater',trees:16,rocks:53,alert:9,speed:2,sky1:'#513c5f',sky2:'#a16c81',peak:'#785876',shade:'#46334d',snow:'#e5b4ca',icon:'👻',desc:'Haunted world beyond the volcano'}
+);
 const MAIN_MOUNTAINS=10;
+const BONUS_SECRETS=[{mountain:6,level:11},{mountain:8,level:12}];
+const BONUS_KEY='gray-coyote-mountains-bonus-secrets-v1';
+const TREASURE_KEY='gray-coyote-mountains-treasures-v1';
+const TREASURES=[
+ {id:'clock',icon:'⌛',name:'Time Crystal'},
+ {id:'heart',icon:'🍓',name:'Heart Berry'},
+ {id:'bell',icon:'🔔',name:'Coyote Bell'},
+ {id:'acorn',icon:'🌰',name:'Golden Acorn'}
+];
 const SECRET_LEVEL=MAIN_MOUNTAINS;
 const SECRET_DOOR_MOUNTAIN=4;
 // Keep the old progress keys so people upgrading the game do not lose their saves.
@@ -277,6 +290,7 @@ const SOUND_KEY='gray-coyote-mountains-sounds-v1';
 const DOOR_LAST_KEY='gray-coyote-mountains-last-secret-door-v1';
 let unlocked=1,cleared=0,secretUnlocked=false,secretCleared=false;
 let summitTrailUnlocked=false,summitShortcutCleared=false,soundEnabled=true;
+let bonusUnlocked=[false,false],bonusCleared=[false,false],treasureBag={clock:0,heart:0,bell:0,acorn:0};
 try{
  const saved=Number(localStorage.getItem(STORAGE_KEY));
  if(Number.isInteger(saved)&&saved>=1&&saved<=MAIN_MOUNTAINS)unlocked=saved;
@@ -291,6 +305,11 @@ try{
  summitTrailUnlocked=secretCleared||localStorage.getItem(SUMMIT_TRAIL_KEY)==='true';
  summitShortcutCleared=localStorage.getItem(SUMMIT_CLEARED_KEY)==='true';
  soundEnabled=localStorage.getItem(SOUND_KEY)!=='false';
+ const bonus=JSON.parse(localStorage.getItem(BONUS_KEY)||'{}'),bag=JSON.parse(localStorage.getItem(TREASURE_KEY)||'{}');
+ bonusUnlocked=[Boolean(bonus.unlocked?.[0]),Boolean(bonus.unlocked?.[1])];
+ bonusCleared=[Boolean(bonus.cleared?.[0]),Boolean(bonus.cleared?.[1])];
+ bonusCleared.forEach((isDone,i)=>{if(isDone)bonusUnlocked[i]=true;});
+ for(const type of TREASURES)if(Number.isInteger(bag[type.id])&&bag[type.id]>=0)treasureBag[type.id]=Math.min(9999,bag[type.id]);
 }catch(e){}
 // A new victory adds one coyote to EVERY level (including replays).
 function coyoteCount(){return Math.min(SPAWNS.length,1+cleared+(secretCleared?1:0)+(summitShortcutCleared&&cleared<MAIN_MOUNTAINS?1:0));}
@@ -303,9 +322,12 @@ function saveProgress(){
   localStorage.setItem(SECRET_CLEARED_KEY,String(secretCleared));
   localStorage.setItem(SUMMIT_TRAIL_KEY,String(summitTrailUnlocked));
   localStorage.setItem(SUMMIT_CLEARED_KEY,String(summitShortcutCleared));
+  localStorage.setItem(BONUS_KEY,JSON.stringify({unlocked:bonusUnlocked,cleared:bonusCleared}));
+  localStorage.setItem(TREASURE_KEY,JSON.stringify(treasureBag));
  }catch(e){}
 }
-let levelIndex=0,trees=new Set(),rocks=new Set(),coyotes=[];
+let levelIndex=0,trees=new Set(),rocks=new Set(),coyotes=[],chests=new Map(),foundInLevel=0;
+let bonusDoors=new Map(),doorHints=new Set();
 let runner={...START},steps=0,lives=3,cooldown=0,mode='playing',screen='home';
 const LEVEL_TIME_MS=5*60*1000;
 let timeRemainingMs=LEVEL_TIME_MS,timerDeadline=0,timerInterval=null,timerRunning=false,timeWarningGiven=false;
@@ -579,7 +601,7 @@ function stopSecretAmbience(){
  }
 }
 function syncSecretAmbience(){
- if(soundEnabled&&screen==='game'&&levelIndex===SECRET_LEVEL&&mode==='playing'&&!document.hidden)startSecretAmbience();
+ if(soundEnabled&&screen==='game'&&levelIndex>=SECRET_LEVEL&&mode==='playing'&&!document.hidden)startSecretAmbience();
  else stopSecretAmbience();
 }
 function playVictory(){
@@ -688,7 +710,7 @@ function mountainSVG(i){
   {back:'M0 166 38 127 99 42 140 133 203 49 268 124 280 185H0Z',front:'M0 185 59 151 110 62 160 151 226 89 280 169V185Z',snow:'M99 42 74 85 101 77 116 91 130 84Z'},
   {back:'M0 159 39 113 90 65 139 120 188 15 240 99 280 143V185H0Z',front:'M0 185 55 144 106 165 187 49 240 139 280 103V185Z',snow:'M188 15 155 68 188 54 205 74 221 65Z'},
   {back:'M0 177 55 95 102 135 158 42 216 138 263 83 280 150V185H0Z',front:'M0 185 59 149 121 164 173 77 233 160 280 123V185Z',snow:'M158 42 131 90 158 78 174 102 190 95Z'}
- ][i];
+ ][i%6];
  const stars=([3,6,9,SECRET_LEVEL].includes(i))?'<circle cx="45" cy="30" r="1.8" fill="white"/><circle cx="83" cy="19" r="2" fill="white"/><circle cx="250" cy="43" r="2" fill="white"/><circle cx="228" cy="17" r="1.5" fill="white"/>':'';
  const sun=([3,6,9,SECRET_LEVEL].includes(i))?'<circle cx="242" cy="31" r="18" fill="#f2f0ce"/>':'<circle cx="236" cy="37" r="22" fill="#f7e5a6" opacity=".85"/>';
  const grove=(i===1||i===7)?'<g fill="#245946"><path d="m23 184 18-54 18 54Zm38 0 13-48 13 48Zm182 0 15-52 15 52Z"/></g>':'';
@@ -699,19 +721,21 @@ function mountainSVG(i){
 function renderMap(){
  el('mountainGrid').replaceChildren();
  for(let i=0;i<LEVELS.length;i++){
-  if(i===SECRET_LEVEL&&!secretUnlocked)continue;
-  const cfg=LEVELS[i],canPlay=i===SECRET_LEVEL?secretUnlocked:i<unlocked||(i===MAIN_MOUNTAINS-1&&summitTrailUnlocked),done=i===SECRET_LEVEL?secretCleared:i<cleared||(i===MAIN_MOUNTAINS-1&&summitShortcutCleared);
+  if(i>=MAIN_MOUNTAINS&&!(i===SECRET_LEVEL?secretUnlocked:bonusUnlocked[i-SECRET_LEVEL-1]))continue;
+  const cfg=LEVELS[i],isSecret=i>=MAIN_MOUNTAINS;
+  const canPlay=isSecret?(i===SECRET_LEVEL?secretUnlocked:bonusUnlocked[i-SECRET_LEVEL-1]):i<unlocked||(i===MAIN_MOUNTAINS-1&&summitTrailUnlocked);
+  const done=isSecret?(i===SECRET_LEVEL?secretCleared:bonusCleared[i-SECRET_LEVEL-1]):i<cleared||(i===MAIN_MOUNTAINS-1&&summitShortcutCleared);
   const b=document.createElement('button');
   b.type='button';b.className='mountain'+(!canPlay?' locked':'')+(done?' done':'');
   b.disabled=!canPlay;
-  b.setAttribute('aria-label',`${i===SECRET_LEVEL?'Secret level':`Mountain ${i+1}`}, ${cfg.name}, ${done?'completed':canPlay?'unlocked':'locked'}. ${coyoteCount()} coyotes.`);
+  b.setAttribute('aria-label',`${isSecret?'Secret level':`Mountain ${i+1}`}, ${cfg.name}, ${done?'completed':canPlay?'unlocked':'locked'}. ${coyoteCount()} coyotes.`);
   b.style.setProperty('--sky1',cfg.sky1);b.style.setProperty('--sky2',cfg.sky2);
-  const status=done?'🏁 Cleared':i===SECRET_LEVEL?'✨ Discovered':i===MAIN_MOUNTAINS-1&&summitTrailUnlocked&&i>=unlocked?'🔥 Secret trail':canPlay?'🔓 Play':'🔒 Locked';
-  b.innerHTML=`<span class="mountain-art">${mountainSVG(i)}<span class="mountain-no">${i===SECRET_LEVEL?'★':i+1}</span><span class="mountain-badge">${status}</span><span class="mountain-icon" aria-hidden="true">${cfg.icon}</span></span><span class="mountain-caption"><strong>${cfg.name}</strong><small>${cfg.desc} · 🐺 ${coyoteCount()}</small></span>`;
+  const status=done?'🏁 Cleared':isSecret?'✨ Discovered':i===MAIN_MOUNTAINS-1&&summitTrailUnlocked&&i>=unlocked?'🔥 Secret trail':canPlay?'🔓 Play':'🔒 Locked';
+  b.innerHTML=`<span class="mountain-art">${mountainSVG(i)}<span class="mountain-no">${isSecret?'★':i+1}</span><span class="mountain-badge">${status}</span><span class="mountain-icon" aria-hidden="true">${cfg.icon}</span></span><span class="mountain-caption"><strong>${cfg.name}</strong><small>${cfg.desc} · 🐺 ${coyoteCount()}</small></span>`;
   if(canPlay)b.addEventListener('click',()=>loadLevel(i));
   el('mountainGrid').appendChild(b);
  }
- el('progress').textContent=`⛰️ ${cleared}/${MAIN_MOUNTAINS} cleared · 🐺 ${coyoteCount()} in every level${secretUnlocked?' · 💎 Secret found':''}${summitTrailUnlocked?' · 🔥 Skyfire trail open':''}`;
+ el('progress').textContent=`⛰️ ${cleared}/${MAIN_MOUNTAINS} cleared · 🧰 ${totalLoot()} found · 🐺 ${coyoteCount()} coyotes${secretUnlocked?' · 💎 Hollow found':''}${bonusUnlocked.some(Boolean)?' · 👻 Bonus secrets found':''}${summitTrailUnlocked?' · 🔥 Skyfire trail open':''}`;
  el('secretTrail').hidden=!summitTrailUnlocked;
  el('playBtn').textContent=cleared===MAIN_MOUNTAINS&&secretCleared?'▶ Replay Adventure':unlocked>1?'▶ Continue Adventure':'▶ Start Adventure';
 }
