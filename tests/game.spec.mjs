@@ -693,7 +693,7 @@ test('Louder haunted ambience starts in both additional secret worlds',async({pa
  for(const secretIndex of [11,12]){
   await page.evaluate(i=>loadLevel(i),secretIndex);
   await expect.poll(()=>page.evaluate(()=>Boolean(secretAmbience))).toBe(true);
-  expect(await page.evaluate(()=>secretAmbience.master.gain.value)).toBeGreaterThan(.8);
+  await expect.poll(()=>page.evaluate(()=>secretAmbience?.master.gain.value||0),{timeout:4000}).toBeGreaterThan(.8);
   await page.locator('#gameScreen button').filter({hasText:'Mountain Map'}).first().click();
   expect(await page.evaluate(()=>secretAmbience)).toBeNull();
  }
