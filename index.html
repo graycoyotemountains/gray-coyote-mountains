@@ -959,7 +959,7 @@ function move(dx,dy){
   playVictory();celebrate();
   say(levelIndex===SECRET_LEVEL?'💎 SECRET TRAIL FOUND! Follow the path to Skyfire Summit!':levelIndex>SECRET_LEVEL?'👻 SECRET WORLD CONQUERED!':levelIndex===SECRET_DOOR_MOUNTAIN?'🏁 MOUNTAIN 6 UNLOCKED! The hidden door on Mountain 5 is a separate challenge.':levelIndex===MAIN_MOUNTAINS-1?(cleared===MAIN_MOUNTAINS?'🏆 ALL TEN MOUNTAINS CLEARED!':'🔥 SKYFIRE CONQUERED VIA SECRET TRAIL!'):'🏁 Peak cleared! A coyote joins the pack across every mountain!');
  }else if(coyotes.some(c=>same(c,runner)))tagged();
- else if(steps%LEVELS[levelIndex].speed===0)moveCoyotes();
+ else if(!openedChest&&steps%LEVELS[levelIndex].speed===0)moveCoyotes();
  else if((levelIndex===SECRET_DOOR_MOUNTAIN&&distance(runner,SECRET_DOOR)<=3&&!secretHintPlayed)||[...bonusDoors].some(([id,p])=>distance(runner,p)<=3&&!doorHints.has(id))){
   secretHintPlayed=true;for(const [id,p] of bonusDoors)if(distance(runner,p)<=3)doorHints.add(id);
   say('✨ An eerie secret door emerges nearby!');playSecret(false);
