@@ -823,3 +823,109 @@ test('Leaving Challenge Mode restores normal Adventure timer and story map locks
  await expect(page.locator('#mapScreen')).toBeVisible();
  await expect(page.locator('.mountain:disabled')).toHaveCount(9);
 });
+
+test('Reset Coyotes from the mountain map preserves all saved Adventure progress',async({page})=>{
+ await page.addInitScript(()=>{
+  localStorage.setItem('gray-sentinel-mountain-unlocked-v1','7');
+  localStorage.setItem('gray-sentinel-mountain-cleared-v1','6');
+  localStorage.setItem('gray-coyote-mountains-secret-found-v1','true');
+  localStorage.setItem('gray-coyote-mountains-treasure-v1',JSON.stringify({crystal:3,berry:2,bell:1,acorn:4}));
+ });
+ await page.goto('/');
+ await page.locator('#homeScreen button').filter({hasText:'Mountain Map'}).click();
+ await expect(page.locator('#progress')).toContainText('🐺 7 coyotes');
+ await page.locator('#resetCoyotesMap').click();
+ await expect(page.locator('#progress')).toContainText('🐺 1 coyotes');
+ await expect(page.locator('.mountain:not(:disabled)')).toHaveCount(8);
+ const state=await page.evaluate(()=>({
+  coyotes:coyoteCount(),
+  reset:localStorage.getItem(COYOTE_RESET_KEY),
+  unlocked,cleared,secretUnlocked,inventory
+ }));
+ expect(state.coyotes).toBe(1);
+ expect(state.reset).toBe('6');
+ expect(state.unlocked).toBe(7);
+ expect(state.cleared).toBe(6);
+ expect(state.secretUnlocked).toBe(true);
+ expect(state.inventory).toEqual({crystal:3,berry:2,bell:1,acorn:4});
+ await page.reload();
+ await page.locator('#homeScreen button').filter({hasText:'Mountain Map'}).click();
+ await expect(page.locator('#progress')).toContainText('🐺 1 coyotes');
+ await page.locator('.mountain').nth(6).click();
+ await expect(page.locator('#coyoteStat')).toHaveText('🐺 1');
+});
+
+test('Reset button in an active Adventure immediately removes extra coyotes without restarting timer',async({page})=>{
+ await page.addInitScript(()=>{
+  localStorage.setItem('gray-sentinel-mountain-unlocked-v1','5');
+  localStorage.setItem('gray-sentinel-mountain-cleared-v1','4');
+ });
+ await page.goto('/');
+ await page.locator('#playBtn').click();
+ await expect(page.locator('#coyoteStat')).toHaveText('🐺 5');
+ await page.evaluate(()=>{timeRemainingMs=90000;timerDeadline=Date.now()+90000;tickTimer();});
+ await page.locator('#resetCoyotesGame').click();
+ await expect(page.locator('#coyoteStat')).toHaveText('🐺 1');
+ await expect(page.locator('#field .coyote')).toHaveCount(1);
+ await expect(page.locator('#message')).toContainText('Pack reset to ONE coyote');
+ expect(await page.evaluate(()=>timeRemainingMs)).toBeGreaterThan(85000);
+ expect(await page.evaluate(()=>({cleared,unlocked,lives}))).toEqual({cleared:4,unlocked:5,lives:3});
+ await page.locator('#retry').click();
+ await expect(page.locator('#coyoteStat')).toHaveText('🐺 1');
+});
+
+test('After coyote reset, new first-time mountain wins gradually add coyotes again',async({page})=>{
+ await page.addInitScript(()=>{
+  localStorage.setItem('gray-sentinel-mountain-unlocked-v1','3');
+  localStorage.setItem('gray-sentinel-mountain-cleared-v1','2');
+ });
+ await page.goto('/');
+ await page.locator('#resetCoyotesHome').click();
+ await expect(page.locator('#coyoteResetNotice')).toContainText('reset to one');
+ await page.locator('#playBtn').click();
+ await expect(page.locator('#coyoteStat')).toHaveText('🐺 1');
+ await page.evaluate(()=>{runner={x:1,y:0};draw();});
+ await page.getByRole('button',{name:'Move left'}).click();
+ await expect(page.locator('#resultTitle')).toContainText('MOUNTAIN CLEARED');
+ await page.locator('#next').click();
+ await expect(page.locator('#coyoteStat')).toHaveText('🐺 2');
+ await expect(page.evaluate(()=>localStorage.getItem(COYOTE_RESET_KEY))).resolves.toBe('2');
+});
+
+test('Challenge Mode ignores coyote reset and always patrols with fifteen',async({page})=>{
+ await page.addInitScript(()=>{
+  localStorage.setItem('gray-sentinel-mountain-unlocked-v1','7');
+  localStorage.setItem('gray-sentinel-mountain-cleared-v1','6');
+ });
+ await page.goto('/');
+ await page.locator('#resetCoyotesHome').click();
+ await page.locator('#challengeBtn').click();
+ await page.locator('#challengeGrid .mountain').nth(9).click();
+ await expect(page.locator('#coyoteStat')).toHaveText('🐺 15');
+ await expect(page.locator('#resetCoyotesGame')).toBeHidden();
+ await page.evaluate(()=>resetCoyotePack());
+ await expect(page.locator('#coyoteStat')).toHaveText('🐺 15');
+ await page.locator('#retry').click();
+ await expect(page.locator('#coyoteStat')).toHaveText('🐺 15');
+ await page.locator('#gameBackBtn').click();
+ await page.locator('#challengeScreen .topbar button').first().click();
+ await page.locator('#playBtn').click();
+ await expect(page.locator('#coyoteStat')).toHaveText('🐺 1');
+});
+
+test('Resetting while a time-out invasion is displayed keeps the invasion until retry',async({page})=>{
+ await page.addInitScript(()=>{
+  localStorage.setItem('gray-sentinel-mountain-unlocked-v1','5');
+  localStorage.setItem('gray-sentinel-mountain-cleared-v1','4');
+ });
+ await page.goto('/');
+ await page.locator('#playBtn').click();
+ await page.evaluate(()=>{timerDeadline=Date.now()-10;tickTimer();});
+ await expect(page.locator('#resultTitle')).toContainText('COYOTE INVASION');
+ await expect(page.locator('#coyoteStat')).toHaveText('🐺 25');
+ await page.locator('#resetCoyotesGame').click();
+ await expect(page.locator('#coyoteStat')).toHaveText('🐺 25');
+ await expect(page.locator('#message')).toContainText('Retry to clear the invasion');
+ await page.locator('#retry').click();
+ await expect(page.locator('#coyoteStat')).toHaveText('🐺 1');
+});

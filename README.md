@@ -26,6 +26,10 @@ Challenge runs have **no treasure chests or secret-door shortcuts** and **never 
 - **Secret portals** on Mountain 5 (The Hollow Mountain 💎), Mountain 7 (The Whispering Woods 🦉), and Mountain 9 (The Phantom Crater 👻). Each reveals itself when you approach. Discovered levels stay available on the map.
 - **Hollow Mountain's secret trail to Skyfire Summit** remains available after clearing Hollow. It skips Mountain 6–9 without marking them complete.
 
+## Coyote Reset 🐺
+
+Tap **🐺 Reset Coyotes** from the home screen, Mountain Map, or while playing a regular Adventure level to bring the growing coyote pack **back to one**. The new count applies immediately to an active level, including retries, and is saved across browser reloads. Future first-time wins add coyotes again. **Unlocked mountains, secrets, treasures, hearts, time remaining, and completed levels are not erased.** During a time-out invasion, reset applies to the next attempt instead of cancelling the invasion. Challenge Mode always has 15 coyotes and is unaffected.
+
 ## Controls and saves
 
 Phones and tablets: touch arrows. Computer: arrow keys/WASD. SHOUT button or Space plays a human voice and scares nearby coyotes. Sound can be muted. Completed mountains, secret discoveries, and collected treasure are saved in the browser.

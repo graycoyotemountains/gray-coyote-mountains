@@ -35,6 +35,8 @@ p{line-height:1.5}
 .hero-inner{position:relative;z-index:1;width:min(590px,100%);padding:clamp(27px,6vw,65px);padding-top:75px}
 .hero .subtitle{max-width:430px;color:#f0f1d8;font-size:1.13rem;margin:0 0 25px}
 .hero-buttons{display:flex;gap:12px;flex-wrap:wrap}
+.reset-notice{margin:10px 0 0;color:#fff0bd;font-size:.9rem;font-weight:700}
+.reset-notice:empty{display:none}
 .pill{display:inline-block;border-radius:999px;background:#16352fba;border:1px solid #d0e3b85e;padding:8px 14px;font-size:.78rem;font-weight:800;letter-spacing:.08em;margin-bottom:25px}
 .hero-wolf{position:absolute;right:7%;bottom:10%;font-size:clamp(54px,12vw,116px);filter:drop-shadow(0 14px 6px #18382d50);transform:rotate(-8deg)}
 .help{margin:16px 0 0;padding:19px 24px;border:1px solid #658a7a;border-radius:18px;background:#183a36;max-width:780px}
@@ -172,9 +174,11 @@ p{line-height:1.5}
           <button id="playBtn" class="btn primary" onclick="continueAdventure()">▶ Start Adventure</button>
           <button class="btn secondary" onclick="showScreen('map')">🗺️ Mountain Map</button>
            <button id="challengeBtn" class="btn primary" onclick="showScreen('challenge')">🔥 Challenge Mode</button>
+           <button id="resetCoyotesHome" type="button" class="btn secondary" onclick="resetCoyotePack()" aria-label="Reset Adventure coyotes to one without losing progress">🐺 Reset Coyotes</button>
           <button id="helpBtn" class="btn secondary" onclick="toggleHelp()" aria-expanded="false" aria-controls="helpPanel">❔ How to Play</button>
           <button type="button" class="btn secondary sound-toggle" onclick="toggleSound()" aria-label="Mute game sounds" aria-pressed="true">🔊 Sound on</button>
         </div>
+        <p id="coyoteResetNotice" class="reset-notice" role="status" aria-live="polite"></p>
       </div>
       <div class="hero-wolf" aria-hidden="true">🐺</div>
     </div>
@@ -183,7 +187,7 @@ p{line-height:1.5}
       <p>🏃 Move with the arrow keys, WASD, or the touch buttons. Reach the 🏁 flag to win each mountain.</p>
       <p>🌲 Trees and 🪨 rocks block your path AND the coyotes. Navigate around them.</p>
       <p>📣 Press Space or SHOUT to frighten nearby coyotes away. You have 3 hearts and <strong>3 minutes per level</strong>. The clock pauses when the game is hidden or you return to the map.</p>
-      <p>🐺 Every new level you complete adds one coyote to <strong>every</strong> mountain, including earlier ones!</p>
+      <p>🐺 New completed levels add coyotes. Use 🐺 Reset Coyotes anytime to put the Adventure pack back to one, without losing levels, secrets, or treasures. Challenge Mode always has 15.</p>
       <p>🚪 Search Mountains 5, 7 and 9 for secret doors. Find 🧰 treasure chests in every regular mountain. Running out of time starts a coyote invasion!</p>
        <p>🔥 Challenge Mode: choose <strong>any of the 13 levels</strong>, including hidden worlds. Escape in <strong>one minute</strong> past 15 coyotes while three villagers guard the flag, leaving only one entrance. Challenge victories do not affect Adventure progress.</p>
     </div>
@@ -209,7 +213,7 @@ p{line-height:1.5}
         <button class="btn primary small" type="button" onclick="takeSecretTrail()">🔥 Take Secret Trail</button>
       </div>
     </div>
-    <div class="map-foot"><div class="legend">🏁 Completed &nbsp; • &nbsp; 🔓 Available &nbsp; • &nbsp; 🔒 Locked</div><button class="btn primary small" onclick="continueAdventure()">▶ Continue Adventure</button></div>
+    <div class="map-foot"><div class="legend">🏁 Completed &nbsp; • &nbsp; 🔓 Available &nbsp; • &nbsp; 🔒 Locked</div><button id="resetCoyotesMap" class="btn secondary small" type="button" onclick="resetCoyotePack()" aria-label="Reset Adventure coyotes to one without losing progress">🐺 Reset Coyotes</button><button class="btn primary small" onclick="continueAdventure()">▶ Continue Adventure</button></div>
     <div class="footer">Your level progress is saved on this device, in this browser.</div>
   </div>
 </section>
@@ -253,6 +257,7 @@ p{line-height:1.5}
             <button id="secretNext" class="btn success" onclick="takeSecretTrail()" style="display:none">🔥 Secret Trail → Skyfire Summit</button>
             <button id="challengeChoose" class="btn primary small" onclick="showScreen('challenge')" style="display:none">🔥 Choose Another Challenge</button>
             <button id="retry" class="btn secondary small" onclick="loadLevel(levelIndex)">↻ Retry Mountain</button>
+            <button id="resetCoyotesGame" class="btn secondary small" type="button" onclick="resetCoyotePack()" aria-label="Reset Adventure coyotes to one without losing progress">🐺 Reset Coyotes</button>
             <button id="gameChooseBtn" class="btn secondary small" onclick="showScreen('map')">🗺️ Choose Mountain</button>
           </div>
           <p class="hint" id="gameHint">🏁 Reach the upper-left flag. 🌲 Trees and 🪨 rocks are solid. Arrow keys / WASD to move; Space to shout.</p>
@@ -302,8 +307,9 @@ const SUMMIT_TRAIL_KEY='gray-coyote-mountains-summit-trail-v1';
 const SUMMIT_CLEARED_KEY='gray-coyote-mountains-summit-shortcut-cleared-v1';
 const SOUND_KEY='gray-coyote-mountains-sounds-v1';
 const DOOR_LAST_KEY='gray-coyote-mountains-last-secret-door-v1';
+const COYOTE_RESET_KEY='gray-coyote-mountains-reset-score-v1';
 let unlocked=1,cleared=0,secretUnlocked=false,secretCleared=false;
-let summitTrailUnlocked=false,summitShortcutCleared=false,soundEnabled=true;
+let summitTrailUnlocked=false,summitShortcutCleared=false,soundEnabled=true,coyoteResetScore=0;
 let extraUnlocked=[false,false],extraCleared=[false,false],inventory={crystal:0,berry:0,bell:0,acorn:0};
 try{
  const saved=Number(localStorage.getItem(STORAGE_KEY));
@@ -319,6 +325,8 @@ try{
  summitTrailUnlocked=secretCleared||localStorage.getItem(SUMMIT_TRAIL_KEY)==='true';
  summitShortcutCleared=localStorage.getItem(SUMMIT_CLEARED_KEY)==='true';
  soundEnabled=localStorage.getItem(SOUND_KEY)!=='false';
+ const storedReset=Number(localStorage.getItem(COYOTE_RESET_KEY));
+ if(Number.isInteger(storedReset)&&storedReset>=0&&storedReset<=MAIN_MOUNTAINS+2)coyoteResetScore=storedReset;
  const se=JSON.parse(localStorage.getItem(EXTRA_KEY)||'{}');
  extraUnlocked=[Boolean(se.unlocked?.[0]),Boolean(se.unlocked?.[1])];
  extraCleared=[Boolean(se.cleared?.[0]),Boolean(se.cleared?.[1])];
@@ -326,8 +334,23 @@ try{
  const savedItems=JSON.parse(localStorage.getItem(TREASURE_KEY)||'{}');
  for(const t of TREASURES)if(Number.isInteger(savedItems[t.id])&&savedItems[t.id]>=0)inventory[t.id]=savedItems[t.id];
 }catch(e){}
-// A new victory adds one coyote to EVERY level (including replays).
-function coyoteCount(){return Math.min(SPAWNS.length,1+cleared+(secretCleared?1:0)+(summitShortcutCleared&&cleared<MAIN_MOUNTAINS?1:0));}
+// Keep unlocked levels separate from the coyote count. Reset subtracts the
+// score earned so far; future first-time victories build the pack back up.
+function coyoteScore(){return cleared+(secretCleared?1:0)+(summitShortcutCleared&&cleared<MAIN_MOUNTAINS?1:0);}
+function coyoteCount(){return Math.min(SPAWNS.length,1+Math.max(0,coyoteScore()-coyoteResetScore));}
+function resetCoyotePack(){
+ if(challengeMode)return; // Challenge Mode always has exactly fifteen coyotes.
+ coyoteResetScore=coyoteScore();
+ saveProgress();
+ renderMap();
+ if(screen==='game'){
+  // Don't erase the special 25-coyote time-out invasion animation.
+  if(mode!=='timedout'){coyotes=spawnCoyotes();draw();}
+  say(mode==='timedout'?'🐺 Future attempts now start with one coyote. Retry to clear the invasion!':'🐺 Pack reset to ONE coyote! Your levels, treasures, and secrets are safe.');
+ }else{
+  el('coyoteResetNotice').textContent='🐺 Coyote pack reset to one! No adventure progress was lost.';
+ }
+}
 function spawnCoyotes(){
  if(!challengeMode)return SPAWNS.slice(0,coyoteCount()).map(p=>({...p,scared:0}));
  const candidates=[];
@@ -352,6 +375,7 @@ function saveProgress(){
   localStorage.setItem(SUMMIT_CLEARED_KEY,String(summitShortcutCleared));
   localStorage.setItem(EXTRA_KEY,JSON.stringify({unlocked:extraUnlocked,cleared:extraCleared}));
   localStorage.setItem(TREASURE_KEY,JSON.stringify(inventory));
+  localStorage.setItem(COYOTE_RESET_KEY,String(coyoteResetScore));
  }catch(e){}
 }
 let levelIndex=0,trees=new Set(),rocks=new Set(),coyotes=[],chests=new Map(),chestsOpened=0,extraDoor=null,extraDoorHinted=false;
@@ -969,6 +993,7 @@ function loadLevel(i){
  say(challengeMode?'🔥 CHALLENGE! 60 seconds, 15 coyotes, three villager guards. Find the ONE open side of 🏁!':i===SECRET_DOOR_MOUNTAIN?'❄️ The secret door has vanished again. Find treasure while you search!':i>=MAIN_MOUNTAINS?'👻 You entered '+LEVELS[i].name+'! Find 🏁!':EXTRA_PORTALS.some(e=>e.mountain===i)?'🚪 A hidden portal and treasure await on this mountain!':'🧰 Find three treasure chests and reach the flag before time runs out!');
  el('gameFrame').classList.toggle('secret-zone',i>=MAIN_MOUNTAINS);
  el('gameFrame').classList.toggle('challenge-zone',challengeMode);
+  el('resetCoyotesGame').hidden=challengeMode;
  el('gameBackBtn').textContent=challengeMode?'← Challenges':'← Mountain Map';
  el('gameChooseBtn').textContent=challengeMode?'🔥 Choose Challenge':'🗺️ Choose Mountain';
  el('retry').textContent=challengeMode?'↻ Retry Challenge':'↻ Retry Mountain';
