@@ -4,6 +4,17 @@ A browser adventure with **10 mountain levels, 3 secret worlds, treasure chests,
 
 **Play:** https://graycoyotemountains.github.io/gray-coyote-mountains/
 
+## Challenge Mode 🔥
+
+From the home screen, select **Challenge Mode** to choose **any of the 13 levels**, including all secret worlds, even before unlocking them in Adventure. Every challenge has:
+
+- A strict **one-minute countdown** instead of the usual three minutes.
+- Exactly **15 coyotes** patrolling the map.
+- The 🏁 flag moved inside the board, surrounded on **three of its four sides** by immovable 🧑‍🌾 villagers. The remaining entrance is always reachable from the trailhead.
+- Independent Challenge trophies saved on the device. You can retry or pick another challenge after winning or losing.
+
+Challenge runs have **no treasure chests or secret-door shortcuts** and **never unlock Adventure mountains, secret worlds, or change your Adventure treasure**. The original campaign remains unchanged.
+
 ## What's new
 
 - **Three-minute countdown** on every level. At zero, a pack of **25 coyotes invades** the board with sound and a red warning, ending that attempt. Retry for a new three minutes. Progress stays saved.

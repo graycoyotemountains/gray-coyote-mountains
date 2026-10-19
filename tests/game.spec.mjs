@@ -698,3 +698,128 @@ test('Louder haunted ambience starts in both additional secret worlds',async({pa
   expect(await page.evaluate(()=>secretAmbience)).toBeNull();
  }
 });
+
+test('Challenge Mode offers all thirteen mountains and hidden worlds with no story unlocks',async({page})=>{
+ await page.goto('/');
+ await page.locator('#challengeBtn').click();
+ await expect(page.locator('#challengeScreen')).toBeVisible();
+ await expect(page.locator('#challengeGrid .mountain')).toHaveCount(13);
+ await expect(page.locator('#challengeGrid .mountain:disabled')).toHaveCount(0);
+ await page.locator('#challengeGrid .mountain').nth(12).click();
+ await expect(page.locator('#gameScreen')).toBeVisible();
+ await expect(page.locator('#subtitle')).toHaveText('The Phantom Crater');
+ await expect(page.locator('#timerStat')).toHaveText('⏱️ 1:00');
+ await expect(page.locator('#coyoteStat')).toHaveText('🐺 15');
+ expect(await page.evaluate(()=>({challengeMode,levelIndex,unlocked,cleared}))).toEqual({challengeMode:true,levelIndex:12,unlocked:1,cleared:0});
+});
+
+test('Challenge flag has three immovable villagers with exactly one reachable entrance',async({page})=>{
+ await page.goto('/');
+ await page.locator('#challengeBtn').click();
+ await page.locator('#challengeGrid .mountain').first().click();
+ const data=await page.evaluate(()=>{
+  const around=[
+   {x:CHALLENGE_GOAL.x+1,y:CHALLENGE_GOAL.y},
+   {x:CHALLENGE_GOAL.x-1,y:CHALLENGE_GOAL.y},
+   {x:CHALLENGE_GOAL.x,y:CHALLENGE_GOAL.y+1},
+   {x:CHALLENGE_GOAL.x,y:CHALLENGE_GOAL.y-1}
+  ];
+  return {villagers:villagers.size,guarded:around.filter(p=>villagers.has(key(p.x,p.y))).length,
+    open:around.filter(p=>!villagers.has(key(p.x,p.y))),
+    entryReachable:connected(START,challengeEntrance),flagReachable:connected(START,CHALLENGE_GOAL),
+    shown:document.querySelectorAll('#field .villager').length,
+    exits:document.querySelectorAll('#field .exit').length,
+    guardsBlocked:[...villagers].every(k=>{const [x,y]=k.split(',').map(Number);return blocked(x,y);})};
+ });
+ expect(data.villagers).toBe(3);
+ expect(data.guarded).toBe(3);
+ expect(data.open).toHaveLength(1);
+ expect(data.entryReachable).toBe(true);
+ expect(data.flagReachable).toBe(true);
+ expect(data.shown).toBe(3);
+ expect(data.exits).toBe(1);
+ expect(data.guardsBlocked).toBe(true);
+});
+
+test('Challenge spawning always provides fifteen unique reachable coyotes on all 13 levels',async({page})=>{
+ await page.goto('/');
+ await page.locator('#challengeBtn').click();
+ await page.locator('#challengeGrid .mountain').first().click();
+ const states=await page.evaluate(()=>{
+  return LEVELS.map((cfg,i)=>{
+   loadLevel(i);
+   return {count:coyotes.length,unique:new Set(coyotes.map(c=>key(c.x,c.y))).size,
+     valid:coyotes.every(c=>!blocked(c.x,c.y)&&connected(START,c)&&!same(c,START)&&!same(c,activeGoal())),
+     clock:timeRemainingMs,reachable:connected(START,challengeEntrance),chests:chests.size};
+  });
+ });
+ for(const state of states){
+  expect(state.count).toBe(15);
+  expect(state.unique).toBe(15);
+  expect(state.valid).toBe(true);
+  expect(state.clock).toBe(60000);
+  expect(state.reachable).toBe(true);
+  expect(state.chests).toBe(0);
+ }
+});
+
+test('Villagers cannot be crossed and Challenge victory does not change campaign progress',async({page})=>{
+ await page.goto('/');
+ await page.locator('#challengeBtn').click();
+ await page.locator('#challengeGrid .mountain').nth(9).click();
+ const before=await page.evaluate(()=>({unlocked,cleared,inventory:JSON.stringify(inventory)}));
+ const guard=await page.evaluate(()=>{
+  const [x,y]=[...villagers][0].split(',').map(Number);
+  const neighborsOfGuard=[{x:x+1,y},{x:x-1,y},{x,y:y+1},{x,y:y-1}];
+  const near=neighborsOfGuard.find(p=>inside(p.x,p.y)&&!blocked(p.x,p.y));
+  runner={...near};draw();
+  return {before:{...near},dx:x-near.x,dy:y-near.y};
+ });
+ await page.evaluate(({dx,dy})=>move(dx,dy),guard);
+ expect(await page.evaluate(()=>({...runner}))).toEqual(guard.before);
+ await page.evaluate(()=>{
+  runner={...challengeEntrance};
+  coyotes=[];draw();
+  move(CHALLENGE_GOAL.x-challengeEntrance.x,CHALLENGE_GOAL.y-challengeEntrance.y);
+ });
+ await expect(page.locator('#resultTitle')).toContainText('CHALLENGE CONQUERED');
+ await expect(page.locator('#challengeChoose')).toBeVisible();
+ expect(await page.evaluate(()=>({unlocked,cleared,inventory:JSON.stringify(inventory)}))).toEqual(before);
+ expect(await page.evaluate(()=>challengeWins.has(9))).toBe(true);
+ await page.locator('#challengeChoose').click();
+ await expect(page.locator('#challengeGrid .mountain').nth(9)).toHaveClass(/done/);
+ await page.reload();
+ await page.locator('#challengeBtn').click();
+ await expect(page.locator('#challengeGrid .mountain').nth(9)).toHaveClass(/done/);
+});
+
+test('Challenge timeout triggers coyote invasion and retry resets one-minute timer and guards',async({page})=>{
+ await page.goto('/');
+ await page.locator('#challengeBtn').click();
+ await page.locator('#challengeGrid .mountain').first().click();
+ await expect(page.locator('#timerTrack')).toHaveAttribute('aria-valuemax','60');
+ await page.evaluate(()=>{timerDeadline=Date.now()-10;tickTimer();});
+ await expect(page.locator('#resultTitle')).toContainText('COYOTE INVASION');
+ await expect(page.locator('#resultBody')).toContainText('60 seconds');
+ await page.locator('#retry').click();
+ await expect(page.locator('#timerStat')).toHaveText('⏱️ 1:00');
+ await expect(page.locator('#coyoteStat')).toHaveText('🐺 15');
+ await expect(page.locator('#field .villager')).toHaveCount(3);
+});
+
+test('Leaving Challenge Mode restores normal Adventure timer and story map locks',async({page})=>{
+ await page.goto('/');
+ await page.locator('#challengeBtn').click();
+ await page.locator('#challengeGrid .mountain').nth(11).click();
+ await page.locator('#gameBackBtn').click();
+ await expect(page.locator('#challengeScreen')).toBeVisible();
+ await page.locator('#challengeScreen .topbar button').first().click();
+ await expect(page.locator('#homeScreen')).toBeVisible();
+ await page.locator('#playBtn').click();
+ await expect(page.locator('#timerStat')).toHaveText('⏱️ 3:00');
+ await expect(page.locator('#coyoteStat')).toHaveText('🐺 1');
+ await expect(page.locator('#field .villager')).toHaveCount(0);
+ await page.locator('#gameBackBtn').click();
+ await expect(page.locator('#mapScreen')).toBeVisible();
+ await expect(page.locator('.mountain:disabled')).toHaveCount(9);
+});
