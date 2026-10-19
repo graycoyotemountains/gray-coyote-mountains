@@ -992,8 +992,8 @@ function draw(){
  const sh=el('shout');sh.disabled=mode!=='playing'||cooldown>0;sh.textContent=cooldown?`📣 ${cooldown} steps`:'📣 SHOUT';
  const result=el('result');result.classList.toggle('visible',mode!=='playing');
  if(mode==='won'){
-  el('resultTitle').textContent=levelIndex===SECRET_LEVEL?'🏆 THE HIDDEN HEART OF THE MOUNTAINS!':levelIndex>SECRET_LEVEL?'👻 SECRET WORLD CONQUERED!':levelIndex===MAIN_MOUNTAINS-1?(cleared===MAIN_MOUNTAINS?'🏆 ALL TEN PEAKS CONQUERED!':'🔥 SKYFIRE SUMMIT CONQUERED!'):levelIndex===SECRET_DOOR_MOUNTAIN?'🏁 MOUNTAIN 5 CLEARED!':'🏁 MOUNTAIN CLEARED!';
-  el('resultBody').textContent=levelIndex===SECRET_LEVEL?'You found the hidden route from Hollow Mountain to Skyfire Summit! Follow the secret trail or choose Skyfire on the map.':levelIndex>SECRET_LEVEL?'You conquered '+LEVELS[levelIndex].name+'! This hidden world remains unlocked.':levelIndex===MAIN_MOUNTAINS-1?(cleared===MAIN_MOUNTAINS?'Ten peaks conquered! You can replay any mountain.':'Skyfire conquered using the secret trail! Mountains in between remain locked until you reach their flags.'):levelIndex===SECRET_DOOR_MOUNTAIN?'Mountain 6 is unlocked! The secret level is separate: return to Mountain 5 to find its hidden door.':'Your victory adds one coyote to EVERY mountain. A new peak awaits!';
+  el('resultTitle').textContent=challengeMode?'🏆 CHALLENGE CONQUERED!':levelIndex===SECRET_LEVEL?'🏆 THE HIDDEN HEART OF THE MOUNTAINS!':levelIndex>SECRET_LEVEL?'👻 SECRET WORLD CONQUERED!':levelIndex===MAIN_MOUNTAINS-1?(cleared===MAIN_MOUNTAINS?'🏆 ALL TEN PEAKS CONQUERED!':'🔥 SKYFIRE SUMMIT CONQUERED!'):levelIndex===SECRET_DOOR_MOUNTAIN?'🏁 MOUNTAIN 5 CLEARED!':'🏁 MOUNTAIN CLEARED!';
+  el('resultBody').textContent=challengeMode?'You beat 15 coyotes and slipped past the villagers with '+formatTime(timeRemainingMs)+' left! Choose another challenge or retry.':levelIndex===SECRET_LEVEL?'You found the hidden route from Hollow Mountain to Skyfire Summit! Follow the secret trail or choose Skyfire on the map.':levelIndex>SECRET_LEVEL?'You conquered '+LEVELS[levelIndex].name+'! This hidden world remains unlocked.':levelIndex===MAIN_MOUNTAINS-1?(cleared===MAIN_MOUNTAINS?'Ten peaks conquered! You can replay any mountain.':'Skyfire conquered using the secret trail! Mountains in between remain locked until you reach their flags.'):levelIndex===SECRET_DOOR_MOUNTAIN?'Mountain 6 is unlocked! The secret level is separate: return to Mountain 5 to find its hidden door.':'Your victory adds one coyote to EVERY mountain. A new peak awaits!';
  }else if(mode==='lost'){
   el('resultTitle').textContent='🐺 THE COYOTE ATE YOUR LUNCH!';
   el('resultBody').textContent='Try again. Use rocks, trees and your shout to stay safe.';
@@ -1005,13 +1005,14 @@ function draw(){
  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
   const tile=document.createElement('div');tile.className='tile';const k=key(x,y);
   if(x===0||y===0)tile.classList.add('trail');
-  if(trees.has(k)){tile.textContent='🌲';tile.classList.add('tree');}
+  if(challengeMode&&villagers.has(k)){tile.textContent='🧑‍🌾';tile.classList.add('villager');}
+   else if(trees.has(k)){tile.textContent='🌲';tile.classList.add('tree');}
   else if(rocks.has(k)){tile.textContent='🪨';tile.classList.add('rock');}
   else if(x===runner.x&&y===runner.y){tile.textContent='🏃';tile.classList.add('runner');}
   else if(coyotes.some(c=>c.x===x&&c.y===y)){tile.textContent='🐺';tile.classList.add('coyote');}
   else if((levelIndex===SECRET_DOOR_MOUNTAIN&&x===SECRET_DOOR.x&&y===SECRET_DOOR.y&&distance(runner,SECRET_DOOR)<=3)||(extraDoor&&x===extraDoor.x&&y===extraDoor.y&&distance(runner,extraDoor)<=3)){tile.textContent='🚪';tile.classList.add('secret-door');}
   else if(chests.has(k)){tile.textContent='🧰';tile.classList.add('chest');}
-  else if(x===GOAL.x&&y===GOAL.y){tile.textContent='🏁';tile.classList.add('exit');}
+  else if(x===activeGoal().x&&y===activeGoal().y){tile.textContent='🏁';tile.classList.add('exit');}
   else if(levelIndex>=SECRET_LEVEL&&(x*3+y*7)%23===0)tile.textContent='💎';
   else if((x*3+y*7)%23===0)tile.textContent='🌾';
   frag.appendChild(tile);
@@ -1062,16 +1063,19 @@ function move(dx,dy){
  const nx=runner.x+dx,ny=runner.y+dy;
  if(blocked(nx,ny)){say('🚧 Blocked! Go around the tree or rock.');return;}
  runner={x:nx,y:ny};steps++;cooldown=Math.max(0,cooldown-1);
- if(levelIndex===SECRET_DOOR_MOUNTAIN&&same(runner,SECRET_DOOR)){
+ if(!challengeMode&&levelIndex===SECRET_DOOR_MOUNTAIN&&same(runner,SECRET_DOOR)){
   secretUnlocked=true;saveProgress();playSecret(true);loadLevel(SECRET_LEVEL);
   say('✨ SECRET DOOR OPENED! Welcome to the Hollow Mountain. The coyotes followed you inside!');
   return;
  }
- if(tryExtraPortal())return;
+ if(!challengeMode&&tryExtraPortal())return;
  const chestMessage=collectChest(key(runner.x,runner.y));
- if(same(runner,GOAL)){
+ if(same(runner,activeGoal())){
   mode='won';pauseTimer();syncSecretAmbience();
-  if(levelIndex===SECRET_LEVEL){
+  if(challengeMode){
+   challengeWins.add(levelIndex);
+   try{localStorage.setItem(CHALLENGE_KEY,JSON.stringify([...challengeWins]));}catch(e){}
+  }else if(levelIndex===SECRET_LEVEL){
    secretCleared=true;summitTrailUnlocked=true;
   }else if(levelIndex>SECRET_LEVEL){
    extraCleared[levelIndex-SECRET_LEVEL-1]=true;
@@ -1085,7 +1089,7 @@ function move(dx,dy){
   }
   saveProgress();
   playVictory();celebrate();
-  say(levelIndex===SECRET_LEVEL?'💎 SECRET TRAIL FOUND! Follow the path to Skyfire Summit!':levelIndex>SECRET_LEVEL?'👻 SECRET WORLD CONQUERED!':levelIndex===SECRET_DOOR_MOUNTAIN?'🏁 MOUNTAIN 6 UNLOCKED! The hidden door on Mountain 5 is a separate challenge.':levelIndex===MAIN_MOUNTAINS-1?(cleared===MAIN_MOUNTAINS?'🏆 ALL TEN MOUNTAINS CLEARED!':'🔥 SKYFIRE CONQUERED VIA SECRET TRAIL!'):'🏁 Peak cleared! A coyote joins the pack across every mountain!');
+  say(challengeMode?'🏆 CHALLENGE CLEARED! You escaped 15 coyotes and the villagers!':levelIndex===SECRET_LEVEL?'💎 SECRET TRAIL FOUND! Follow the path to Skyfire Summit!':levelIndex>SECRET_LEVEL?'👻 SECRET WORLD CONQUERED!':levelIndex===SECRET_DOOR_MOUNTAIN?'🏁 MOUNTAIN 6 UNLOCKED! The hidden door on Mountain 5 is a separate challenge.':levelIndex===MAIN_MOUNTAINS-1?(cleared===MAIN_MOUNTAINS?'🏆 ALL TEN MOUNTAINS CLEARED!':'🔥 SKYFIRE CONQUERED VIA SECRET TRAIL!'):'🏁 Peak cleared! A coyote joins the pack across every mountain!');
  }else if(coyotes.some(c=>same(c,runner)))tagged();
  else if(steps%LEVELS[levelIndex].speed===0)moveCoyotes();
  else if(levelIndex===SECRET_DOOR_MOUNTAIN&&distance(runner,SECRET_DOOR)<=3){
@@ -1119,7 +1123,7 @@ function shout(){
  say(count?`📣 HEY COYOTES! ${count} retreat${count===1?'s':''}!`:'📣 Your shout echoes across the hillside.');
  draw();
 }
-function advance(){if(mode==='won'&&levelIndex<MAIN_MOUNTAINS-1)loadLevel(levelIndex+1);}
+function advance(){if(!challengeMode&&mode==='won'&&levelIndex<MAIN_MOUNTAINS-1)loadLevel(levelIndex+1);}
 document.addEventListener('visibilitychange',()=>{
  if(document.hidden)pauseTimer();
  else resumeTimer();
