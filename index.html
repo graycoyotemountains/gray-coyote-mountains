@@ -116,6 +116,10 @@ p{line-height:1.5}
 }
 .tile{min-width:0;aspect-ratio:1;display:grid;place-items:center;background:#6b8952;border-radius:3px;font-size:clamp(11px,2.5vw,25px);line-height:1}
 .tile:nth-child(4n){background:#729154}.tile.trail{background:#998461}.tile.tree{background:#34553d}.tile.rock{background:#72716b}.tile.runner{background:#b4de79}.tile.coyote{background:#c39d71}.tile.exit{background:#e9c46b}
+.tile.villager{background:#d0b49c;box-shadow:inset 0 0 0 2px #f3d5b7}
+.game-frame.challenge-zone{border:2px solid #efac69;box-shadow:0 0 26px #f1aa5d55}
+.challenge-header{padding:14px 16px;border-radius:15px;background:#683f45;border:1px solid #eba973;max-width:840px;margin:0 auto 18px}
+.challenge-header p{margin:6px 0 0;color:#fff0d8}
 .tile.chest{background:#dcae61;box-shadow:inset 0 0 0 2px #ffeba7;animation:glimmer 1.6s infinite alternate}
 .game-frame.invasion-mode{border-color:#ff7777;box-shadow:0 0 28px #e4434380}
 .game-frame.invasion-mode .tile.coyote{background:#e85047;animation:glimmer .35s infinite alternate}
@@ -167,6 +171,7 @@ p{line-height:1.5}
         <div class="hero-buttons">
           <button id="playBtn" class="btn primary" onclick="continueAdventure()">▶ Start Adventure</button>
           <button class="btn secondary" onclick="showScreen('map')">🗺️ Mountain Map</button>
+           <button id="challengeBtn" class="btn primary" onclick="showScreen('challenge')">🔥 Challenge Mode</button>
           <button id="helpBtn" class="btn secondary" onclick="toggleHelp()" aria-expanded="false" aria-controls="helpPanel">❔ How to Play</button>
           <button type="button" class="btn secondary sound-toggle" onclick="toggleSound()" aria-label="Mute game sounds" aria-pressed="true">🔊 Sound on</button>
         </div>
@@ -180,6 +185,7 @@ p{line-height:1.5}
       <p>📣 Press Space or SHOUT to frighten nearby coyotes away. You have 3 hearts and <strong>3 minutes per level</strong>. The clock pauses when the game is hidden or you return to the map.</p>
       <p>🐺 Every new level you complete adds one coyote to <strong>every</strong> mountain, including earlier ones!</p>
       <p>🚪 Search Mountains 5, 7 and 9 for secret doors. Find 🧰 treasure chests in every regular mountain. Running out of time starts a coyote invasion!</p>
+       <p>🔥 Challenge Mode: choose <strong>any of the 13 levels</strong>, including hidden worlds. Escape in <strong>one minute</strong> past 15 coyotes while three villagers guard the flag, leaving only one entrance. Challenge victories do not affect Adventure progress.</p>
     </div>
     <div class="quick-cards">
       <div class="quick-card"><strong>⛰️ Ten peaks + 3 secrets</strong>Collect treasures and explore three hidden worlds, including a shortcut to Skyfire Summit.</div>
@@ -208,14 +214,25 @@ p{line-height:1.5}
   </div>
 </section>
 
+<section id="challengeScreen" class="screen" aria-label="Challenge Mode level picker">
+ <div class="shell">
+  <div class="topbar"><button class="btn secondary small" onclick="showScreen('home')">← Home</button><div class="brand">🔥 GRAY COYOTE CHALLENGES</div><button type="button" class="btn secondary small sound-toggle" onclick="toggleSound()" aria-label="Mute game sounds" aria-pressed="true">🔊 Sound on</button></div>
+  <div class="map-intro"><div><div class="eyebrow">Pick any mountain</div><h2>60 seconds. Fifteen coyotes.</h2><p>All 13 levels are available, even hidden worlds. The 🏁 flag is guarded by three villagers and only one entrance is open.</p></div>
+   <div id="challengeProgress" class="progress" aria-live="polite">🔥 Choose a challenge</div></div>
+  <div class="challenge-header"><strong>🧑‍🌾 The Villager's Last Stand</strong><p>Find the one open side of the flag, dodge 15 coyotes, and finish before the minute runs out. Your Adventure progress and treasure collection stay separate.</p></div>
+  <div class="map-scene"><div id="challengeGrid" class="route" aria-label="All 13 challenge levels"></div></div>
+  <div class="map-foot"><div class="legend">🔥 One minute &nbsp; • &nbsp; 🐺 15 patrols &nbsp; • &nbsp; 🧑‍🌾 Three guards</div><button class="btn secondary small" onclick="showScreen('home')">⌂ Home</button></div>
+ </div>
+</section>
+
 <section id="gameScreen" class="screen" aria-label="Play level">
   <div class="shell">
-    <div class="topbar"><button class="btn secondary small" onclick="showScreen('map')">← Mountain Map</button><div class="brand">🐺 GRAY COYOTE MOUNTAINS</div><button class="btn secondary small sound-toggle" type="button" onclick="toggleSound()" aria-label="Mute game sounds" aria-pressed="true">🔊 Sound on</button><button class="btn secondary small" onclick="showScreen('home')">⌂ Home</button></div>
+    <div class="topbar"><button id="gameBackBtn" class="btn secondary small" onclick="showScreen('map')">← Mountain Map</button><div class="brand">🐺 GRAY COYOTE MOUNTAINS</div><button class="btn secondary small sound-toggle" type="button" onclick="toggleSound()" aria-label="Mute game sounds" aria-pressed="true">🔊 Sound on</button><button class="btn secondary small" onclick="showScreen('home')">⌂ Home</button></div>
     <div id="gameFrame" class="game-frame">
       <div class="game-head"><p class="eyebrow" id="mountainLabel">Mountain 1 / 10</p><h2 id="subtitle">Amphitheater Ridge</h2></div>
       <div class="stats"><span id="levelStat"></span><span id="lifeStat"></span><span id="coyoteStat"></span><span id="stepStat"></span><span id="treasureStat" aria-label="Collected treasures">🧰 0/3</span><span id="timerStat" aria-label="Time remaining">⏱️ 3:00</span></div>
       <div id="timerTrack" class="timer-track" role="progressbar" aria-label="Time remaining in seconds" aria-valuemin="0" aria-valuemax="180" aria-valuenow="180"><div id="timerFill" class="timer-fill"></div></div>
-      <p class="timer-hint">⏳ Three minutes per mountain! Open 🧰 treasure chests.</p>
+      <p id="timerHint" class="timer-hint">⏳ Three minutes per mountain! Open 🧰 treasure chests.</p>
       <div class="play-layout">
         <div class="board-panel">
           <div class="board-toolbar"><span>🧭 18 × 14 hillside</span><button id="zoomBtn" class="btn secondary" onclick="toggleZoom()" aria-pressed="false">🔍 Zoom in</button></div>
@@ -234,8 +251,9 @@ p{line-height:1.5}
           <div class="game-actions">
             <button id="next" class="btn success" onclick="advance()" style="display:none">NEXT MOUNTAIN →</button>
             <button id="secretNext" class="btn success" onclick="takeSecretTrail()" style="display:none">🔥 Secret Trail → Skyfire Summit</button>
+            <button id="challengeChoose" class="btn primary small" onclick="showScreen('challenge')" style="display:none">🔥 Choose Another Challenge</button>
             <button id="retry" class="btn secondary small" onclick="loadLevel(levelIndex)">↻ Retry Mountain</button>
-            <button class="btn secondary small" onclick="showScreen('map')">🗺️ Choose Mountain</button>
+            <button id="gameChooseBtn" class="btn secondary small" onclick="showScreen('map')">🗺️ Choose Mountain</button>
           </div>
           <p class="hint" id="gameHint">🏁 Reach the upper-left flag. 🌲 Trees and 🪨 rocks are solid. Arrow keys / WASD to move; Space to shout.</p>
         </div>
@@ -310,7 +328,20 @@ try{
 }catch(e){}
 // A new victory adds one coyote to EVERY level (including replays).
 function coyoteCount(){return Math.min(SPAWNS.length,1+cleared+(secretCleared?1:0)+(summitShortcutCleared&&cleared<MAIN_MOUNTAINS?1:0));}
-function spawnCoyotes(){return SPAWNS.slice(0,coyoteCount()).map(p=>({...p,scared:0}));}
+function spawnCoyotes(){
+ if(!challengeMode)return SPAWNS.slice(0,coyoteCount()).map(p=>({...p,scared:0}));
+ const candidates=[];
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+  const p={x,y};
+  if(blocked(x,y)||same(p,START)||same(p,activeGoal())||distance(p,START)<4)continue;
+  if(connected(START,p))candidates.push(p);
+ }
+ for(let i=candidates.length-1;i>0;i--){
+  const j=Math.floor(Math.random()*(i+1));
+  [candidates[i],candidates[j]]=[candidates[j],candidates[i]];
+ }
+ return candidates.slice(0,15).map(p=>({...p,scared:0}));
+}
 function saveProgress(){
  try{
   localStorage.setItem(STORAGE_KEY,String(unlocked));
@@ -326,6 +357,16 @@ function saveProgress(){
 let levelIndex=0,trees=new Set(),rocks=new Set(),coyotes=[],chests=new Map(),chestsOpened=0,extraDoor=null,extraDoorHinted=false;
 let runner={...START},steps=0,lives=3,cooldown=0,mode='playing',screen='home';
 const LEVEL_TIME_MS=3*60*1000;
+const CHALLENGE_TIME_MS=60*1000;
+const CHALLENGE_GOAL={x:3,y:3};
+const CHALLENGE_KEY='gray-coyote-mountains-challenge-v1';
+let challengeMode=false,challengeWins=new Set(),villagers=new Set(),challengeEntrance=null;
+try{
+ const savedChallenges=JSON.parse(localStorage.getItem(CHALLENGE_KEY)||'[]');
+ if(Array.isArray(savedChallenges))for(const level of savedChallenges)if(Number.isInteger(level)&&level>=0&&level<LEVELS.length)challengeWins.add(level);
+}catch(e){}
+function timeLimitMs(){return challengeMode?CHALLENGE_TIME_MS:LEVEL_TIME_MS;}
+function activeGoal(){return challengeMode?CHALLENGE_GOAL:GOAL;}
 let timeRemainingMs=LEVEL_TIME_MS,timerDeadline=0,timerInterval=null,timerRunning=false,timeWarningGiven=false;
 // Time is measured against a deadline, not interval counts, so it stays
 // accurate when browsers throttle timers. Backgrounded tabs pause fairly.
@@ -341,8 +382,10 @@ function updateTimerDisplay(){
  clock.classList.toggle('warning',timeRemainingMs<=60000&&mode==='playing');
  clock.classList.toggle('urgent',timeRemainingMs<=30000&&mode==='playing');
  clock.setAttribute('aria-label',formatTime(timeRemainingMs)+' remaining');
- document.getElementById('timerFill').style.width=(100*timeRemainingMs/LEVEL_TIME_MS)+'%';
- document.getElementById('timerTrack').setAttribute('aria-valuenow',String(wholeSeconds));
+ document.getElementById('timerFill').style.width=(100*timeRemainingMs/timeLimitMs())+'%';
+ const track=document.getElementById('timerTrack');
+ track.setAttribute('aria-valuemax',String(timeLimitMs()/1000));
+ track.setAttribute('aria-valuenow',String(wholeSeconds));
 }
 function pauseTimer(){
  if(timerRunning)timeRemainingMs=Math.max(0,timerDeadline-Date.now());
@@ -353,7 +396,7 @@ function pauseTimer(){
 }
 function resetTimer(){
  pauseTimer();
- timeRemainingMs=LEVEL_TIME_MS;
+ timeRemainingMs=timeLimitMs();
  timeWarningGiven=false;
  updateTimerDisplay();
 }
@@ -686,7 +729,7 @@ const el=id=>document.getElementById(id);
 const key=(x,y)=>x+','+y;
 const same=(a,b)=>a.x===b.x&&a.y===b.y;
 const inside=(x,y)=>x>=0&&x<W&&y>=0&&y<H;
-const blocked=(x,y)=>!inside(x,y)||trees.has(key(x,y))||rocks.has(key(x,y));
+const blocked=(x,y)=>!inside(x,y)||trees.has(key(x,y))||rocks.has(key(x,y))||(challengeMode&&villagers.has(key(x,y)));
 const distance=(a,b)=>Math.abs(a.x-b.x)+Math.abs(a.y-b.y);
 const neighbors=p=>[{x:p.x+1,y:p.y},{x:p.x-1,y:p.y},{x:p.x,y:p.y+1},{x:p.x,y:p.y-1}].filter(p=>!blocked(p.x,p.y));
 function rng(seed){return()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};}
@@ -706,6 +749,36 @@ function makeTerrain(i){
   if(connected(START,GOAL)&&SPAWNS.slice(0,coyoteCount()).every(p=>connected(START,p)))return;
  }
  trees=new Set();rocks=new Set();
+}
+function setupChallengeFlag(){
+ const around=[
+  {x:CHALLENGE_GOAL.x,y:CHALLENGE_GOAL.y+1},
+  {x:CHALLENGE_GOAL.x+1,y:CHALLENGE_GOAL.y},
+  {x:CHALLENGE_GOAL.x,y:CHALLENGE_GOAL.y-1},
+  {x:CHALLENGE_GOAL.x-1,y:CHALLENGE_GOAL.y}
+ ];
+ challengeEntrance={...around[Math.floor(Math.random()*around.length)]};
+ villagers=new Set(around.filter(p=>!same(p,challengeEntrance)).map(p=>key(p.x,p.y)));
+ // Guaranteed corridor from trailhead to the sole open side.
+ const queue=[{...START}],parents=new Map(),seen=new Set([key(START.x,START.y)]);
+ for(let i=0;i<queue.length;i++){
+  const pos=queue[i];
+  if(same(pos,challengeEntrance))break;
+  for(const next of [{x:pos.x-1,y:pos.y},{x:pos.x,y:pos.y-1},{x:pos.x+1,y:pos.y},{x:pos.x,y:pos.y+1}]){
+   const k=key(next.x,next.y);
+   if(!inside(next.x,next.y)||villagers.has(k)||seen.has(k))continue;
+   seen.add(k);parents.set(k,pos);queue.push(next);
+  }
+ }
+ if(!seen.has(key(challengeEntrance.x,challengeEntrance.y)))throw Error('Challenge flag unreachable');
+ let pos={...challengeEntrance};
+ while(pos){
+  trees.delete(key(pos.x,pos.y));rocks.delete(key(pos.x,pos.y));
+  pos=parents.get(key(pos.x,pos.y));
+ }
+ trees.delete(key(CHALLENGE_GOAL.x,CHALLENGE_GOAL.y));
+ rocks.delete(key(CHALLENGE_GOAL.x,CHALLENGE_GOAL.y));
+ for(const k of villagers){trees.delete(k);rocks.delete(k);}
 }
 function relocateSecretDoor(){
  // Pick only reachable, unblocked interior squares, away from both the start
