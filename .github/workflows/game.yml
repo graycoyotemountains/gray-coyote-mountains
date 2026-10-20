@@ -2,6 +2,8 @@ name: Test and publish Gray Coyote Mountains
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
@@ -17,6 +19,7 @@ jobs:
       - run: npx playwright install --with-deps chromium webkit
       - run: npm test
   deploy:
+    if: github.event_name != 'pull_request'
     needs: test
     runs-on: ubuntu-latest
     permissions:
