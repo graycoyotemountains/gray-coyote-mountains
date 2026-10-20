@@ -69,7 +69,13 @@ LEVELS.push({
    localStorage.setItem(VILLAGE_KEY,String(villageCleared));
   }catch(error){console.warn('Expansion save unavailable',error);}
  }
- saveProgress=function(){baseSave();saveExtras();};
+ saveProgress=function(){
+  // Preserve the two-secret-world layout of the original progress key.
+  const thirdU=extraUnlocked[2],thirdC=extraCleared[2];
+  extraUnlocked.length=2;extraCleared.length=2;
+  try{baseSave();}finally{extraUnlocked[2]=thirdU;extraCleared[2]=thirdC;}
+  saveExtras();
+ };
  function unlockVillage(){
   if(collectedFacts.size!==50)return;
   extraUnlocked[2]=true;
@@ -153,6 +159,10 @@ LEVELS.push({
  createChestsAndPortals=function(){
   baseChests();
   if(challengeMode)return;
+  if(levelIndex>=SECRET_LEVEL&&levelIndex<VILLAGE_INDEX){
+   const p=findSpot([]);
+   if(p)chests.set(key(p.x,p.y),'fact');
+  }
   if(levelIndex===VILLAGE_INDEX){
    chests.clear();chestsOpened=0;
    for(let j=0;j<3;j++){
@@ -230,7 +240,7 @@ LEVELS.push({
   if(!challengeMode&&levelIndex===VILLAGE_INDEX){
    el('mountainLabel').textContent='🏘️ BONUS VILLAGE LEVEL';
    el('levelStat').textContent='🏘️ Village';
-   el('treasureStat').textContent='🧰 '+chestsOpened+'/3 · 📖 '+collectedFacts.size+'/50';
+   el('treasureStat').textContent='🧰 '+chestsOpened+'/3 · 🎒 '+totalTreasures()+' · 📖 '+collectedFacts.size+'/50';
   }else if(!challengeMode&&levelIndex>=MAIN_MOUNTAINS){
    el('treasureStat').textContent='✨ '+(secretItem?'Find the hidden tool':'Tool found')+' · 🚪 Secret passage';
   }else if(!challengeMode){
