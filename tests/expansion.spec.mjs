@@ -24,7 +24,7 @@ test('The field guide holds exactly fifty separate facts and starts locked',asyn
 test('A fact appears in one of the three ordinary chests and is saved on pickup',async({page})=>{
  await page.goto('/');await page.locator('#playBtn').click();
  const pos=await page.evaluate(()=>{
-  expect(chests.size).toBe(3);
+  if(chests.size!==3)throw Error('Expected three chests');
   const location=[...chests].find(([k,v])=>v==='fact');
   if(!location)throw Error('Fact chest missing');
   const [x,y]=location[0].split(',').map(Number);return {x,y};
