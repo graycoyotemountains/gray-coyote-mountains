@@ -47,3 +47,15 @@ GitHub Actions runs browser tests in Desktop Chrome, iPad Safari and iPhone Safa
 ## Audio upgrade
 
 When a coyote catches you, the game plays `assets/human-munch.wav`, a short **real human eating recording**, rather than electronic chewing. The recording is from [User391915396's *Eating sound effect*](https://freesound.org/people/User391915396/sounds/570336/), distributed as **CC0**, obtained from the CC0 [WilhelmSFX sound bank](https://github.com/Wh1teDuke/WilhelmSFX). Spooky door sounds and the continuing ambience in all secret worlds have also been increased in volume. Sound toggle, tab-switch pausing, and mobile support remain intact.
+
+## October 2026 expansion: Field Guide, Secret Tools and Village
+
+- **📖 Fifty science-based coyote facts.** On every mountain, one of the three random chests contains a fact. Every secret world has one fact chest alongside its special item and secret door. Facts are drawn without repeats until all fifty are found. The Field Guide shows locked and discovered entries; its progress saves in localStorage.
+- **🚲 Hollow Mountain bicycle:** find the bicycle, switch to a riding icon, and replace shout with a bike bell that recharges after three movement steps. Take it into the next level.
+- **🪂 Whispering Woods paraglider:** find the glider to travel two squares per direction when the route is clear.
+- **📻 Phantom Crater radio:** find the radio, call a ranger once, and regain SHOUT. The ranger follows one square behind, swaps locations if the player steps onto it, and automatically keeps coyotes more than five squares away. Ranger protection continues through the next map.
+- **🚪 Secret door loop:** each secret world has a randomly positioned reachable door, hidden until approached. Hollow → Whispering → Phantom → Hollow. Discovery also unlocks the next secret map.
+- **🏘️ Bonus village:** collecting all fifty facts unlocks the Lunch Snatch Village. Villagers help the coyotes steal your lunch and relocate the flag every five player turns. The village victory also persists.
+- **🌍 Lifetime counters:** the home screen supports worldwide unique-browser count and total level-start count, including retries and Challenge runs. The static GitHub Pages site needs the separate Cloudflare Worker/D1 stats endpoint to supply truthful shared totals. Until connected, the interface explicitly says so. See [stats-backend instructions](stats-backend/README.md). Historical visits from before installation cannot be backfilled; anonymous IDs approximate unique players, not human identity.
+
+All existing Adventure, Challenge, coyote-reset, secret discovery, treasure and audio save keys remain compatible. The game includes additional Playwright coverage for the new expansion. The publishing workflow tests Desktop Chrome, iPad Safari and iPhone Safari before deploying to GitHub Pages.
