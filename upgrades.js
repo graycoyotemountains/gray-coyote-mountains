@@ -321,12 +321,28 @@ LEVELS.push({
   }
  };
  function ringBikeBell(){
-  let count=0;
-  for(const c of coyotes)if(distance(c,runner)<=7){c.scared=Math.max(3,c.scared);count++;}
+  let count=0,retreated=0;
+  for(const c of coyotes){
+   if(distance(c,runner)>7)continue;
+   c.scared=Math.max(3,c.scared);
+   count++;
+   // A bell must visibly repel coyotes NOW, not merely set their AI to flee
+   // on a future patrol turn. Use the same two-square retreat as SHOUT.
+   for(let step=0;step<2;step++){
+    const previousDistance=distance(c,runner);
+    const retreatOptions=possibleMoves(c).filter(p=>distance(p,runner)>previousDistance);
+    if(!retreatOptions.length)break; // Never force a frightened coyote closer.
+    const farthest=Math.max(...retreatOptions.map(p=>distance(p,runner)));
+    const choices=retreatOptions.filter(p=>distance(p,runner)===farthest);
+    const next=choices[Math.floor(Math.random()*choices.length)];
+    c.x=next.x;c.y=next.y;
+    retreated++;
+   }
+  }
   cooldown=3;
   note(980,0,.14,{end:1230,volume:.13});
   note(1300,.15,.19,{end:820,volume:.11});
-  say('🔔 RING RING! '+count+' coyote(s) scared away. Bell recharges in 3 steps.');
+  say('🔔 RING RING! '+count+' coyote(s) frightened, '+retreated+' retreat steps! Bell recharges in 3 steps.');
   draw();
  }
  shout=function(){
