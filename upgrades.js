@@ -27,6 +27,9 @@ LEVELS.push({
  const baseLoad=loadLevel,baseDraw=draw,baseMove=move,baseMoveCoyotes=moveCoyotes;
  const baseGoal=activeGoal,baseChests=createChestsAndPortals,baseCollect=collectChest,baseShout=shout,baseTag=tagged;
  const baseBlocked=blocked;
+ // The original SVG atlas has 13 silhouettes. Reuse a mountain landscape for the bonus village.
+ const originalMountainSVG=mountainSVG;
+ mountainSVG=function(i){return originalMountainSVG(i===VILLAGE_INDEX?1:i);};
  const gallery=document.createElement('dialog');
  gallery.id='fieldGuide';
  gallery.setAttribute('aria-label','Collected coyote facts');
@@ -244,7 +247,7 @@ LEVELS.push({
   }else if(!challengeMode&&levelIndex>=MAIN_MOUNTAINS){
    el('treasureStat').textContent='✨ '+(secretItem?'Find the hidden tool':'Tool found')+' · 🚪 Secret passage';
   }else if(!challengeMode){
-   el('treasureStat').textContent='🧰 '+chestsOpened+'/3 · 📖 '+collectedFacts.size+'/50';
+   el('treasureStat').textContent='🧰 '+chestsOpened+'/3 · 🎒 '+totalTreasures()+' · 📖 '+collectedFacts.size+'/50';
   }
   if(!challengeMode){
    const sh=el('shout');
