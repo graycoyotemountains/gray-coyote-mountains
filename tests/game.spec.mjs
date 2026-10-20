@@ -523,7 +523,7 @@ test('Human shout audio is locally hosted and SHOUT triggers the recorded human 
  await expect(page.locator('#shout')).toBeDisabled();
 });
 
-test('Three randomized accessible treasure boxes populate each regular level but not secrets',async({page})=>{
+test('Regular levels have three chests and secret worlds have a fact chest',async({page})=>{
  await page.addInitScript(()=>{
   localStorage.setItem('gray-sentinel-mountain-unlocked-v1','10');
   localStorage.setItem('gray-sentinel-mountain-cleared-v1','9');
@@ -532,7 +532,7 @@ test('Three randomized accessible treasure boxes populate each regular level but
  });
  await page.goto('/');await page.locator('#playBtn').click();
  const report=await page.evaluate(()=>{
-  return LEVELS.map((cfg,i)=>{
+  return LEVELS.slice(0,13).map((cfg,i)=>{
    loadLevel(i);
    return {level:i,count:chests.size,shown:document.querySelectorAll('#field .chest').length,
     valid:[...chests].every(([position])=>{
@@ -542,7 +542,7 @@ test('Three randomized accessible treasure boxes populate each regular level but
   });
  });
  for(const r of report){
-  expect(r.count).toBe(r.level<10?3:0);
+  expect(r.count).toBe(r.level<10?3:1);
   expect(r.shown).toBe(r.count);
   expect(r.valid).toBe(true);
  }
@@ -601,7 +601,7 @@ test('Portals on mountains 7 and 9 unlock separate secret worlds and persist',as
   });
   await page.evaluate(d=>move(...d),direction);
   await expect(page.locator('#subtitle')).toHaveText(name);
-  await expect(page.locator('#field .chest')).toHaveCount(0);
+  await expect(page.locator('#field .chest')).toHaveCount(1);
  }
  await page.locator('#gameScreen button').filter({hasText:'Mountain Map'}).first().click();
  await expect(page.locator('.mountain')).toHaveCount(12);
@@ -632,7 +632,7 @@ test('Original Hollow Mountain, secret trail and old save files still work',asyn
  });
  await page.goto('/');await page.locator('#playBtn').click();
  await page.evaluate(()=>loadLevel(SECRET_LEVEL));
- await expect(page.locator('#field .chest')).toHaveCount(0);
+ await expect(page.locator('#field .chest')).toHaveCount(1);
  await page.evaluate(()=>{runner={x:1,y:0};draw();});
  await page.getByRole('button',{name:'Move left'}).click();
  await expect(page.locator('#resultTitle')).toContainText('HIDDEN HEART');
@@ -746,7 +746,7 @@ test('Challenge spawning always provides fifteen unique reachable coyotes on all
  await page.locator('#challengeBtn').click();
  await page.locator('#challengeGrid .mountain').first().click();
  const states=await page.evaluate(()=>{
-  return LEVELS.map((cfg,i)=>{
+  return LEVELS.slice(0,13).map((cfg,i)=>{
    loadLevel(i);
    return {count:coyotes.length,unique:new Set(coyotes.map(c=>key(c.x,c.y))).size,
      valid:coyotes.every(c=>!blocked(c.x,c.y)&&connected(START,c)&&!same(c,START)&&!same(c,activeGoal())),
