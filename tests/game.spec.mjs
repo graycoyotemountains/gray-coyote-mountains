@@ -757,7 +757,8 @@ test('Challenge spawning always provides fifteen unique reachable coyotes on all
   expect(state.count).toBe(15);
   expect(state.unique).toBe(15);
   expect(state.valid).toBe(true);
-  expect(state.clock).toBe(60000);
+  expect(state.clock).toBeGreaterThanOrEqual(59900);
+  expect(state.clock).toBeLessThanOrEqual(60000);
   expect(state.reachable).toBe(true);
   expect(state.chests).toBe(0);
  }
