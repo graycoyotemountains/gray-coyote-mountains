@@ -15,17 +15,20 @@
  async function request(event){
   if(!endpoint||!playerId)return;
   try{
-   const response=await fetch(endpoint+'/stats',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({event,playerId})
-   });
+   const response=event==='summary'
+    ? await fetch(endpoint+'/stats',{method:'GET'})
+    : await fetch(endpoint+'/stats',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({event,playerId})
+      });
    if(!response.ok)throw Error('Statistics unavailable');
    display(await response.json());
   }catch(error){output.textContent='🌍 Worldwide counters temporarily unavailable';}
  }
  if(endpoint&&playerId){
   output.textContent='🌍 Loading worldwide play statistics…';
-  request('visit');
+  // Only an actual level start counts as a player; opening the site does not.
+  request('summary');
  }else output.textContent='🌍 Worldwide counters awaiting shared server connection';
  const oldLoad=loadLevel;
  loadLevel=function(i){
