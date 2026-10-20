@@ -28,7 +28,7 @@ Challenge runs have **no treasure chests or secret-door shortcuts** and **never 
 
 ## Coyote Reset 🐺
 
-Tap **🐺 Reset Coyotes** from the home screen, Mountain Map, or while playing a regular Adventure level to bring the growing coyote pack **back to one**. The new count applies immediately to an active level, including retries, and is saved across browser reloads. Future first-time wins add coyotes again. **Unlocked mountains, secrets, treasures, hearts, time remaining, and completed levels are not erased.** During a time-out invasion, reset applies to the next attempt instead of cancelling the invasion. Challenge Mode always has 15 coyotes and is unaffected.
+Tap **🐺 Reset Coyotes** from the home screen, Mountain Map, or while playing a regular Adventure level to bring the growing coyote pack **back to one**. The new count applies immediately to an active level, including retries, and is saved across browser reloads. Every successful Adventure completion adds exactly one coyote, including replays and secret levels. The population is saved across reloads, and winning again after a reset begins growing the pack from one. **Unlocked mountains, secrets, treasures, hearts, time remaining, and completed levels are not erased.** During a time-out invasion, reset applies to the next attempt instead of cancelling the invasion. Challenge Mode always has 15 coyotes and is unaffected.
 
 ## Controls and saves
 
@@ -58,4 +58,4 @@ When a coyote catches you, the game plays `assets/human-munch.wav`, a short **re
 - **🏘️ Bonus village:** collecting all fifty facts unlocks the Lunch Snatch Village. Villagers help the coyotes steal your lunch and relocate the flag every five player turns. The village victory also persists.
 - **🌍 Lifetime counters:** the home screen supports worldwide unique-browser count and total level-start count, including retries and Challenge runs. The static GitHub Pages site needs the separate Cloudflare Worker/D1 stats endpoint to supply truthful shared totals. Until connected, the interface explicitly says so. See [stats-backend instructions](stats-backend/README.md). Historical visits from before installation cannot be backfilled; anonymous IDs approximate unique players, not human identity.
 
-All existing Adventure, Challenge, coyote-reset, secret discovery, treasure and audio save keys remain compatible. The game includes additional Playwright coverage for the new expansion. The publishing workflow tests Desktop Chrome, iPad Safari and iPhone Safari before deploying to GitHub Pages.
+All existing Adventure, Challenge, coyote-reset, secret discovery, treasure and audio save keys remain compatible. Older saves are migrated to the new cumulative Adventure-win counter without erasing progress or reset history. The game includes additional Playwright coverage for the new expansion. The publishing workflow tests Desktop Chrome, iPad Safari and iPhone Safari before deploying to GitHub Pages.
