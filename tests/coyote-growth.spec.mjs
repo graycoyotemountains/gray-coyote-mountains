@@ -121,7 +121,9 @@ test('Time-out and Challenge victories do not grow the Adventure pack',async({pa
  await page.locator('#challengeGrid .mountain').first().click();
  await page.evaluate(()=>{coyotes=[];villagers.clear();runner={x:4,y:3};draw();move(-1,0);});
  expect(await page.evaluate(()=>({wins:coyoteVictories,pack:coyoteCount()}))).toEqual({wins:0,pack:1});
- await page.evaluate(()=>showScreen('map'));
+ // Leave Challenge Mode before selecting an Adventure mountain; the app
+ // intentionally routes showScreen('map') to Challenge while that mode is active.
+ await page.evaluate(()=>{challengeMode=false;showScreen('map');});
  await page.locator('#mountainGrid .mountain').first().click();
  await expect(page.locator('#coyoteStat')).toHaveText('🐺 1');
 });
