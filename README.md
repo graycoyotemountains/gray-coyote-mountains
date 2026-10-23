@@ -4,6 +4,23 @@ A browser adventure with **10 mountain levels, 3 secret worlds, treasure chests,
 
 **Play:** https://graycoyotemountains.github.io/gray-coyote-mountains/
 
+## Illustrated Mountain Map (v1.1.0)
+
+- The Adventure level-selection screen is a single illustrated, interactive
+  mountain panorama based on the original drawing. Select labeled mountain
+  peaks to open the same existing levels and preserve unlocks.
+- On iPhone or narrow screens, swipe sideways within the panorama to reach
+  later mountains. The page itself does not need to scroll sideways.
+- Challenge Mode retains its original level cards. The gameplay board,
+  controls, timer, collectible effects, audio and saved-progress keys are
+  unchanged by this visual update.
+- Automated tests cover desktop Chrome, iPad Safari and iPhone Safari.
+
+**Versions and rollback:** See [CHANGELOG.md](CHANGELOG.md), the repository's
+[commit history](https://github.com/graycoyotemountains/gray-coyote-mountains/commits/main)
+and [GitHub Actions](https://github.com/graycoyotemountains/gray-coyote-mountains/actions).
+
+
 ## Challenge Mode 🔥
 
 From the home screen, select **Challenge Mode** to choose **any of the 13 levels**, including all secret worlds, even before unlocking them in Adventure. Every challenge has:
