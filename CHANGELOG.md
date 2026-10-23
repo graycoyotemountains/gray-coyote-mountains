@@ -4,6 +4,29 @@ All notable changes to Gray Coyote Mountains are recorded here. This is a
 human-readable release log; Git commit history is the authoritative version
 history and enables rollback of individual changes.
 
+## [1.2.0] - 2026-10-23
+
+### Changed
+- Replaced the horizontally scrolling level-selection panorama with a portrait,
+  hand-illustrated mountain trail that scales to narrow iPhone screens without
+  requiring sideways scrolling.
+- Arranged regular Mountains 1–10 from top to bottom in progression order,
+  with the three secret entrances alongside their originating mountains and
+  the optional 50-fact bonus village at the trail's end.
+- Added a "Latest unlocked" shortcut for returning players and preserved the
+  previous map position when returning from a game.
+- Kept native accessible level-selection buttons, progress, replay, Challenge
+  Mode, all secret mechanics, treasure inventory, and the 18x14 gameplay grid.
+- Extended automated Chrome and WebKit regression coverage to assert no
+  horizontal overflow, vertical scrolling, and late-level access.
+
+### Rollback
+- Stable pre-release snapshot: `backup/pre-vertical-map-2026-10-23`
+  (commit `59924086782f6d9a1c9ab08d715d1bf563df334e`).
+- Revert this release's merge commit through GitHub if necessary. The existing
+  test-and-publish workflow redeploys the reverted version after passing tests.
+- No saved-progress localStorage keys or formats were changed.
+
 ## [1.1.0] - 2026-10-22
 
 ### Changed

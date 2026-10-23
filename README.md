@@ -4,13 +4,14 @@ A browser adventure with **10 mountain levels, 3 secret worlds, treasure chests,
 
 **Play:** https://graycoyotemountains.github.io/gray-coyote-mountains/
 
-## Illustrated Mountain Map (v1.1.0)
+## Illustrated Mountain Map (v1.2.0)
 
-- The Adventure level-selection screen is a single illustrated, interactive
-  mountain panorama based on the original drawing. Select labeled mountain
-  peaks to open the same existing levels and preserve unlocks.
-- On iPhone or narrow screens, swipe sideways within the panorama to reach
-  later mountains. The page itself does not need to scroll sideways.
+- The Adventure level-selection screen is a portrait illustrated trail inspired
+  by the original mountain drawing. The ten mountain buttons wind from Level 1
+  at the top to Level 10 below, with optional secret levels and bonus village.
+- On iPhone and other narrow screens, scroll vertically to reach later mountains.
+  There is no sideways map or page scrolling. "Latest unlocked" jumps to the
+  farthest available main mountain, and returning to the map preserves position.
 - Challenge Mode retains its original level cards. The gameplay board,
   controls, timer, collectible effects, audio and saved-progress keys are
   unchanged by this visual update.
