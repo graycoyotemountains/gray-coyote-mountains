@@ -148,6 +148,40 @@ p{line-height:1.5}
 @media(max-width:410px){.screen{padding:12px 9px 25px}.route{gap:11px}.mountain-caption{min-height:99px;padding:9px}.mountain-caption strong{font-size:.92rem}.mountain-caption small{font-size:.72rem}.mountain-art{height:120px}.mountain-no{left:7px;top:8px;min-width:32px;height:33px;padding:4px}.mountain-badge{top:9px;right:6px;font-size:.63rem;padding:4px 7px}.hero-inner{padding-left:22px;padding-right:22px}.hero-buttons{gap:9px}.btn{padding:11px 14px}.controls .btn{min-width:51px;padding:9px}.controls #shout{min-width:94px}}
 @media(max-width:560px){.hero h1{font-size:clamp(2.35rem,10.5vw,3.8rem)}.hero-inner{padding-left:22px;padding-right:22px}.hero .subtitle{max-width:300px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* v1.1 illustrated level-select panorama. Scoped to #mapScreen: gameplay and
+   challenge layouts deliberately retain their original styling. */
+#mapScreen .map-scene{padding:0;background:#9dc6c2;overflow:hidden;border:2px solid #c7ac71;border-radius:23px}
+#mapScreen .map-scene::before,#mapScreen .map-scene::after{display:none}
+#mapScreen .map-landscape-viewport{max-width:100%;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-color:#8b6944 #d1dfd2;-webkit-overflow-scrolling:touch}
+#mapScreen .map-landscape-viewport:focus-visible{outline:3px solid #ffcf83;outline-offset:-4px}
+#mapScreen .map-landscape{position:relative;width:100%;min-width:1010px;aspect-ratio:1400/820;background:#8bbabd url("assets/mountain-map.svg") center / 100% 100% no-repeat;isolation:isolate}
+#mapScreen .map-wood-banner{position:absolute;z-index:3;top:1.5%;left:26%;right:26%;min-height:11%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;color:#3e2718;background:linear-gradient(160deg,#fce0a5,#d8a36d 70%,#bb855a);border:3px solid #68452c;border-radius:15px;box-shadow:0 5px 0 #67472e,0 9px 15px #1f3b3560;pointer-events:none}
+#mapScreen .map-wood-banner span{font-weight:950;font-size:clamp(1rem,2.4vw,1.7rem);letter-spacing:.08em;line-height:1.1}
+#mapScreen .map-wood-banner small{font-weight:900;letter-spacing:.18em;font-size:.76rem}
+#mapScreen #mountainGrid{position:absolute;z-index:4;inset:0;display:block;pointer-events:none}
+#mapScreen #mountainGrid::before{display:none}
+#mapScreen #mountainGrid .mountain{position:absolute;left:var(--peak-x);top:var(--peak-y);transform:translate(-50%,-50%);width:110px;min-width:110px;min-height:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 5px;border:2px solid #795235;border-radius:17px;color:#382a1d;background:linear-gradient(#fff0cf,#f6d59b);box-shadow:0 3px 0 #74563a,0 6px 12px #1c332c75;text-align:center;pointer-events:auto;overflow:visible;transition:transform .15s ease,box-shadow .15s ease}
+#mapScreen #mountainGrid .mountain:hover:not(:disabled){transform:translate(-50%,calc(-50% - 4px));box-shadow:0 6px 0 #74563a,0 11px 14px #1c332c75}
+#mapScreen #mountainGrid .mountain:active:not(:disabled){transform:translate(-50%,calc(-50% + 1px))}
+#mapScreen #mountainGrid .mountain.locked{border-color:#867e69;background:linear-gradient(#e5e1d4,#c6c0aa);color:#5d5b52;box-shadow:0 3px 0 #5c635e,0 6px 12px #1c332c65}
+#mapScreen #mountainGrid .mountain.done{border-color:#34754e;background:linear-gradient(#fbebbe,#d7e5a9)}
+#mapScreen #mountainGrid .peak-number{font-size:1.05rem;font-weight:950;line-height:1}
+#mapScreen #mountainGrid .peak-name{font-size:.76rem;font-weight:900;line-height:1.12;overflow-wrap:break-word;max-width:100%}
+#mapScreen #mountainGrid .peak-status{display:block;font-size:.65rem;line-height:1.1;font-weight:850}
+#mapScreen #mountainGrid .secret-peak{width:122px;min-width:122px;border-color:#69518b;background:linear-gradient(#faf0ff,#dfc0f1)}
+#mapScreen .map-landscape-note{position:absolute;left:19px;bottom:10px;z-index:1;font-size:10px;font-weight:850;letter-spacing:.11em;color:#fce5aa;text-shadow:0 2px 4px #263e39}
+#mapScreen .map-swipe-hint{position:relative;z-index:5;margin:0;padding:10px 15px;background:#233f37;color:#fbedd1;font-size:.84rem;text-align:center;line-height:1.4}
+#mapScreen .secret-trail{margin:10px 12px 12px}
+@media(min-width:1010px){#mapScreen .map-swipe-hint span{display:none}}
+@media(max-width:730px){
+ #mapScreen .map-landscape{min-width:1010px}
+ #mapScreen .map-wood-banner span{font-size:1.45rem}
+ #mapScreen .map-intro{gap:7px;margin-bottom:12px}
+ #mapScreen .map-intro h2{font-size:1.8rem}
+}
+@media(prefers-reduced-motion:reduce){#mapScreen #mountainGrid .mountain{transition:none}}
+
 </style>
 </head>
 <body>
@@ -207,7 +241,15 @@ p{line-height:1.5}
       <div><div class="eyebrow">Choose your next climb</div><h2>Ten peaks. Three secrets.</h2><p>Reach each 🏁 flag, and find hidden 🚪 entrances on Mountains 5, 7 and 9.</p></div>
       <div id="progress" class="progress" aria-live="polite">🔓 1 of 10 unlocked</div>
     </div>
-    <div class="map-scene"><div id="mountainGrid" class="route" aria-label="Mountain levels and any discovered secret level"></div>
+    <div class="map-scene">
+      <div class="map-landscape-viewport" role="region" aria-label="Scrollable mountain level selection. Swipe sideways on narrow screens to discover all ten mountains." tabindex="0">
+        <div class="map-landscape">
+          <div class="map-wood-banner" aria-hidden="true"><span>🐺 GRAY COYOTE MOUNTAINS</span><small>CHOOSE A MOUNTAIN</small></div>
+          <div id="mountainGrid" class="route mountain-peak-route" aria-label="Mountain levels and any discovered secret level"></div>
+          <div class="map-landscape-note" aria-hidden="true">SHORELINE · BAYLANDS · NORTHERN CALIFORNIA</div>
+        </div>
+      </div>
+      <p class="map-swipe-hint">👆 Tap a mountain to play <span>· Swipe left or right to explore all ten peaks</span></p>
       <div id="secretTrail" class="secret-trail" hidden>
         <div><strong>💎 The Hollow Mountain ⟶ 🔥 Skyfire Summit</strong><small>Secret trail unlocked! Jump to Mountain 10 without unlocking Mountains 6–9.</small></div>
         <button class="btn primary small" type="button" onclick="takeSecretTrail()">🔥 Take Secret Trail</button>
@@ -880,6 +922,12 @@ function mountainSVG(i){
  const ice=(i===4||i===9)?'<path d="M0 178q30-10 50 0t60-2 60 1 55-3 55 5v10H0Z" fill="#e8edeb" opacity=".8"/>':'';
  return `<svg viewBox="0 0 280 185" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${sun}${stars}<path d="${silhouettes.back}" fill="${a.peak}"/><path d="${silhouettes.front}" fill="${a.shade}"/><path d="${silhouettes.snow}" fill="${a.snow}"/>${grove}${stones}${ice}<path d="M0 185Q75 158 140 175T280 166V185Z" fill="#284b42" opacity=".68"/></svg>`;
 }
+// Positions correspond to the illustrated landscape, not gameplay coordinates.
+const MAP_PEAK_SPOTS=[
+ [7.5,46],[23,53],[31,39],[41,41],[52,46],
+ [61,59],[68,41],[78,30],[87.5,46],[95,57],
+ [39,88],[54,88],[69,88]
+];
 function renderMap(){
  el('mountainGrid').replaceChildren();
  for(let i=0;i<LEVELS.length;i++){
@@ -893,7 +941,11 @@ function renderMap(){
   b.setAttribute('aria-label',`${secret?'Secret level':`Mountain ${i+1}`}, ${cfg.name}, ${done?'completed':canPlay?'unlocked':'locked'}. ${coyoteCount()} coyotes.`);
   b.style.setProperty('--sky1',cfg.sky1);b.style.setProperty('--sky2',cfg.sky2);
   const status=done?'🏁 Cleared':secret?'✨ Discovered':i===MAIN_MOUNTAINS-1&&summitTrailUnlocked&&i>=unlocked?'🔥 Secret trail':canPlay?'🔓 Play':'🔒 Locked';
-  b.innerHTML=`<span class="mountain-art">${mountainSVG(i)}<span class="mountain-no">${secret?'★':i+1}</span><span class="mountain-badge">${status}</span><span class="mountain-icon" aria-hidden="true">${cfg.icon}</span></span><span class="mountain-caption"><strong>${cfg.name}</strong><small>${cfg.desc} · 🐺 ${coyoteCount()}</small></span>`;
+  const spot=MAP_PEAK_SPOTS[i];
+  b.classList.add('peak-button',...(secret?['secret-peak']:[]));
+  b.style.setProperty('--peak-x',spot[0]+'%');b.style.setProperty('--peak-y',spot[1]+'%');
+  b.title=`${cfg.name} · ${status} · 🐺 ${coyoteCount()} coyotes`;
+  b.innerHTML=`<span class="peak-number">${secret?'★':i+1}</span><strong class="peak-name">${cfg.name}</strong><small class="peak-status">${status}</small>`;
   if(canPlay)b.addEventListener('click',()=>loadLevel(i));
   el('mountainGrid').appendChild(b);
  }
