@@ -926,7 +926,7 @@ function mountainSVG(i){
 const MAP_PEAK_SPOTS=[
  [7.5,46],[23,53],[31,39],[41,41],[52,46],
  [61,59],[68,41],[78,30],[87.5,46],[95,57],
- [39,88],[54,88],[69,88]
+ [39,88],[54,88],[69,88],[84,88] // 50-fact bonus village
 ];
 function renderMap(){
  el('mountainGrid').replaceChildren();
@@ -941,7 +941,7 @@ function renderMap(){
   b.setAttribute('aria-label',`${secret?'Secret level':`Mountain ${i+1}`}, ${cfg.name}, ${done?'completed':canPlay?'unlocked':'locked'}. ${coyoteCount()} coyotes.`);
   b.style.setProperty('--sky1',cfg.sky1);b.style.setProperty('--sky2',cfg.sky2);
   const status=done?'🏁 Cleared':secret?'✨ Discovered':i===MAIN_MOUNTAINS-1&&summitTrailUnlocked&&i>=unlocked?'🔥 Secret trail':canPlay?'🔓 Play':'🔒 Locked';
-  const spot=MAP_PEAK_SPOTS[i];
+  const spot=MAP_PEAK_SPOTS[i]||[Math.min(94,39+(i-MAIN_MOUNTAINS)*15),88];
   b.classList.add('peak-button',...(secret?['secret-peak']:[]));
   b.style.setProperty('--peak-x',spot[0]+'%');b.style.setProperty('--peak-y',spot[1]+'%');
   b.title=`${cfg.name} · ${status} · 🐺 ${coyoteCount()} coyotes`;
