@@ -206,10 +206,12 @@ LEVELS.push({
   const cards=el('mountainGrid').children;
   if(extraUnlocked[2]&&cards.length){
    const card=cards[cards.length-1];
-   if(card.querySelector('.mountain-caption strong')?.textContent===LEVELS[VILLAGE_INDEX].name){
+   if((card.querySelector('.peak-name')||card.querySelector('.mountain-caption strong'))?.textContent===LEVELS[VILLAGE_INDEX].name){
     card.setAttribute('aria-label','Bonus village level, '+(villageCleared?'completed':'unlocked'));
-    card.querySelector('.mountain-no').textContent='🏘️';
-    card.querySelector('.mountain-badge').textContent=villageCleared?'🏁 Cleared':'🌟 Bonus unlocked';
+    const number=card.querySelector('.peak-number')||card.querySelector('.mountain-no');
+    const status=card.querySelector('.peak-status')||card.querySelector('.mountain-badge');
+    if(number)number.textContent='🏘️';
+    if(status)status.textContent=villageCleared?'🏁 Cleared':'🌟 Bonus unlocked';
    }
   }
   updateGuide();
