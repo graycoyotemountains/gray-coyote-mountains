@@ -47,3 +47,18 @@ test('Challenge Mode retains its existing card picker and game controls', async 
   await expect(page.locator('#gameScreen')).toBeVisible();
   await expect(page.locator('#field .tile')).toHaveCount(252);
 });
+
+test('50 coyote facts reveal the bonus village as an extra playable peak', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('gray-coyote-mountains-facts-v1', JSON.stringify(Array.from({length:50},(_,i)=>i)));
+  });
+  await page.goto('/');
+  await page.locator('#homeScreen button').filter({ hasText: 'Mountain Map' }).click();
+  await expect(page.locator('#mountainGrid .mountain')).toHaveCount(11);
+  const village = page.locator('#mountainGrid .mountain').last();
+  await expect(village.locator('.peak-name')).toHaveText('The Lunch Snatch Village');
+  await expect(village.locator('.peak-status')).toHaveText('🌟 Bonus unlocked');
+  await village.click();
+  await expect(page.locator('#gameScreen')).toBeVisible();
+  await expect(page.locator('#field .tile')).toHaveCount(252);
+});
