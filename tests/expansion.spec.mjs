@@ -68,6 +68,8 @@ test('Secret doors chain Hollow to Woods to Crater and back to Hollow',async({pa
    runner={...from};coyotes=[];
    move(secretChainDoor.x-from.x,secretChainDoor.y-from.y);
   });
+  await expect(page.locator('#secretBranchDialog')).toBeVisible();
+  await page.locator('#secretExistingChoices button').click();
   expect(await page.evaluate(()=>levelIndex)).toBe(target);
  }
 });
@@ -220,6 +222,8 @@ test('Paraglider survives a secret door, saved reload and one following level',a
   runner={...from};coyotes=[];draw();
   move(secretChainDoor.x-from.x,secretChainDoor.y-from.y);
  });
+ await expect(page.locator('#secretBranchDialog')).toBeVisible();
+ await page.locator('#secretExistingChoices button').click();
  expect(await page.evaluate(()=>levelIndex)).toBe(12);
  expect(await page.evaluate(()=>equipment?.type)).toBe('glider');
  await expect(page.locator('#field .runner')).toContainText('🪂');
