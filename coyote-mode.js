@@ -171,7 +171,7 @@
    '#coyoteMapScreen .coyote-card-text small{font-size:clamp(.64rem,1.65vw,.77rem);line-height:1.2}',
    '#coyoteMapScreen .coyote-card-status{font-size:clamp(.68rem,2vw,.8rem)}',
    '#coyoteMapScreen .coyote-map-fact{max-width:720px}',
-   '@media(max-width:440px){#coyoteMapScreen .coyote-mountain-grid{border-radius:13px;border-width:2px}#coyoteMapScreen .coyote-mountain-card{min-height:125px;padding:5px 3px;border-width:2px;border-radius:12px}#coyoteMapScreen .coyote-card-text{padding:2px}#coyoteMapScreen .coyote-card-text small{font-size:.68rem}}',
+   '@media(max-width:440px){#coyoteMapScreen .coyote-mountain-grid{border-radius:13px;border-width:2px}#coyoteMapScreen .coyote-mountain-card{min-height:125px;padding:5px 3px;border-width:2px;border-radius:12px}#coyoteMapScreen .coyote-card-text{padding:2px}#coyoteMapScreen .coyote-card-text small{font-size:.68rem}#coyoteMapScreen .coyote-card-text small:first-of-type{display:none}}',
    '@media(prefers-reduced-motion:reduce){#coyoteMapScreen .coyote-mountain-card{transition:none}}'
   ].join('');
   document.head.append(style);
@@ -189,7 +189,8 @@
    const card=document.createElement('button');
    card.type='button';card.className='coyote-mountain-card';card.disabled=!enabled;
    card.dataset.habitat=level.habitat;
-   card.setAttribute('aria-label','Mountain '+(index+1)+': '+level.name+', '+(done?'completed':enabled?'available':'locked'));
+   card.setAttribute('aria-label','Mountain '+(index+1)+': '+level.name+', '+(done?'completed':enabled?'available':'locked')+'. '+level.detail);
+   card.title=level.detail;
    const status=done?'🏁 Completed':enabled?'🔓 Play':'🔒 Locked';
    // Level markers wind down a single Baylands shoreline illustration.
    const bayStop=[[28,17],[72,29],[28,42],[72,55],[28,68],[72,82]][index];
