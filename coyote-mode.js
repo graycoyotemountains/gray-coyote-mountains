@@ -8,7 +8,7 @@
   {x:10,y:7,type:'visitor',icon:'🚶',name:'park visitor'},
   {x:14,y:3,type:'visitor',icon:'🚶‍♀️',name:'park visitor'}
  ];
- const CUB_START=[{x:15,y:11},{x:8,y:3}];
+ const CUB_START=[{x:1,y:13},{x:2,y:12}];
  const elem=id=>document.getElementById(id);
  const key=(x,y)=>x+','+y;
  const manhattan=(a,b)=>Math.abs(a.x-b.x)+Math.abs(a.y-b.y);
@@ -31,13 +31,13 @@
    '<div class="shell">',
    '<div class="topbar"><button class="btn secondary small" id="coyoteHome" type="button">← Home</button><div class="brand">🐺 COYOTE MODE</div></div>',
    '<div class="coyote-title"><div class="eyebrow">A new point of view</div><h2>Play as the Coyote</h2>',
-   '<p>Escape the curious cubs, playfully startle all three park rangers and visitors with your YIP, then reach your den! Avoid being tagged. You have 3 hearts and 2:30.</p></div>',
-   '<div class="coyote-stats" aria-live="polite"><span id="coyoteLife">❤️❤️❤️</span><span id="coyotePeople">👣 0/3 startled</span><span id="coyoteTime">⏱️ 2:30</span><span id="coyoteMoves">👟 0</span><span id="coyoteWins">🏆 0 wins</span></div>',
+   '<p>Guide your two curious cubs to safety by reaching your den before time runs out. Keep the cubs calm! Rangers or park visitors can frighten them if they get too close. Your YIP sends people away, but YIP too close to a cub and it will panic.</p></div>',
+   '<div class="coyote-stats" aria-live="polite"><span id="coyoteLife">🐾 Cubs calm</span><span id="coyotePeople">🚶 0 visitors retreated</span><span id="coyoteTime">⏱️ 2:30</span><span id="coyoteMoves">👟 0</span><span id="coyoteWins">🏆 0 wins</span></div>',
    '<div class="coyote-layout"><div class="coyote-board-panel">',
    '<div class="coyote-board-viewport"><div id="coyoteField" role="img" aria-label="Coyote mode game board, 18 columns by 14 rows. Move with arrow keys or the touch controls."></div></div>',
    '<p id="coyoteMessage" role="status" aria-live="polite">Follow the trail!</p>',
    '</div><div class="coyote-side">',
-   '<div class="coyote-legend"><strong>Trail guide</strong><p>🐺 You · 🐾 Curious cubs · 🧑‍✈️ Ranger · 🚶 Visitors · 🕳️ Den</p><p>YIP scares nearby people away and briefly distracts cubs. The den opens after three playful scares.</p></div>',
+   '<div class="coyote-legend"><strong>Trail guide</strong><p>🐺 You · 🐾 Your two cubs · 🧑‍✈️ Ranger · 🚶 Visitors · 🕳️ Den</p><p>Cubs follow you every two steps. Keep them away from people! YIP drives nearby people away, but a cub within two squares will be frightened. You win by reaching the den with both cubs calm.</p></div>',
    '<div class="coyote-controls" aria-label="Coyote movement controls">',
    '<button class="btn" type="button" data-dx="0" data-dy="-1" aria-label="Coyote move up">⬆️</button><div>',
    '<button class="btn" type="button" data-dx="-1" data-dy="0" aria-label="Coyote move left">⬅️</button>',
@@ -47,7 +47,7 @@
    '</div>',
    '<div id="coyoteResult" role="status" aria-live="polite" hidden><strong id="coyoteResultTitle"></strong><p id="coyoteResultBody"></p></div>',
    '<button class="btn secondary" type="button" id="coyoteRetry">↻ Try again</button>',
-   '<p class="coyote-education">🌿 Wildlife fact: Real California coyotes usually avoid people. Never approach, feed, or encourage wild animals to chase visitors. This is a make-believe role reversal!</p>',
+   '<p class="coyote-education">🌿 Wildlife fact: California coyotes often live in family groups. Real coyotes generally avoid people. Give wildlife space and never feed or approach them. This adventure is make-believe.</p>',
    '</div></div></div>'
   ].join('');
   document.querySelector('main').appendChild(section);
@@ -126,15 +126,15 @@
   state={
    phase:'playing',position:{...START},obstacles:buildTerrain(),
    people:PEOPLE.map(p=>({...p,active:true})),
-   cubs:CUB_START.map(p=>({...p,flee:0})),
-   hearts:3,moves:0,yipCooldown:0,scared:0
+   cubs:CUB_START.map(p=>({...p})),
+   moves:0,yipCooldown:0,scared:0,cubsCalm:true
   };
   remainingMs=DURATION;
   elem('homeScreen').classList.remove('active');
   elem('coyoteScreen').classList.add('active');
   screen='coyote';
   elem('coyoteResult').hidden=true;
-  message('🐺 Your adventure begins! The cubs are curious. YIP to startle park visitors, then reach your den.');
+  message('🐺 Get to the den while BOTH cubs stay calm! They follow every two steps. Avoid visitors, and be careful where you YIP.');
   draw();
   resume();
   try{window.scrollTo(0,0);}catch(error){}
@@ -172,25 +172,14 @@
  }
  function updateCubs(){
   if(state.moves%2!==0)return;
-  state.cubs.forEach(cub=>{
-   if(cub.flee>0){
-    cub.flee--;
-    const safe=adjacent(cub).sort((a,b)=>manhattan(b,state.position)-manhattan(a,state.position));
-    if(safe.length)Object.assign(cub,safe[0]);
-   } else {
-    Object.assign(cub,nextStep(cub,state.position));
-   }
-  });
+  state.cubs.forEach(cub=>Object.assign(cub,nextStep(cub,state.position)));
  }
- function tagged(){
-  state.hearts--;
-  if(state.hearts===0){finish(false,'🐾 The curious cubs caught up! Try another coyote run.');return;}
-  state.position={...START};
-  state.cubs=CUB_START.map(p=>({...p,flee:0}));
-  state.yipCooldown=0;
-  message('🐾 A cub tagged you! You lost a heart and returned to the trailhead.');
+ function cubIsFrightenedByPerson(){
+  return state.cubs.some(cub=>state.people.some(person=>person.active&&manhattan(person,cub)<=1));
  }
- function collision(){return state.cubs.some(c=>manhattan(c,state.position)===0);}
+ function cubTooCloseToYip(){
+  return state.cubs.some(cub=>manhattan(cub,state.position)<=2);
+ }
  function move(dx,dy){
   if(!state||state.phase!=='playing'||screen!=='coyote')return;
   tick();if(state.phase!=='playing')return;
@@ -198,33 +187,39 @@
   if(!open(nx,ny)){message('🌲 A rock or tree blocks the trail. Find another path.');return;}
   state.position={x:nx,y:ny};state.moves++;
   state.yipCooldown=Math.max(0,state.yipCooldown-1);
-  if(manhattan(state.position,DEN)===0 && state.scared===PEOPLE.length){
-   finish(true,'🏡 You returned safely to your den after three playful YIPs!');return;
-  }
-  if(manhattan(state.position,DEN)===0){
-   message('🕳️ Your den is here! Startle all three people with YIP before you can finish.');
-  } else message('🌿 Stay ahead of the curious cubs. YIP when a visitor is nearby!');
-  if(collision()){tagged();draw();return;}
   updateCubs();
-  if(state.phase==='playing'&&collision())tagged();
+  if(cubIsFrightenedByPerson()){
+   state.cubsCalm=false;
+   finish(false,'🐾 A cub got too close to a park visitor and was frightened! Try a safer path.');
+  }else if(manhattan(state.position,DEN)===0){
+   finish(true,'🏡 You reached the den with both cubs calm! Your coyote family is safe.');
+  }else if(cubTooCloseToYip()){
+   message('🐾 Your cubs are close! Avoid a loud YIP right now.');
+  }else{
+   message('🌿 Keep going to the den. Your cubs are calm; keep them away from park visitors.');
+  }
   draw();
  }
  function yip(){
   if(!state||state.phase!=='playing'||screen!=='coyote')return;
   tick();if(state.phase!=='playing')return;
   if(state.yipCooldown>0){message('🐺 Your YIP needs '+state.yipCooldown+' more move(s) to recharge.');return;}
+  // A loud bark may deter people, but startling the cubs loses the run.
+  if(cubTooCloseToYip()){
+   state.cubsCalm=false;
+   finish(false,'🐾 That YIP was too close! One of your cubs got scared. Try a quieter route.');
+   return;
+  }
   let count=0;
   state.people.forEach(person=>{
    if(person.active&&manhattan(person,state.position)<=4){
     person.active=false;state.scared++;count++;
    }
   });
-  // Even if no visitor is nearby, the yip momentarily distracts close cubs.
-  state.cubs.forEach(cub=>{if(manhattan(cub,state.position)<=5)cub.flee=2;});
   state.yipCooldown=4;
   if(typeof playCoyote==='function')try{playCoyote(true);}catch(error){}
-  if(count)message('🐺 YIP! '+count+' person'+(count===1?' is':' are')+' startled and heads safely away. '+state.scared+'/3!');
-  else message('🐺 YIP! Your call echoes through the Baylands. Find the ranger and visitors!');
+  if(count)message('🐺 YIP! '+count+' person'+(count===1?' retreats':' retreat')+' safely away. Your cubs remain calm.');
+  else message('🐺 YIP! Your call echoes across the hillside, but your cubs are safely distant.');
   draw();
  }
  function finish(won,reason){
@@ -234,15 +229,15 @@
    try{localStorage.setItem(WIN_KEY,String(wins));}catch(error){}
   }
   elem('coyoteResult').hidden=false;
-  elem('coyoteResultTitle').textContent=won?'🏆 COYOTE MADE IT HOME!':'🐾 COYOTE RUN OVER!';
+  elem('coyoteResultTitle').textContent=won?'🏆 SAFE AT THE DEN!':'🐾 THE CUBS GOT SCARED!';
   elem('coyoteResultBody').textContent=reason;
   message(reason);
   draw();
  }
  function message(text){elem('coyoteMessage').textContent=text;}
  function updateHud(){
-  elem('coyoteLife').textContent='❤️'.repeat(state.hearts)||'💔';
-  elem('coyotePeople').textContent='👣 '+state.scared+'/'+PEOPLE.length+' startled';
+  elem('coyoteLife').textContent=state.cubsCalm?'🐾 Cubs calm':'😨 Cub frightened';
+  elem('coyotePeople').textContent='🚶 '+state.scared+' visitors retreated';
   const seconds=Math.ceil(remainingMs/1000);
   elem('coyoteTime').textContent='⏱️ '+Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
   elem('coyoteMoves').textContent='👟 '+state.moves;
@@ -284,7 +279,7 @@
  document.addEventListener('visibilitychange',()=>{if(document.hidden)pause();else resume();});
  // A read-only snapshot makes regression tests possible without editing live state.
  window.coyoteModeSnapshot=()=>state?{
-  phase:state.phase,hearts:state.hearts,moves:state.moves,
+  phase:state.phase,cubsCalm:state.cubsCalm,moves:state.moves,
   scared:state.scared,yipCooldown:state.yipCooldown,position:{...state.position},
   people:state.people.map(p=>({x:p.x,y:p.y,active:p.active})),
   cubs:state.cubs.map(p=>({x:p.x,y:p.y})),
