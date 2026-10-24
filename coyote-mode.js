@@ -237,7 +237,7 @@
  function message(text){elem('coyoteMessage').textContent=text;}
  function updateHud(){
   elem('coyoteLife').textContent=state.cubsCalm?'🐾 Cubs calm':'😨 Cub frightened';
-  elem('coyotePeople').textContent='🚶 '+state.scared+' visitors retreated';
+  elem('coyotePeople').textContent='🚶 '+state.scared+' visitor'+(state.scared===1?'':'s')+' retreated';
   const seconds=Math.ceil(remainingMs/1000);
   elem('coyoteTime').textContent='⏱️ '+Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
   elem('coyoteMoves').textContent='👟 '+state.moves;
