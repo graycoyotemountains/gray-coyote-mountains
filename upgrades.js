@@ -370,7 +370,7 @@ LEVELS.push(...BONUS_CONFIGS);
   try{baseRenderMap();}finally{LEVELS.push(...extras);}
   renderBonusPanel();
   const secretsFound=Number(secretUnlocked)+Number(Boolean(extraUnlocked[0]))+Number(Boolean(extraUnlocked[1]));
-  el('progress').textContent='⛰️ '+cleared+'/10 cleared · 🧰 '+totalTreasures()+' treasures · 🐺 '+coyoteCount()+' coyotes · 💎 '+secretsFound+'/3 secrets · 🌟 '+bonusUnlocked.size+'/5 bonus trails · 📖 '+collectedFacts.size+'/50 facts'+(summitTrailUnlocked?' · 🔥 Skyfire trail open':'');
+  el('progress').textContent='⛰️ '+cleared+'/10 cleared · 🧰 '+totalTreasures()+' treasures · 🐺 '+coyoteCount()+' coyotes · 💎 '+secretsFound+'/3 secrets · 🌟 '+bonusUnlocked.size+'/5 bonus trails · 📖 '+collectedFacts.size+'/50 facts';
   const cards=el('mountainGrid').children;
   if(extraUnlocked[2]&&cards.length){
    const card=cards[cards.length-1];
@@ -391,7 +391,7 @@ LEVELS.push(...BONUS_CONFIGS);
   if(!Number.isInteger(i)||i<0||i>=LEVELS.length)return;
   // Do not consume carried equipment on a forbidden map selection.
   if(!challengeMode&&i>=MAIN_MOUNTAINS&&i!==VILLAGE_INDEX&&!(i===SECRET_LEVEL?secretUnlocked:extraUnlocked[i-SECRET_LEVEL-1]))return;
-  if(!challengeMode&&i<MAIN_MOUNTAINS&&i>=unlocked&&!(i===MAIN_MOUNTAINS-1&&summitTrailUnlocked))return;
+  if(!challengeMode&&i<MAIN_MOUNTAINS&&i>=unlocked)return;
   if(!challengeMode){equipment=adjustPowerForLevel(equipment,i);adjustRangerForLevel(i);}
   baseLoad(i);
   if(screen!=='game'||levelIndex!==i)return;
@@ -571,8 +571,19 @@ LEVELS.push(...BONUS_CONFIGS);
   if(challengeMode||oldMode!=='playing'||mode!=='won')return;
   if(oldLevel>=SECRET_LEVEL&&oldLevel<VILLAGE_INDEX){
    markSecretVictory(oldLevel);
-   saveProgress();draw();
-   say('🌟 SECRET VICTORY! '+BONUS_BY_SECRET[oldLevel].map(i=>LEVELS[i].name).join(' and ')+' unlocked!');
+   saveProgress();
+   if(oldLevel===SECRET_LEVEL){
+    // The Hollow victory trail is mandatory. Save the victory first, then
+    // enter the first new bonus mountain automatically without a choice.
+    loadLevel(BONUS_START);
+    if(levelIndex===BONUS_START){
+     say('🌟 MANDATORY SECRET TRAIL! Hollow Mountain leads to Mistveil Lagoon. Find the next flag!');
+     draw();
+    }
+   }else{
+    draw();
+    say('🌟 SECRET VICTORY! '+BONUS_BY_SECRET[oldLevel].map(i=>LEVELS[i].name).join(' and ')+' unlocked!');
+   }
   }else if(oldLevel>=BONUS_START){
    bonusCleared.add(oldLevel);extraCleared[oldLevel-SECRET_LEVEL-1]=true;
    saveProgress();draw();
