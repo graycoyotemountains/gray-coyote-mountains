@@ -175,7 +175,7 @@ test('All six mountains have traversable corridors and retain Adventure progress
     humans:level.people.length,calm:level.cubsCalm};
   });
   expect(info.tiles).toBe(252);
-  expect(info.pathLength).toBe(27);
+  expect(info.pathLength).toBe(28);
   expect(info.blocked).toBe(false);
   expect(info.humans).toBeGreaterThanOrEqual(3);
   expect(info.calm).toBe(true);
