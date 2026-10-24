@@ -25,6 +25,8 @@ test('Coyote mode is playable and independent of Adventure and Challenge', async
 });
 
 test('Reach the den without frightening either cub to win', async ({page})=>{
+ await page.addInitScript(()=>{Math.random=()=>0.5;});
+
  await page.goto('/');
  await page.locator('#coyoteModeBtn').click();
  await expect(page.locator('#coyoteMapScreen')).toBeVisible();
@@ -60,7 +62,9 @@ test('A YIP next to the cubs frightens them and ends the run', async ({page})=>{
  expect((await page.evaluate(()=>window.coyoteModeSnapshot())).phase).toBe('playing');
 });
 
-test('A distant YIP clears a visitor without upsetting the cubs', async ({page})=>{
+test('A distant YIP makes a visitor flee without upsetting the cubs', async ({page})=>{
+ await page.addInitScript(()=>{Math.random=()=>0.5;});
+
  await page.goto('/');
  await page.locator('#coyoteModeBtn').click();
  await expect(page.locator('#coyoteMapScreen')).toBeVisible();
@@ -75,6 +79,8 @@ test('A distant YIP clears a visitor without upsetting the cubs', async ({page})
  expect(after.phase).toBe('playing');
  expect(after.cubsCalm).toBe(true);
  expect(after.scared).toBe(1);
+ expect(after.people.filter(p=>p.active)).toHaveLength(before.people.length);
+ expect(after.people.some(p=>p.scared>0)).toBe(true);
  await expect(page.locator('#coyotePeople')).toHaveText('🚶 1 visitor retreated');
 });
 
@@ -115,6 +121,8 @@ test('Six unique coyote mountains render in a phone-friendly selector',async({pa
 });
 
 test('Completing first mountain unlocks the second and persists after reload',async({page})=>{
+ await page.addInitScript(()=>{Math.random=()=>0.5;});
+
  await page.goto('/');
  await page.locator('#coyoteModeBtn').click();
  await page.locator('#coyoteMountainGrid .coyote-mountain-card').first().click();
@@ -144,6 +152,8 @@ test('Completing first mountain unlocks the second and persists after reload',as
 });
 
 test('All six mountains have safe den routes and do not modify Adventure saves',async({page})=>{
+ await page.addInitScript(()=>{Math.random=()=>0.5;});
+
  test.setTimeout(120000);
  await page.addInitScript(()=>{
   localStorage.setItem('gray-coyote-mountains-coyote-unlocked-v1','6');
@@ -158,12 +168,18 @@ test('All six mountains have safe den routes and do not modify Adventure saves',
  for(let index=0;index<6;index++){
   await cards.nth(index).click();
   const current=await page.evaluate(()=>window.coyoteModeSnapshot());
-  if(current.position.x===1){
-   for(let i=0;i<15;i++)await page.keyboard.press('ArrowRight');
-   for(let i=0;i<11;i++)await page.keyboard.press('ArrowUp');
-  }else{
-   for(let i=0;i<15;i++)await page.keyboard.press('ArrowLeft');
-   for(let i=0;i<11;i++)await page.keyboard.press('ArrowUp');
+  // Deterministic AI makes these genuinely playable routes repeatable in CI.
+  // The last three require a different trail or a carefully timed YIP.
+  const direction=current.position.x===1?'ArrowRight':'ArrowLeft';
+  const route=index===3||index===4?
+   [...Array(11).fill('ArrowUp'),...Array(15).fill(direction)]:
+   index===5?
+   [...Array(8).fill(direction),...Array(11).fill('ArrowUp'),...Array(7).fill(direction)]:
+   [...Array(15).fill(direction),...Array(11).fill('ArrowUp')];
+  for(let step=0;step<route.length;step++){
+   await page.keyboard.press(route[step]);
+   if((index===4&&step===4)||(index===5&&step===6))
+    await page.locator('#coyoteYip').click();
   }
   const result=await page.evaluate(()=>window.coyoteModeSnapshot());
   expect(result.phase,'Mountain '+(index+1)+' should have a safe route').toBe('won');
@@ -196,4 +212,55 @@ test('A later mountain preserves its own obstacles, den and optional ranger enco
  expect((await page.evaluate(()=>window.coyoteModeSnapshot())).mountain).toBe(5);
  await page.locator('#coyoteHome').click();
  await expect(page.locator('#coyoteMapScreen')).toBeVisible();
+});
+
+
+test('Rangers and visitors move one obstacle-aware square every few coyote steps',async({page})=>{
+ await page.addInitScript(()=>{Math.random=()=>0.5;});
+ await page.goto('/');
+ await page.locator('#coyoteModeBtn').click();
+ await page.locator('#coyoteMountainGrid .coyote-mountain-card').first().click();
+ const start=await page.evaluate(()=>window.coyoteModeSnapshot());
+ const patrolSpeed=(await page.evaluate(()=>window.coyoteMountainDefinitions()))[0].speed;
+ expect(patrolSpeed).toBe(3);
+ for(let i=1;i<patrolSpeed;i++){
+  await page.keyboard.press('ArrowRight');
+  const intermediate=await page.evaluate(()=>window.coyoteModeSnapshot());
+  expect(intermediate.people.map(p=>[p.x,p.y])).toEqual(start.people.map(p=>[p.x,p.y]));
+ }
+ await page.keyboard.press('ArrowRight');
+ const after=await page.evaluate(()=>window.coyoteModeSnapshot());
+ const moved=after.people.filter((p,i)=>Math.abs(p.x-start.people[i].x)+Math.abs(p.y-start.people[i].y)===1);
+ expect(moved.length).toBeGreaterThan(0);
+ for(let i=0;i<after.people.length;i++){
+  const dist=Math.abs(after.people[i].x-start.people[i].x)+Math.abs(after.people[i].y-start.people[i].y);
+  expect(dist).toBeLessThanOrEqual(1);
+ }
+ expect(after.phase).toBe('playing');
+ const rangerBefore=start.people[0],rangerAfter=after.people[0];
+ const fromDist=Math.abs(rangerBefore.x-after.position.x)+Math.abs(rangerBefore.y-after.position.y);
+ const toDist=Math.abs(rangerAfter.x-after.position.x)+Math.abs(rangerAfter.y-after.position.y);
+ expect(toDist).toBeLessThan(fromDist); // alert radius: ranger follows adult coyote
+});
+
+test('All six maps use the Adventure coyote movement cadence',async({page})=>{
+ await page.addInitScript(()=>localStorage.setItem('gray-coyote-mountains-coyote-unlocked-v1','6'));
+ await page.goto('/');
+ await page.locator('#coyoteModeBtn').click();
+ const defs=await page.evaluate(()=>window.coyoteMountainDefinitions());
+ expect(defs.map(d=>d.speed)).toEqual([3,3,3,2,2,2]);
+ expect(defs.map(d=>d.alert)).toEqual([5,5,6,6,7,7]);
+ for(let i=0;i<6;i++){
+  await page.locator('#coyoteMountainGrid .coyote-mountain-card').nth(i).click();
+  const start=await page.evaluate(()=>window.coyoteModeSnapshot());
+  const direction=start.position.x===1?'ArrowRight':'ArrowLeft';
+  await page.keyboard.press(direction);
+  const after=await page.evaluate(()=>window.coyoteModeSnapshot());
+  // No human teleports: all remain at most one square from their initial spots.
+  for(let p=0;p<start.people.length;p++){
+   const travel=Math.abs(after.people[p].x-start.people[p].x)+Math.abs(after.people[p].y-start.people[p].y);
+   expect(travel).toBeLessThanOrEqual(1);
+  }
+  await page.locator('#coyoteHome').click();
+ }
 });
