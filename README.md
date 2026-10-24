@@ -165,3 +165,29 @@ locked, reach the secret level's flag to unlock it, then retry the door.
 The five new levels, their wins and their unlocks are saved locally in
 this browser, independently of Coyote Mode and the existing Adventure
 progress keys. The new section scrolls vertically on phones.
+
+## Ten extra peaks on the Adventure mountain map (v1.9.0)
+
+Scroll below the ten normal mountains to the illustrated **Hidden Mountain
+Trails** continuation of the map, or choose **✨ See 10 extra peaks**.
+All ten bonus mountains appear in this illustrated vertical map, with
+disabled markers explaining how to discover a locked level. The original
+five remain unlocked by winning Hollow Mountain, Whispering Woods or
+Phantom Crater.
+
+**Five new bonus mountain doors** are hidden in ordinary Adventure levels:
+
+| Regular source mountain | Newly hidden bonus mountain |
+| --- | --- |
+| Mountain 2 | 🦀 Tidepool Terrace |
+| Mountain 4 | 🌲 Redwood Ravine |
+| Mountain 6 | ⛈️ Thunderstone Pass |
+| Mountain 8 | 🌻 Sunflower Bluff |
+| Mountain 10 | 🌌 Aurora Crown |
+
+Approach a door to reveal it, then step onto its square to immediately
+enter the extra level and permanently unlock its marker on the Adventure
+map. It can be replayed afterward. Finding these doors does **not**
+replace the original hidden doors on Mountains 5, 7 or 9. Every extra
+mountain has a flag, coyotes, three collectible chests and branching
+paths. All previously saved game and bonus-level progress is retained.
