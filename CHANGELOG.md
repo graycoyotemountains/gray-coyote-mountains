@@ -4,6 +4,27 @@ All notable changes to Gray Coyote Mountains are recorded here. This is a
 human-readable release log; Git commit history is the authoritative version
 history and enables rollback of individual changes.
 
+## [1.4.0] - 2026-10-24
+
+### Added
+- An independent **Play as the Coyote** bonus mode, selectable from the home screen.
+- New objective: guide a coyote to its den while keeping two following cubs calm.
+  Cubs follow every two steps and can become frightened near park visitors or
+  by a loud YIP within two squares. The run ends if a cub becomes frightened.
+- YIP can encourage nearby park visitors and rangers to retreat when the cubs
+  are a safe distance away. Scaring people is **optional**, not a victory condition.
+- A separate two-and-a-half-minute clock, dedicated 18-by-14 board, mobile
+  directional controls, and local coyote-mode victory counter.
+- Multi-device regression tests for calm-cub victories, frightened cubs,
+  optional visitor retreat, navigation, and phone layout.
+
+### Compatibility and rollback
+- Adventure progress, collected facts, secret levels, Challenge Mode and the
+  existing game board were not modified.
+- Before this release: `ec702b6c994de7bc9de2dd6e25f31aa6e6294c88`.
+  Revert the v1.4.0 release merge to restore the prior game.
+- The existing v1.3.0 gameplay is also retained on the `main` history.
+
 ## [1.3.0] - 2026-10-23
 
 ### Changed
