@@ -4,6 +4,29 @@ All notable changes to Gray Coyote Mountains are recorded here. This is a
 human-readable release log; Git commit history is the authoritative version
 history and enables rollback of individual changes.
 
+## [1.5.0] - 2026-10-24
+
+### Added
+- Six coyote-family mountains with a responsive, illustrated mountain selection
+  screen: Baylands Trail, Salt Marsh Lookout, Stevens Creek Pass, Coyote
+  Grasslands, Sycamore Ridge and Shoreline Summit.
+- Varied habitats, obstacles, visitor placement, starting directions and time
+  limits. All levels retain a traversable, cub-safe path to the den.
+- Sequential unlocking, completed-mountain indicators, next-mountain
+  navigation and persistent coyote-campaign progress.
+
+### Unchanged
+- On every mountain, bring the coyote to its den without frightening either cub.
+  YIP still moves visitors away but may scare nearby cubs. Scaring people is
+  optional and is not a win condition.
+- Adventure, Challenge Mode, inventory, coyote counters and their saved data.
+
+### Rollback
+- Last v1.4.0 commit: `5847de0102e616b01b95ae15fe0d0c321b3ffbc3`.
+  Revert this release merge to restore the single-mountain coyote mode.
+- The v1.4.0 lifetime coyote victories continue; new unlocked mountains and
+  cleared mountains use separate localStorage keys.
+
 ## [1.4.0] - 2026-10-24
 
 ### Added
