@@ -34,7 +34,7 @@
    duration:130000,seed:323331,obstacles:.35,terrain:['tree','tree','rock']},
   {name:'Shoreline Summit',alert:7,speed:2,icon:'⛰️',habitat:'summit',detail:'The final steep climb to the family den',
    start:{x:16,y:12},den:{x:1,y:1},cubs:[{x:16,y:13},{x:15,y:12}],
-   people:[{x:4,y:4,type:'ranger',icon:'🧑‍✈️',name:'ranger'},{x:7,y:8,type:'visitor',icon:'🚶',name:'visitor'},{x:10,y:6,type:'ranger',icon:'🧑‍✈️',name:'ranger'},{x:13,y:9,type:'visitor',icon:'🚶‍♀️',name:'visitor'},{x:14,y:3,type:'visitor',icon:'🚶',name:'visitor'}],
+   people:[{x:4,y:4,type:'ranger',icon:'🧑‍✈️',name:'ranger'},{x:7,y:8,type:'visitor',icon:'🚶',name:'visitor'},{x:10,y:6,type:'ranger',icon:'🧑‍✈️',name:'ranger'},{x:11,y:7,type:'visitor',icon:'🚶‍♀️',name:'visitor'},{x:14,y:3,type:'visitor',icon:'🚶',name:'visitor'}],
    duration:125000,seed:711800,obstacles:.37,terrain:['rock','tree','brush']}
  ];
  const currentMountain=()=>MOUNTAINS[activeMountain];
