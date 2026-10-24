@@ -4,6 +4,18 @@ A browser adventure with **10 mountain levels, 3 secret worlds, treasure chests,
 
 **Play:** https://graycoyotemountains.github.io/gray-coyote-mountains/
 
+## Paraglider, village and search discoverability (v1.3.0)
+
+- The paraglider now moves one square per direction and can land on tree and
+  rock obstacles; coyotes still cannot cross those squares.
+- The bonus village uses gray pavement and single-square 🏠 houses, in place
+  of tree and rock obstacle artwork.
+- Search-facing page metadata and a published [sitemap](sitemap.xml) make the
+  game easier for search engines to discover. To request Google indexing,
+  verify the game URL-prefix property in Google Search Console and submit
+  `https://graycoyotemountains.github.io/gray-coyote-mountains/sitemap.xml`.
+  Indexing and search-result placement are controlled by search engines.
+
 ## Illustrated Mountain Map (v1.2.0)
 
 - The Adventure level-selection screen is a portrait illustrated trail inspired
@@ -70,7 +82,7 @@ When a coyote catches you, the game plays `assets/human-munch.wav`, a short **re
 
 - **📖 Fifty science-based coyote facts.** On every mountain, one of the three random chests contains a fact. Every secret world has one fact chest alongside its special item and secret door. Facts are drawn without repeats until all fifty are found. The Field Guide shows locked and discovered entries; its progress saves in localStorage.
 - **🚲 Hollow Mountain bicycle:** find the bicycle, switch to a riding icon, and replace shout with a bike bell that recharges after three movement steps. Take it into the next level.
-- **🪂 Whispering Woods paraglider:** find the glider to travel two squares per direction when the route is clear.
+- **🪂 Whispering Woods paraglider:** find the glider to move one square at a time, including onto tree and rock obstacles.
 - **📻 Phantom Crater radio:** find the radio, call a ranger once, and regain SHOUT. The ranger follows one square behind, swaps locations if the player steps onto it, and automatically keeps coyotes more than five squares away. Ranger protection continues through the next map.
 - **🚪 Secret door loop:** each secret world has a randomly positioned reachable door, hidden until approached. Hollow → Whispering → Phantom → Hollow. Discovery also unlocks the next secret map.
 - **🏘️ Bonus village:** collecting all fifty facts unlocks the Lunch Snatch Village. Villagers help the coyotes steal your lunch and relocate the flag every five player turns. The village victory also persists.
