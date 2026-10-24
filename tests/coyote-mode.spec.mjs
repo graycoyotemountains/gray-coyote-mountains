@@ -53,17 +53,17 @@ test('A YIP next to the cubs frightens them and ends the run', async ({page})=>{
 test('A distant YIP clears a visitor without upsetting the cubs', async ({page})=>{
  await page.goto('/');
  await page.locator('#coyoteModeBtn').click();
- for(let i=0;i<4;i++)await page.keyboard.press('ArrowRight');
+ for(let i=0;i<6;i++)await page.keyboard.press('ArrowRight');
  await page.keyboard.press('ArrowUp');
  const before=await page.evaluate(()=>window.coyoteModeSnapshot());
- expect(before.position).toEqual({x:5,y:11});
+ expect(before.position).toEqual({x:7,y:11});
  expect(before.cubsCalm).toBe(true);
  await page.locator('#coyoteYip').click();
  const after=await page.evaluate(()=>window.coyoteModeSnapshot());
  expect(after.phase).toBe('playing');
  expect(after.cubsCalm).toBe(true);
  expect(after.scared).toBe(1);
- await expect(page.locator('#coyotePeople')).toHaveText('🚶 1 visitors retreated');
+ await expect(page.locator('#coyotePeople')).toHaveText('🚶 1 visitor retreated');
 });
 
 test('Phone mode has no horizontal overflow and uses touch movement buttons', async ({page})=>{
