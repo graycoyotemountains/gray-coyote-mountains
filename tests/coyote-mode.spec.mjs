@@ -15,6 +15,8 @@ test('Coyote mode is playable and independent of Adventure and Challenge', async
  expect(start.cubsCalm).toBe(true);
  expect(start.cubs).toHaveLength(2);
  await page.locator('#coyoteHome').click();
+ await expect(page.locator('#coyoteMapScreen')).toBeVisible();
+ await page.locator('#coyoteMapHome').click();
  await expect(page.locator('#homeScreen')).toBeVisible();
  await page.locator('#challengeBtn').click();
  await expect(page.locator('#challengeGrid .mountain')).toHaveCount(13);
