@@ -4,6 +4,25 @@ All notable changes to Gray Coyote Mountains are recorded here. This is a
 human-readable release log; Git commit history is the authoritative version
 history and enables rollback of individual changes.
 
+## [1.3.0] - 2026-10-23
+
+### Changed
+- Paraglider movement now travels exactly one square per input and may land on
+  trees or rocks, remaining visible. Coyotes and ordinary players still cannot
+  enter obstacle squares.
+- Village terrain now appears as gray pavement with individually rendered,
+  one-square house obstacles. Existing obstacle collision and level topology
+  are preserved.
+- Added canonical URL, page description, social sharing metadata, and XML
+  sitemap and an automated IndexNow notification on publication to help
+  participating search engines discover the game.
+- Added multi-device automated tests for movement and village rendering.
+
+### Rollback
+- Previous stable version: `dd2f89231102b9a4b418fcf7a556191d18d00608`
+  (v1.2.0). Revert this release's changes to redeploy the previous build.
+- Saved progress formats and localStorage keys were not modified.
+
 ## [1.2.0] - 2026-10-23
 
 ### Changed

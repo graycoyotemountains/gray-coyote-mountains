@@ -4,7 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#172e2e">
-<title>Gray Coyote Mountains | Mountain Adventure</title>
+<title>Gray Coyote Mountains | Free Browser Adventure Game</title>
+<meta name="description" content="Play Gray Coyote Mountains, a free mountain adventure for phones, tablets, and computers. Dodge coyotes, explore secret levels, collect treasure, and reach the flag.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://graycoyotemountains.github.io/gray-coyote-mountains/">
+<link rel="sitemap" type="application/xml" href="sitemap.xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Gray Coyote Mountains | Free Browser Adventure Game">
+<meta property="og:description" content="Explore ten mountains, secret worlds, and a bonus village. Dodge coyotes and collect treasure in a free browser game.">
+<meta property="og:url" content="https://graycoyotemountains.github.io/gray-coyote-mountains/">
 <style>
 :root{color-scheme:dark;--cream:#f9f0d8;--muted:#d3decb;--gold:#f4c66e;--mint:#c4eb9a;--forest:#18352f;--border:#61786b}
 *{box-sizing:border-box}
@@ -1172,10 +1180,11 @@ function tagged(){
   say(`🐺 The coyote ate your lunch. You lost a heart. ${lives} remaining. Back to the trailhead!`);
  }
 }
-function move(dx,dy){
+function move(dx,dy,allowObstacleLanding=false){
  if(!canTakeAction())return;
  const nx=runner.x+dx,ny=runner.y+dy;
- if(blocked(nx,ny)){say('🚧 Blocked! Go around the tree or rock.');return;}
+ // Gliders may land on obstacles, but cannot leave the board.
+ if(!inside(nx,ny)||(blocked(nx,ny)&&!allowObstacleLanding)){say('🚧 Blocked! Go around the tree or rock.');return;}
  runner={x:nx,y:ny};steps++;cooldown=Math.max(0,cooldown-1);
  if(!challengeMode&&levelIndex===SECRET_DOOR_MOUNTAIN&&same(runner,SECRET_DOOR)){
   secretUnlocked=true;saveProgress();playSecret(true);loadLevel(SECRET_LEVEL);

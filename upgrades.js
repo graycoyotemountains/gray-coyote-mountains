@@ -48,6 +48,19 @@ LEVELS.push({
  mapGuide.addEventListener('click',openGuide);
  const styles=document.createElement('style');
  styles.textContent='.expedition-panel{margin:18px 0;padding:16px;background:#23463d;border:1px solid #82977f;border-radius:17px;display:flex;align-items:center;justify-content:space-between;gap:13px;flex-wrap:wrap}.expedition-panel p{margin:3px 0;color:#c9ddc6;font-size:.89rem}.expedition-panel strong{color:#ffe0a1}#fieldGuide{width:min(700px,95vw);max-height:88vh;overflow:auto;background:#193c35;color:#f9f0d8;border:2px solid #a0b998;border-radius:18px;padding:22px;box-shadow:0 20px 60px #051d19}#fieldGuide::backdrop{background:#071a1bbf}.guide-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.guide-head h2{font-size:1.55rem}#guideFacts{padding-left:25px;line-height:1.55}#guideFacts li{padding:5px 3px;border-bottom:1px solid #ffffff1a}#guideFacts li.locked{color:#a3b4a6}.guide-sources{font-size:.81rem}.guide-sources a{color:#f6dc91}.tile.ranger,.tile.special-item,.tile.village-guard{background:#b4d5b1!important}.tile.secret-chain{background:#996eaf!important;animation:pulse 1.5s infinite}.tile.ranger{box-shadow:inset 0 0 0 2px #f7e18a}.tile.special-item{box-shadow:inset 0 0 0 2px #eeb96e}';
+ styles.textContent += `
+/* Gray village pavement and single-square houses; original obstacle sets
+   still block coyotes and unequipped players. */
+.game-frame.village-zone #field{background:#747779;border-color:#aaa8a2}
+.game-frame.village-zone .tile{background:#989d9f}
+.game-frame.village-zone .tile:nth-child(4n){background:#a7abae}
+.game-frame.village-zone .tile.house{background:#bd9a80;box-shadow:inset 0 0 0 2px #e6c4a0;font-size:clamp(12px,2.5vw,25px)}
+.game-frame.village-zone .tile.runner{background:#c5dea9}
+.game-frame.village-zone .tile.coyote{background:#c99a73}
+.game-frame.village-zone .tile.exit{background:#e7ce83}
+.game-frame.village-zone .tile.chest{background:#dcae61}
+.game-frame.village-zone .tile.village-guard{background:#d7b294!important}
+`;
  document.head.append(styles);
  function openGuide(){
   const list=document.getElementById('guideFacts');list.replaceChildren();
@@ -261,6 +274,14 @@ LEVELS.push({
    }
   }
   const tiles=el('field').children;
+  const village=!challengeMode&&levelIndex===VILLAGE_INDEX;
+  el('gameFrame').classList.toggle('village-zone',village);
+  if(village)for(const tile of tiles){
+   // One house per solid obstacle square; no multi-square buildings.
+   if(tile.classList.contains('tree')||tile.classList.contains('rock')){
+    tile.textContent='🏠';tile.classList.add('house');
+   }else if(tile.textContent==='🌾')tile.textContent='';
+  }
   function setAt(p,emoji,cls){
    if(!p||!inside(p.x,p.y)||same(runner,p))return;
    const tile=tiles[p.y*W+p.x];
@@ -273,6 +294,11 @@ LEVELS.push({
    if(ranger)setAt(ranger,'👮','ranger');
    for(const k of villageGuards){const a=k.split(',').map(Number);setAt({x:a[0],y:a[1]},'🧑‍🌾','village-guard');}
    const runnerTile=tiles[runner.y*W+runner.x];
+   // Overlay the glider on a solid obstacle so the player never disappears.
+   if(equipment?.type==='glider'&&runnerTile&&
+     (runnerTile.classList.contains('tree')||runnerTile.classList.contains('rock'))){
+    runnerTile.classList.add('runner','glider-hover');
+   }
    if(runnerTile?.classList.contains('runner')){
     runnerTile.textContent=equipment?.type==='bike'?'🚴':equipment?.type==='glider'?'🪂':'🏃';
    }
@@ -289,24 +315,27 @@ LEVELS.push({
   equipment={type,origin:levelIndex,currentLevel:levelIndex,nextLevel:null};
   secretItem=null;cooldown=0;
   if(type==='bike')say('🚲 BICYCLE FOUND! Ride with 🚴. Ring the bell every THREE steps. Keep your bicycle in the next level!');
-  else if(type==='glider')say('🪂 PARAGLIDER FOUND! Glide TWO squares per direction. The trail is yours!');
+  else if(type==='glider')say('🪂 PARAGLIDER FOUND! Move ONE square at a time, even onto trees and rocks. Fly over obstacles!');
   else say('📻 RADIO FOUND! Press CALL RANGER to summon a ranger who protects you for this and the next map!');
   note(620,0,.12,{end:920,volume:.09});saveProgress();return true;
  }
  move=function(dx,dy){
   if(!canTakeAction())return;
   if(Math.abs(dx)+Math.abs(dy)!==1)return;
-  const count=!challengeMode&&equipment?.type==='glider'?2:1;
+  const gliding=!challengeMode&&equipment?.type==='glider';
+  const count=1; // All equipment uses the standard one-square move.
   for(let n=0;n<count;n++){
    const target={x:runner.x+dx,y:runner.y+dy};
-   if(blocked(target.x,target.y)){if(n===0)say('🚧 Blocked! Go around.');break;}
+   if(!inside(target.x,target.y)||(blocked(target.x,target.y)&&!gliding)){
+    say('🚧 Blocked! Go around.');break;
+   }
    if(!challengeMode&&secretChainDoor&&same(target,secretChainDoor)){
     const next=nextSecret(levelIndex);
     grantSecretAccess(next);playSecret(true);
     loadLevel(next);say('🚪 SECRET PASSAGE! '+LEVELS[next].name+' awaits!');break;
    }
    const previous={...runner},beforeLives=lives,beforeLevel=levelIndex;
-   baseMove(dx,dy);
+   baseMove(dx,dy,gliding);
    if(levelIndex!==beforeLevel||mode!=='playing')break;
    if(same(previous,runner)&&lives===beforeLives)break;
    if(lives<beforeLives)break;
