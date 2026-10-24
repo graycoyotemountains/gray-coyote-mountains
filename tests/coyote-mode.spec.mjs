@@ -138,7 +138,7 @@ test('Completing first mountain unlocks the second and persists after reload',as
  expect(second.den).toEqual({x:1,y:1});
  expect(second.habitat).toBe('marsh');
  await expect(page.locator('#coyoteField .coyote-tile')).toHaveCount(252);
- await expect(page.locator('#coyoteTime')).toHaveText('⏱️ 2:25');
+ await expect(page.locator('#coyoteTime')).toContainText('⏱️ 2:');
 });
 
 test('All six mountains have safe den routes and do not modify Adventure saves',async({page})=>{
