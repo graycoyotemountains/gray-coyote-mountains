@@ -150,52 +150,85 @@ test('Reaching a flag launches confetti and offers normal next level', async ({p
   await expect(page.locator('#next')).toBeVisible();
 });
 
-test('Completing Hollow opens a shortcut to Skyfire but not other locked peaks', async ({page}) => {
-  await page.addInitScript(()=>{
-    localStorage.setItem('gray-sentinel-mountain-unlocked-v1','5');
-    localStorage.setItem('gray-sentinel-mountain-cleared-v1','4');
-    localStorage.setItem('gray-coyote-mountains-secret-found-v1','true');
-  });
-  await page.goto('/');
-  await page.locator('#homeScreen button').filter({hasText:'Mountain Map'}).click();
-  await page.locator('.mountain').last().click();
-  await expect(page.locator('#subtitle')).toHaveText('The Hollow Mountain');
-  await expect(page.locator('#secretNext')).toBeHidden();
-  await page.evaluate(()=>{runner={x:1,y:0};draw();});
-  await page.getByRole('button',{name:'Move left'}).click();
-  await expect(page.locator('#secretNext')).toBeVisible();
-  await expect(page.locator('#resultBody')).toContainText('Skyfire Summit');
-  await expect(page.evaluate(()=>localStorage.getItem('gray-coyote-mountains-summit-trail-v1'))).resolves.toBe('true');
-  await page.locator('#secretNext').click();
-  await expect(page.locator('#subtitle')).toHaveText('Skyfire Summit');
-  await page.locator('#gameScreen button').filter({hasText:'Mountain Map'}).first().click();
-  await expect(page.locator('#secretTrail')).toBeVisible();
-  await expect(page.locator('.mountain').nth(5)).toBeDisabled();
-  await expect(page.locator('.mountain').nth(9)).toBeEnabled();
-  await expect(page.locator('#progress')).toContainText('4/10');
-  await page.locator('.mountain').nth(9).click();
-  await page.evaluate(()=>{runner={x:1,y:0};draw();});
-  await page.getByRole('button',{name:'Move left'}).click();
-  await expect(page.locator('#resultTitle')).toContainText('SKYFIRE SUMMIT CONQUERED');
-  await expect(page.locator('#resultBody')).toContainText('remain locked');
-  await expect(page.evaluate(()=>localStorage.getItem('gray-sentinel-mountain-cleared-v1'))).resolves.toBe('4');
-  await page.locator('#gameScreen button').filter({hasText:'Mountain Map'}).first().click();
-  await expect(page.locator('.mountain').nth(5)).toBeDisabled();
-  await expect(page.locator('.mountain').nth(9)).toHaveClass(/done/);
+test('Winning Hollow forces a transition into Mistveil Lagoon, not Skyfire', async ({page})=>{
+ await page.addInitScript(()=>{
+  localStorage.setItem('gray-sentinel-mountain-unlocked-v1','5');
+  localStorage.setItem('gray-sentinel-mountain-cleared-v1','4');
+  localStorage.setItem('gray-coyote-mountains-secret-found-v1','true');
+ });
+ await page.goto('/');
+ await page.locator('#playBtn').click();
+ await page.evaluate(()=>loadLevel(10));
+ await expect(page.locator('#subtitle')).toHaveText('The Hollow Mountain');
+ const before=await page.evaluate(()=>coyoteVictories);
+ await page.evaluate(()=>{runner={x:1,y:0};coyotes=[];draw();move(-1,0);});
+ await expect(page.locator('#subtitle')).toHaveText('Mistveil Lagoon');
+ const state=await page.evaluate(()=>({levelIndex,mode,secretCleared,coyoteVictories,unlocked,
+   bonus:[...bonusUnlocked].sort((a,b)=>a-b),shortcut:summitTrailUnlocked}));
+ expect(state).toMatchObject({levelIndex:14,mode:'playing',secretCleared:true,
+   coyoteVictories:before+1,unlocked:5,bonus:[14,15],shortcut:false});
+ await expect(page.locator('#message')).toContainText('MANDATORY SECRET TRAIL');
+ await expect(page.locator('#secretNext')).toHaveCount(0);
+ await page.locator('#gameScreen button').filter({hasText:'Mountain Map'}).first().click();
+ await expect(page.locator('#secretTrail')).toHaveCount(0);
+ await expect(page.locator('.mountain').nth(5)).toBeDisabled();
+ await expect(page.locator('.mountain').nth(9)).toBeDisabled();
+ await expect(page.locator('#bonusExpeditionGrid button').first()).toBeEnabled();
+ await expect(page.locator('#progress')).toContainText('4/10');
 });
 
-test('Existing completed Hollow Mountain saves automatically have the Skyfire trail', async ({page}) => {
-  await page.addInitScript(()=>{
-    localStorage.setItem('gray-sentinel-mountain-unlocked-v1','5');
-    localStorage.setItem('gray-sentinel-mountain-cleared-v1','4');
-    localStorage.setItem('gray-coyote-mountains-secret-cleared-v1','true');
-  });
-  await page.goto('/');
-  await page.locator('#homeScreen button').filter({hasText:'Mountain Map'}).click();
-  await expect(page.locator('#secretTrail')).toBeVisible();
-  await expect(page.locator('.mountain').nth(9)).toBeEnabled();
-  await page.locator('#secretTrail button').click();
-  await expect(page.locator('#subtitle')).toHaveText('Skyfire Summit');
+test('Legacy Hollow and Skyfire shortcut saves retain progress without an optional shortcut', async ({page})=>{
+ await page.addInitScript(()=>{
+  localStorage.setItem('gray-sentinel-mountain-unlocked-v1','5');
+  localStorage.setItem('gray-sentinel-mountain-cleared-v1','4');
+  localStorage.setItem('gray-coyote-mountains-secret-cleared-v1','true');
+  localStorage.setItem('gray-coyote-mountains-summit-trail-v1','true');
+ });
+ await page.goto('/');
+ await page.locator('#homeScreen button').filter({hasText:'Mountain Map'}).click();
+ await expect(page.locator('#secretTrail')).toHaveCount(0);
+ await expect(page.locator('.mountain').nth(9)).toBeDisabled();
+ await expect(page.locator('#bonusExpeditionGrid button').first()).toBeEnabled();
+ await expect(page.locator('#bonusExpeditionGrid button').nth(1)).toBeEnabled();
+ expect(await page.evaluate(()=>secretCleared)).toBe(true);
+ expect(await page.evaluate(()=>summitTrailUnlocked)).toBe(true); // Historical flag kept without enabling shortcut.
+});
+
+test('Players who previously completed Skyfire through the old shortcut can still replay it',async({page})=>{
+ await page.addInitScript(()=>{
+  localStorage.setItem('gray-sentinel-mountain-unlocked-v1','5');
+  localStorage.setItem('gray-sentinel-mountain-cleared-v1','4');
+  localStorage.setItem('gray-coyote-mountains-secret-cleared-v1','true');
+  localStorage.setItem('gray-coyote-mountains-summit-trail-v1','true');
+  localStorage.setItem('gray-coyote-mountains-summit-shortcut-cleared-v1','true');
+ });
+ await page.goto('/');
+ await page.locator('#homeScreen button').filter({hasText:'Mountain Map'}).click();
+ await expect(page.locator('#secretTrail')).toHaveCount(0);
+ await expect(page.locator('.mountain').nth(9)).toBeEnabled();
+ await expect(page.locator('.mountain').nth(9)).toHaveClass(/done/);
+ await expect(page.locator('.mountain').nth(5)).toBeDisabled();
+ await page.locator('.mountain').nth(9).click();
+ await expect(page.locator('#subtitle')).toHaveText('Skyfire Summit');
+});
+
+test('Hollow mandatory trail carries the bicycle to Mistveil for one more level',async({page})=>{
+ await page.addInitScript(()=>localStorage.setItem('gray-coyote-mountains-secret-found-v1','true'));
+ await page.goto('/');
+ await page.locator('#playBtn').click();
+ await page.evaluate(()=>{
+  loadLevel(10);
+  // The original secret-level bicycle is carried into one additional level.
+  equipment={type:'bike',origin:10,currentLevel:10,nextLevel:null};
+  coyotes=[];runner={x:1,y:0};draw();move(-1,0);
+ });
+ await expect(page.locator('#subtitle')).toHaveText('Mistveil Lagoon');
+ expect(await page.evaluate(()=>equipment?.type)).toBe('bike');
+ await expect(page.locator('#field .runner')).toContainText('🚴');
+ await expect(page.locator('#shout')).toContainText('BIKE BELL');
+ expect(await page.evaluate(()=>equipment?.nextLevel)).toBe(14);
+ await page.evaluate(()=>loadLevel(15));
+ expect(await page.evaluate(()=>equipment)).toBeNull();
 });
 
 test('Secret door plays its special sound and coyote collision plays munch', async ({page}) => {
@@ -506,8 +539,9 @@ test('The haunted atmosphere pauses in the background and stops on victory',asyn
  await expect.poll(()=>page.evaluate(()=>Boolean(secretAmbience))).toBe(true);
  await page.evaluate(()=>{runner={x:1,y:0};draw();});
  await page.getByRole('button',{name:'Move left'}).click();
- await expect(page.locator('#resultTitle')).toContainText('HIDDEN HEART');
- expect(await page.evaluate(()=>secretAmbience)).toBeNull();
+ await expect(page.locator('#subtitle')).toHaveText('Mistveil Lagoon');
+ // Mistveil is another secret world, so the spooky ambient audio continues.
+ await expect.poll(()=>page.evaluate(()=>Boolean(secretAmbience))).toBe(true);
 });
 
 test('Human shout audio is locally hosted and SHOUT triggers the recorded human voice',async({page})=>{
@@ -635,9 +669,10 @@ test('Original Hollow Mountain, secret trail and old save files still work',asyn
  await expect(page.locator('#field .chest')).toHaveCount(1);
  await page.evaluate(()=>{runner={x:1,y:0};draw();});
  await page.getByRole('button',{name:'Move left'}).click();
- await expect(page.locator('#resultTitle')).toContainText('HIDDEN HEART');
- await expect(page.locator('#secretNext')).toBeVisible();
- await expect(page.evaluate(()=>localStorage.getItem(SUMMIT_TRAIL_KEY))).resolves.toBe('true');
+ await expect(page.locator('#subtitle')).toHaveText('Mistveil Lagoon');
+ await expect(page.locator('#secretNext')).toHaveCount(0);
+ await expect(page.evaluate(()=>localStorage.getItem(SECRET_CLEARED_KEY))).resolves.toBe('true');
+ await expect(page.evaluate(()=>JSON.parse(localStorage.getItem(BONUS_KEY)).unlocked)).resolves.toEqual([14,15]);
 });
 
 test('Coyote catch plays an actual bundled human munch sound rather than synthesis',async({page})=>{

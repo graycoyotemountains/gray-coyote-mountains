@@ -97,7 +97,7 @@ Challenge runs have **no treasure chests or secret-door shortcuts** and **never 
   - 🔔 **Coyote Bell:** frighten coyotes and recharge SHOUT
   - 🌰 **Golden Acorn:** collectible treasure
 - **Secret portals** on Mountain 5 (The Hollow Mountain 💎), Mountain 7 (The Whispering Woods 🦉), and Mountain 9 (The Phantom Crater 👻). Each reveals itself when you approach. Discovered levels stay available on the map.
-- **Hollow Mountain's secret trail to Skyfire Summit** remains available after clearing Hollow. It skips Mountain 6–9 without marking them complete.
+- **Hollow Mountain's trail is mandatory:** reach its flag to travel automatically to 🦆 Mistveil Lagoon, one of the five new bonus expeditions. There is no optional Skyfire Summit shortcut anymore. Echo Fern Forest also unlocks for later exploration. Mountain 10 is reached through normal progression, except that anyone who already completed Skyfire through the previous shortcut retains replay access.
 
 ## Coyote Reset 🐺
 
@@ -150,6 +150,8 @@ secret levels:
 - **The Hollow Mountain:** 🦆 Mistveil Lagoon and 🌿 Echo Fern Forest.
 - **The Whispering Woods:** 🧊 Crystal Icefall and 🦇 Moonshadow Caverns.
 - **The Phantom Crater:** 🌠 Starfall Observatory.
+
+**Winning The Hollow Mountain automatically starts Mistveil Lagoon.** This is no longer an optional shortcut to Skyfire Summit. Echo Fern Forest also unlocks in the map; other secret doors still offer destination choices.
 
 Each new mountain is a complete 18 × 14 level with its own terrain, flag,
 coyotes, three treasure chests (including a collectible fact), and a

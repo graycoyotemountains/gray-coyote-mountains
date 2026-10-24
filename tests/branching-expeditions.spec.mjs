@@ -9,7 +9,10 @@ const winSecret=async(page,i)=>{
   if(levelIndex!==i)throw Error('Secret not reachable: '+i);
   coyotes=[];runner={x:1,y:0};draw();
   move(-1,0);
-  return {mode,levelIndex,unlocked:[...bonusUnlocked].sort((a,b)=>a-b)};
+  return {
+   won:i===10?secretCleared:mode==='won',
+   mode,levelIndex,unlocked:[...bonusUnlocked].sort((a,b)=>a-b)
+  };
  },i);
 };
 const useDoor=async(page)=>{
@@ -44,7 +47,9 @@ test('Winning Hollow Mountain unlocks two new levels, persisted after reload',as
  await page.goto('/');
  await page.locator('#playBtn').click();
  const state=await winSecret(page,10);
- expect(state.mode).toBe('won');
+ expect(state.won).toBe(true);
+ expect(state.levelIndex).toBe(14); // Immediate mandatory Hollow exit
+ expect(state.mode).toBe('playing');
  expect(state.unlocked).toEqual([14,15]);
  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem(BONUS_KEY)).unlocked)).toEqual([14,15]);
  await page.reload();
@@ -61,7 +66,7 @@ test('Winning all three secret worlds reveals exactly five new adventures',async
  await page.addInitScript(secretSaves);
  await page.goto('/');
  await page.locator('#playBtn').click();
- for(const i of [10,11,12])expect((await winSecret(page,i)).mode).toBe('won');
+ for(const i of [10,11,12])expect((await winSecret(page,i)).won).toBe(true);
  expect([...await page.evaluate(()=>[...bonusUnlocked].sort((a,b)=>a-b))]).toEqual([14,15,16,17,18]);
  await page.reload();
  await page.locator('#homeScreen button').filter({hasText:'Mountain Map'}).click();
