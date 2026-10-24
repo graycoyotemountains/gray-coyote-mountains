@@ -225,7 +225,7 @@ LEVELS.push(...BONUS_CONFIGS);
 
  function bonusUnlockedAt(i){return bonusUnlocked.has(i);}
  function markBonusUnlocked(i){
-  if(i<BONUS_START||i>=BONUS_START+5)return;
+  if(i<BONUS_START||i>=BONUS_START+BONUS_CONFIGS.length)return;
   bonusUnlocked.add(i);extraUnlocked[i-SECRET_LEVEL-1]=true;
  }
  function markSecretVictory(i){
@@ -361,8 +361,15 @@ LEVELS.push(...BONUS_CONFIGS);
  }
  activeGoal=function(){return !challengeMode&&levelIndex===VILLAGE_INDEX?villageFlag:baseGoal();};
  createChestsAndPortals=function(){
+  normalBonusDoor=null;
   baseChests();
   if(challengeMode)return;
+  // The original secret portals on Mountains 5, 7 and 9 are unchanged.
+  // Five OTHER normal mountains have a separate discoverable extra door.
+  if(Object.hasOwn(BONUS_BY_MOUNTAIN,levelIndex)){
+   normalBonusDoor=findSpot([START,GOAL,extraDoor,SECRET_DOOR,...SPAWNS]);
+   if(normalBonusDoor&&!connected(START,normalBonusDoor))normalBonusDoor=null;
+  }
   if(levelIndex>=SECRET_LEVEL&&levelIndex<VILLAGE_INDEX){
    const p=findSpot([]);
    if(p)chests.set(key(p.x,p.y),'fact');
@@ -454,6 +461,7 @@ LEVELS.push(...BONUS_CONFIGS);
    if(i===VILLAGE_INDEX)el('gameHint').textContent='🏘️ Villagers relocate the flag every five steps. Avoid their ambushes and the coyotes!';
    else if(i>=BONUS_START)el('gameHint').textContent='🌟 Bonus expedition! Reach the flag to win. Find the branching door to choose another hidden route.';
    else if(i>=MAIN_MOUNTAINS)el('gameHint').textContent='✨ Find the special tool and hidden door. Win this secret level to unlock new bonus mountains, then choose your path at the door!';
+   else if(Object.hasOwn(BONUS_BY_MOUNTAIN,i))el('gameHint').textContent='🌀 A hidden doorway to '+LEVELS[BONUS_BY_MOUNTAIN[i]].name+' is somewhere on this mountain. Get close to discover it!';
   }
   draw();
  };
@@ -502,6 +510,7 @@ LEVELS.push(...BONUS_CONFIGS);
   }
   if(!challengeMode){
    if(secretChainDoor&&distance(runner,secretChainDoor)<=3)setAt(secretChainDoor,levelIndex>=BONUS_START?'🌀':'🚪','secret-chain');
+   if(normalBonusDoor&&distance(runner,normalBonusDoor)<=3)setAt(normalBonusDoor,'🌀','secret-chain');
    if(secretItem)setAt(secretItem,secretItem.type==='bike'?'🚲':secretItem.type==='glider'?'🪂':'📻','special-item');
    if(ranger)setAt(ranger,'👮','ranger');
    for(const k of villageGuards){const a=k.split(',').map(Number);setAt({x:a[0],y:a[1]},'🧑‍🌾','village-guard');}
@@ -544,6 +553,15 @@ LEVELS.push(...BONUS_CONFIGS);
    }
    if(!challengeMode&&secretChainDoor&&same(target,secretChainDoor)){
     openBranchChoices();
+    break;
+   }
+   if(!challengeMode&&normalBonusDoor&&same(target,normalBonusDoor)){
+    const bonus=BONUS_BY_MOUNTAIN[levelIndex];
+    markBonusUnlocked(bonus);
+    saveProgress();
+    playSecret(true);
+    loadLevel(bonus);
+    if(levelIndex===bonus)say('🌀 NEW SECRET EXPEDITION! '+LEVELS[bonus].name+' unlocked from Mountain '+(BONUS_PARENT[bonus]+1)+'!');
     break;
    }
    const previous={...runner},beforeLives=lives,beforeLevel=levelIndex;
