@@ -52,6 +52,9 @@ LEVELS.push({
 /* Gray village pavement and single-square houses; original obstacle sets
    still block coyotes and unequipped players. */
 .game-frame.village-zone #field{background:#747779;border-color:#aaa8a2}
+/* Secret worlds use more specific :not selectors; keep pavement gray in the village. */
+.game-frame.village-zone.secret-zone .tile:not(.tree):not(.rock):not(.runner):not(.coyote):not(.exit){background:#989d9f}
+.game-frame.village-zone.secret-zone .tile:not(.tree):not(.rock):not(.runner):not(.coyote):not(.exit):nth-child(4n){background:#a7abae}
 .game-frame.village-zone .tile{background:#989d9f}
 .game-frame.village-zone .tile:nth-child(4n){background:#a7abae}
 .game-frame.village-zone .tile.house{background:#bd9a80;box-shadow:inset 0 0 0 2px #e6c4a0;font-size:clamp(12px,2.5vw,25px)}
