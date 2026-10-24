@@ -10,7 +10,7 @@ A browser adventure with **10 mountain levels, 3 secret worlds, treasure chests,
   rock obstacles; coyotes still cannot cross those squares.
 - The bonus village uses gray pavement and single-square 🏠 houses, in place
   of tree and rock obstacle artwork.
-- Search-facing page metadata and a published [sitemap](sitemap.xml) make the
+- Search-facing page metadata, a published [sitemap](sitemap.xml), and an IndexNow notification on each deployment make the
   game easier for search engines to discover. To request Google indexing,
   verify the game URL-prefix property in Google Search Console and submit
   `https://graycoyotemountains.github.io/gray-coyote-mountains/sitemap.xml`.
