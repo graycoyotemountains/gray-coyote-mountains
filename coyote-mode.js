@@ -9,28 +9,70 @@
   {x:14,y:3,type:'visitor',icon:'🚶‍♀️',name:'park visitor'}
  ];
  const CUB_START=[{x:1,y:13},{x:2,y:12}];
+ const UNLOCK_KEY='gray-coyote-mountains-coyote-unlocked-v1';
+ const CLEARED_KEY='gray-coyote-mountains-coyote-cleared-v1';
+ // All locations are playful, Shoreline/Baylands-inspired landscapes.
+ // A wide obstacle-free border route remains available in each map.
+ const MOUNTAINS=[
+  {name:'Baylands Trail',icon:'🌾',habitat:'baylands',detail:'Learn to lead your cubs past the Baylands',
+   start:START,den:DEN,cubs:CUB_START,people:PEOPLE,duration:150000,seed:912384,obstacles:.23,terrain:['tree','rock']},
+  {name:'Salt Marsh Lookout',icon:'🦆',habitat:'marsh',detail:'Winding marsh channels and taller reeds',
+   start:{x:16,y:12},den:{x:1,y:1},cubs:[{x:16,y:13},{x:15,y:12}],
+   people:[{x:6,y:5,type:'ranger',icon:'🧑‍✈️',name:'ranger'},{x:10,y:7,type:'visitor',icon:'🚶',name:'visitor'},{x:14,y:5,type:'visitor',icon:'🚶‍♀️',name:'visitor'}],
+   duration:145000,seed:728204,obstacles:.27,terrain:['brush','water','rock']},
+  {name:'Stevens Creek Pass',icon:'💧',habitat:'creek',detail:'Rocks and creekside trees make tight turns',
+   start:START,den:DEN,cubs:CUB_START,
+   people:[{x:4,y:4,type:'visitor',icon:'🚶',name:'visitor'},{x:7,y:8,type:'ranger',icon:'🧑‍✈️',name:'ranger'},{x:13,y:6,type:'visitor',icon:'🚶‍♀️',name:'visitor'},{x:10,y:3,type:'visitor',icon:'🚶',name:'visitor'}],
+   duration:140000,seed:822111,obstacles:.30,terrain:['tree','rock','water']},
+  {name:'Coyote Grasslands',icon:'🌿',habitat:'grassland',detail:'Wide grassland paths with more visitors',
+   start:{x:16,y:12},den:{x:1,y:1},cubs:[{x:16,y:13},{x:15,y:12}],
+   people:[{x:5,y:4,type:'visitor',icon:'🚶',name:'visitor'},{x:8,y:7,type:'ranger',icon:'🧑‍✈️',name:'ranger'},{x:12,y:8,type:'visitor',icon:'🚶‍♀️',name:'visitor'},{x:14,y:3,type:'visitor',icon:'🚶',name:'visitor'}],
+   duration:135000,seed:994310,obstacles:.32,terrain:['brush','rock','tree']},
+  {name:'Sycamore Ridge',icon:'🌳',habitat:'woods',detail:'Dense tree cover and winding shortcuts',
+   start:START,den:DEN,cubs:CUB_START,
+   people:[{x:5,y:8,type:'visitor',icon:'🚶',name:'visitor'},{x:6,y:4,type:'ranger',icon:'🧑‍✈️',name:'ranger'},{x:11,y:6,type:'visitor',icon:'🚶‍♀️',name:'visitor'},{x:14,y:3,type:'visitor',icon:'🚶',name:'visitor'},{x:10,y:9,type:'visitor',icon:'🚶‍♀️',name:'visitor'}],
+   duration:130000,seed:323331,obstacles:.35,terrain:['tree','tree','rock']},
+  {name:'Shoreline Summit',icon:'⛰️',habitat:'summit',detail:'The final steep climb to the family den',
+   start:{x:16,y:12},den:{x:1,y:1},cubs:[{x:16,y:13},{x:15,y:12}],
+   people:[{x:4,y:4,type:'ranger',icon:'🧑‍✈️',name:'ranger'},{x:7,y:8,type:'visitor',icon:'🚶',name:'visitor'},{x:10,y:6,type:'ranger',icon:'🧑‍✈️',name:'ranger'},{x:13,y:9,type:'visitor',icon:'🚶‍♀️',name:'visitor'},{x:14,y:3,type:'visitor',icon:'🚶',name:'visitor'}],
+   duration:125000,seed:711800,obstacles:.37,terrain:['rock','tree','brush']}
+ ];
+ const currentMountain=()=>MOUNTAINS[activeMountain];
  const elem=id=>document.getElementById(id);
  const key=(x,y)=>x+','+y;
  const manhattan=(a,b)=>Math.abs(a.x-b.x)+Math.abs(a.y-b.y);
  const inside=(x,y)=>x>=0&&y>=0&&x<WIDTH&&y<HEIGHT;
  const controls={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],a:[-1,0],s:[0,1],d:[1,0]};
- let state=null,interval=null,remainingMs=DURATION,deadline=0;
- let wins=0;
- try{wins=Math.max(0,Number(localStorage.getItem(WIN_KEY))||0);}catch(error){}
+ let state=null,interval=null,remainingMs=DURATION,deadline=0,activeMountain=0;
+ let wins=0,unlockedMountain=1,clearedMountains=new Set();
+ try{
+  wins=Math.max(0,Number(localStorage.getItem(WIN_KEY))||0);
+  const savedUnlocked=Number(localStorage.getItem(UNLOCK_KEY));
+  if(Number.isInteger(savedUnlocked))unlockedMountain=Math.max(1,Math.min(MOUNTAINS.length,savedUnlocked));
+  const savedCleared=JSON.parse(localStorage.getItem(CLEARED_KEY)||'[]');
+  if(Array.isArray(savedCleared))clearedMountains=new Set(savedCleared.filter(i=>Number.isInteger(i)&&i>=0&&i<MOUNTAINS.length));
+  if(clearedMountains.size)unlockedMountain=Math.max(unlockedMountain,Math.min(MOUNTAINS.length,Math.max(...clearedMountains)+2));
+ }catch(error){/* Storage is optional; the campaign works without it. */}
  function createMarkup(){
   const btn=document.createElement('button');
   btn.id='coyoteModeBtn';btn.className='btn primary';
   btn.type='button';btn.textContent='🐺 Play as the Coyote';
-  btn.addEventListener('click',start);
+  btn.addEventListener('click',openPicker);
   const home=elem('homeScreen').querySelector('.hero-buttons');
   home.append(btn);
+  const picker=document.createElement('section');
+  picker.id='coyoteMapScreen';picker.className='screen';
+  picker.setAttribute('aria-label','Coyote mountain selection');
+  picker.innerHTML='<div class="shell"><div class="topbar"><button class="btn secondary small" type="button" id="coyoteMapHome">← Home</button><div class="brand">🐺 COYOTE FAMILY TRAIL</div></div><div class="coyote-map-intro"><div class="eyebrow">One den at a time</div><h2>Six mountains. Two cubs. One family.</h2><p>Reach each den with both cubs calm to unlock the next mountain. Every habitat brings new paths and park visitors.</p><span id="coyoteMapProgress" class="progress"></span></div><div id="coyoteMountainGrid" class="coyote-mountain-grid" aria-label="Six coyote mode mountains"></div><p class="coyote-map-fact">🌿 Coyotes live in family groups, and real coyotes generally avoid people. Keep your distance from wildlife when visiting the Baylands.</p></div>';
+  document.querySelector('main').appendChild(picker);
+  elem('coyoteMapHome').addEventListener('click',leave);
   const section=document.createElement('section');
   section.id='coyoteScreen';section.className='screen';
   section.setAttribute('aria-label','Play as the Coyote mode');
   section.innerHTML=[
    '<div class="shell">',
-   '<div class="topbar"><button class="btn secondary small" id="coyoteHome" type="button">← Home</button><div class="brand">🐺 COYOTE MODE</div></div>',
-   '<div class="coyote-title"><div class="eyebrow">A new point of view</div><h2>Play as the Coyote</h2>',
+   '<div class="topbar"><button class="btn secondary small" id="coyoteHome" type="button">← Mountain Map</button><div class="brand">🐺 COYOTE MODE</div></div>',
+   '<div class="coyote-title"><div class="eyebrow" id="coyoteMountainNumber">Mountain 1 / 6</div><h2 id="coyoteMountainName">Baylands Trail</h2>',
    '<p>Guide your two curious cubs to safety by reaching your den before time runs out. Keep the cubs calm! Rangers or park visitors can frighten them if they get too close. Your YIP sends people away, but YIP too close to a cub and it will panic.</p></div>',
    '<div class="coyote-stats" aria-live="polite"><span id="coyoteLife">🐾 Cubs calm</span><span id="coyotePeople">🚶 0 visitors retreated</span><span id="coyoteTime">⏱️ 2:30</span><span id="coyoteMoves">👟 0</span><span id="coyoteWins">🏆 0 wins</span></div>',
    '<div class="coyote-layout"><div class="coyote-board-panel">',
@@ -46,6 +88,7 @@
    '<button class="btn" type="button" data-dx="0" data-dy="1" aria-label="Coyote move down">⬇️</button>',
    '</div>',
    '<div id="coyoteResult" role="status" aria-live="polite" hidden><strong id="coyoteResultTitle"></strong><p id="coyoteResultBody"></p></div>',
+   '<button class="btn success" type="button" id="coyoteNext" hidden>Next Mountain →</button>',
    '<button class="btn secondary" type="button" id="coyoteRetry">↻ Try again</button>',
    '<p class="coyote-education">🌿 Wildlife fact: California coyotes often live in family groups. Real coyotes generally avoid people. Give wildlife space and never feed or approach them. This adventure is make-believe.</p>',
    '</div></div></div>'
@@ -66,6 +109,14 @@
    '#coyoteScreen .coyote-tile:nth-child(5n){background:#89a86d}',
    '#coyoteScreen .coyote-tile.coyote-path{background:#baa77f}',
    '#coyoteScreen .coyote-tile.coyote-tree{background:#4d7655}',
+   '#coyoteScreen .coyote-tile.coyote-brush{background:#9ab97e}',
+   '#coyoteScreen .coyote-tile.coyote-water{background:#6fa7ad}',
+   '#coyoteScreen[data-habitat="marsh"] .coyote-tile{background:#85a58a}',
+   '#coyoteScreen[data-habitat="marsh"] .coyote-tile:nth-child(5n){background:#78a399}',
+   '#coyoteScreen[data-habitat="creek"] .coyote-tile{background:#759986}',
+   '#coyoteScreen[data-habitat="grassland"] .coyote-tile{background:#b2b56b}',
+   '#coyoteScreen[data-habitat="woods"] .coyote-tile{background:#668b60}',
+   '#coyoteScreen[data-habitat="summit"] .coyote-tile{background:#969b87}',
    '#coyoteScreen .coyote-tile.coyote-rock{background:#88847b}',
    '#coyoteScreen .coyote-tile.coyote-den{background:#e0c583}',
    '#coyoteScreen .coyote-tile.coyote-den-ready{background:#f0d46d;box-shadow:inset 0 0 0 2px #fff1a3}',
@@ -82,12 +133,33 @@
    '#coyoteScreen #coyoteResult strong{color:#fbe4a2}',
    '#coyoteScreen #coyoteResult p{margin:4px 0 0;font-size:.86rem}',
    '#coyoteScreen .coyote-education{color:#bed3c0;font-size:.78rem;line-height:1.4;margin:0}',
+   '#coyoteMapScreen .coyote-map-intro{text-align:center;margin:20px auto 26px;max-width:750px}',
+   '#coyoteMapScreen .coyote-map-intro h2{font-size:clamp(1.8rem,5vw,2.9rem);margin:8px 0;color:#f4d69c}',
+   '#coyoteMapScreen .coyote-map-intro p{color:#deebce}',
+   '#coyoteMapScreen #coyoteMapProgress{display:inline-block;margin-top:9px}',
+   '#coyoteMapScreen .coyote-mountain-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px;max-width:930px;margin:0 auto}',
+   '#coyoteMapScreen .coyote-mountain-card{font:inherit;position:relative;min-width:0;display:flex;flex-direction:column;text-align:left;border:2px solid #d6be86;border-radius:18px;padding:0;background:#f7edcf;color:#26453a;box-shadow:0 7px 0 #152c266e;overflow:hidden;transition:transform .15s}',
+   '#coyoteMapScreen .coyote-mountain-card:not(:disabled):hover{transform:translateY(-3px)}',
+   '#coyoteMapScreen .coyote-mountain-card:disabled{opacity:.75;filter:saturate(.62)}',
+   '#coyoteMapScreen .coyote-card-art{display:flex;align-items:center;justify-content:space-evenly;min-height:120px;padding:12px;font-size:clamp(2.2rem,6vw,3.9rem);background:linear-gradient(145deg,#acd2ce,#80a99b 52%,#4f7a5d)}',
+   '#coyoteMapScreen .coyote-mountain-card[data-habitat="marsh"] .coyote-card-art{background:linear-gradient(145deg,#b2d2d7,#77b1a6,#69896f)}',
+   '#coyoteMapScreen .coyote-mountain-card[data-habitat="creek"] .coyote-card-art{background:linear-gradient(145deg,#a6cadd,#85baaa,#4f807f)}',
+   '#coyoteMapScreen .coyote-mountain-card[data-habitat="grassland"] .coyote-card-art{background:linear-gradient(145deg,#d7d5a5,#baa96f,#689866)}',
+   '#coyoteMapScreen .coyote-mountain-card[data-habitat="woods"] .coyote-card-art{background:linear-gradient(145deg,#b2ce9f,#698f71,#345745)}',
+   '#coyoteMapScreen .coyote-mountain-card[data-habitat="summit"] .coyote-card-art{background:linear-gradient(145deg,#d2c9bf,#9c9e9b,#536c74)}',
+   '#coyoteMapScreen .coyote-card-text{padding:12px 16px 15px;display:flex;flex-direction:column;gap:4px}',
+   '#coyoteMapScreen .coyote-card-text strong{font-size:1.12rem}',
+   '#coyoteMapScreen .coyote-card-text small{color:#55675b;font-size:.81rem}',
+   '#coyoteMapScreen .coyote-card-status{font-weight:900;color:#245c44}',
+   '#coyoteMapScreen .coyote-map-fact{text-align:center;color:#c8d9c5;margin:23px auto;max-width:740px;font-size:.86rem}',
+   '@media(max-width:600px){#coyoteMapScreen .coyote-mountain-grid{grid-template-columns:minmax(0,1fr);gap:13px}#coyoteMapScreen .coyote-card-art{min-height:84px;font-size:2.5rem}#coyoteMapScreen .coyote-card-text{padding:10px 14px 13px}}',
    '@media(max-width:850px){#coyoteScreen .coyote-layout{grid-template-columns:minmax(0,1fr)}#coyoteScreen .coyote-side{max-width:100%}#coyoteScreen .coyote-controls .btn{min-width:54px}}',
    '@media(max-width:500px){#coyoteScreen .coyote-tile{font-size:clamp(10px,3vw,15px)}#coyoteScreen .coyote-board-viewport{padding:3px}#coyoteScreen #coyoteField{gap:1px}#coyoteScreen .coyote-title h2{font-size:1.85rem}}'
   ].join('');
   document.head.append(style);
-  elem('coyoteHome').addEventListener('click',leave);
-  elem('coyoteRetry').addEventListener('click',start);
+  elem('coyoteHome').addEventListener('click',openPicker);
+  elem('coyoteRetry').addEventListener('click',()=>start(activeMountain));
+  elem('coyoteNext').addEventListener('click',()=>start(activeMountain+1));
   elem('coyoteYip').addEventListener('click',yip);
   section.querySelectorAll('[data-dx]').forEach(button=>button.addEventListener('click',()=>move(Number(button.dataset.dx),Number(button.dataset.dy))));
  }
