@@ -391,7 +391,7 @@ LEVELS.push(...BONUS_CONFIGS);
   if(!Number.isInteger(i)||i<0||i>=LEVELS.length)return;
   // Do not consume carried equipment on a forbidden map selection.
   if(!challengeMode&&i>=MAIN_MOUNTAINS&&i!==VILLAGE_INDEX&&!(i===SECRET_LEVEL?secretUnlocked:extraUnlocked[i-SECRET_LEVEL-1]))return;
-  if(!challengeMode&&i<MAIN_MOUNTAINS&&i>=unlocked)return;
+  if(!challengeMode&&i<MAIN_MOUNTAINS&&i>=unlocked&&!(i===MAIN_MOUNTAINS-1&&summitShortcutCleared))return;
   if(!challengeMode){equipment=adjustPowerForLevel(equipment,i);adjustRangerForLevel(i);}
   baseLoad(i);
   if(screen!=='game'||levelIndex!==i)return;
