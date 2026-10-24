@@ -34,9 +34,24 @@ jobs:
       - uses: actions/configure-pages@v5
         with:
           enablement: true
-      - run: mkdir -p dist && cp index.html facts.js upgrades.js stats-config.js stats.js sitemap.xml dist/ && cp -R assets dist/assets
+      - run: mkdir -p dist && cp index.html facts.js upgrades.js stats-config.js stats.js sitemap.xml 17c4c3d616e7b88e64408357575008c5.txt dist/ && cp -R assets dist/assets
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
       - id: deployment
         uses: actions/deploy-pages@v4
+      # IndexNow works with a key hosted under the same project directory.
+      # A 202 means accepted pending key verification; this is advisory,
+      # never a reason to break an otherwise healthy GitHub Pages release.
+      - name: Notify Bing and participating IndexNow engines
+        continue-on-error: true
+        run: |
+          status=$(curl --retry 2 --silent --show-error \
+            --output /tmp/indexnow-response --write-out "%{http_code}" \
+            --get \
+            --data-urlencode "url=https://graycoyotemountains.github.io/gray-coyote-mountains/" \
+            --data-urlencode "key=17c4c3d616e7b88e64408357575008c5" \
+            --data-urlencode "keyLocation=https://graycoyotemountains.github.io/gray-coyote-mountains/17c4c3d616e7b88e64408357575008c5.txt" \
+            "https://api.indexnow.org/indexnow")
+          echo "IndexNow response: HTTP ${status}"
+          test "$status" = 200 || test "$status" = 202
