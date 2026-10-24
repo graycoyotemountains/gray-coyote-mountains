@@ -246,7 +246,7 @@ p{line-height:1.5}
   <div class="shell">
     <div class="topbar"><button class="btn secondary small" onclick="showScreen('home')">← Home</button><div class="brand">🗺️ MOUNTAIN TRAIL MAP</div><button type="button" class="btn secondary small sound-toggle" onclick="toggleSound()" aria-label="Mute game sounds" aria-pressed="true">🔊 Sound on</button></div>
     <div class="map-intro">
-      <div><div class="eyebrow">Choose your next climb</div><h2>Ten peaks. Three secrets.</h2><p>Reach each 🏁 flag, and find hidden 🚪 entrances on Mountains 5, 7 and 9.</p></div>
+      <div><div class="eyebrow">Choose your next climb</div><h2>Ten peaks. Three secrets. Five expeditions.</h2><p>Find hidden 🚪 entrances on Mountains 5, 7 and 9. Winning Hollow Mountain leads directly to Mistveil Lagoon!</p></div>
       <div><div id="progress" class="progress" aria-live="polite">🔓 1 of 10 unlocked</div><button class="btn secondary small map-jump" type="button" onclick="jumpToLatestMountain()">↓ Latest unlocked</button></div>
     </div>
     <div class="map-scene">
@@ -258,10 +258,6 @@ p{line-height:1.5}
         </div>
       </div>
       <p class="map-swipe-hint">👆 Tap a mountain to play · Scroll down the trail to discover more peaks</p>
-      <div id="secretTrail" class="secret-trail" hidden>
-        <div><strong>💎 The Hollow Mountain ⟶ 🔥 Skyfire Summit</strong><small>Secret trail unlocked! Jump to Mountain 10 without unlocking Mountains 6–9.</small></div>
-        <button class="btn primary small" type="button" onclick="takeSecretTrail()">🔥 Take Secret Trail</button>
-      </div>
     </div>
     <div class="map-foot"><div class="legend">🏁 Completed &nbsp; • &nbsp; 🔓 Available &nbsp; • &nbsp; 🔒 Locked</div><button id="resetCoyotesMap" class="btn secondary small" type="button" onclick="resetCoyotePack()" aria-label="Reset Adventure coyotes to one without losing progress">🐺 Reset Coyotes</button><button class="btn primary small" onclick="continueAdventure()">▶ Continue Adventure</button></div>
     <div class="footer">Your level progress is saved on this device, in this browser.</div>
@@ -304,7 +300,6 @@ p{line-height:1.5}
           <div id="result" role="status"><strong id="resultTitle"></strong><p id="resultBody"></p></div>
           <div class="game-actions">
             <button id="next" class="btn success" onclick="advance()" style="display:none">NEXT MOUNTAIN →</button>
-            <button id="secretNext" class="btn success" onclick="takeSecretTrail()" style="display:none">🔥 Secret Trail → Skyfire Summit</button>
             <button id="challengeChoose" class="btn primary small" onclick="showScreen('challenge')" style="display:none">🔥 Choose Another Challenge</button>
             <button id="retry" class="btn secondary small" onclick="loadLevel(levelIndex)">↻ Retry Mountain</button>
             <button id="resetCoyotesGame" class="btn secondary small" type="button" onclick="resetCoyotePack()" aria-label="Reset Adventure coyotes to one without losing progress">🐺 Reset Coyotes</button>
@@ -372,8 +367,9 @@ try{
  secretUnlocked=localStorage.getItem(SECRET_UNLOCK_KEY)==='true';
  secretCleared=localStorage.getItem(SECRET_CLEARED_KEY)==='true';
  if(secretCleared)secretUnlocked=true;
- // Previously completed secret levels already qualify for the shortcut.
- summitTrailUnlocked=secretCleared||localStorage.getItem(SUMMIT_TRAIL_KEY)==='true';
+ // Legacy shortcut flags are read for save compatibility only. Hollow's
+ // new mandatory exit goes to Mistveil Lagoon, never to Skyfire Summit.
+ summitTrailUnlocked=localStorage.getItem(SUMMIT_TRAIL_KEY)==='true';
  summitShortcutCleared=localStorage.getItem(SUMMIT_CLEARED_KEY)==='true';
  soundEnabled=localStorage.getItem(SOUND_KEY)!=='false';
  const storedReset=Number(localStorage.getItem(COYOTE_RESET_KEY));
@@ -943,14 +939,14 @@ function renderMap(){
  for(let i=0;i<LEVELS.length;i++){
   if(i>=MAIN_MOUNTAINS&&!(i===SECRET_LEVEL?secretUnlocked:extraUnlocked[i-SECRET_LEVEL-1]))continue;
   const cfg=LEVELS[i],secret=i>=MAIN_MOUNTAINS;
-  const canPlay=secret?(i===SECRET_LEVEL?secretUnlocked:extraUnlocked[i-SECRET_LEVEL-1]):i<unlocked||(i===MAIN_MOUNTAINS-1&&summitTrailUnlocked);
+  const canPlay=secret?(i===SECRET_LEVEL?secretUnlocked:extraUnlocked[i-SECRET_LEVEL-1]):i<unlocked;
   const done=secret?(i===SECRET_LEVEL?secretCleared:extraCleared[i-SECRET_LEVEL-1]):i<cleared||(i===MAIN_MOUNTAINS-1&&summitShortcutCleared);
   const b=document.createElement('button');
   b.type='button';b.className='mountain'+(!canPlay?' locked':'')+(done?' done':'');
   b.disabled=!canPlay;
   b.setAttribute('aria-label',`${secret?'Secret level':`Mountain ${i+1}`}, ${cfg.name}, ${done?'completed':canPlay?'unlocked':'locked'}. ${coyoteCount()} coyotes.`);
   b.style.setProperty('--sky1',cfg.sky1);b.style.setProperty('--sky2',cfg.sky2);
-  const status=done?'🏁 Cleared':secret?'✨ Discovered':i===MAIN_MOUNTAINS-1&&summitTrailUnlocked&&i>=unlocked?'🔥 Secret trail':canPlay?'🔓 Play':'🔒 Locked';
+  const status=done?'🏁 Cleared':secret?'✨ Discovered':canPlay?'🔓 Play':'🔒 Locked';
   const spot=MAP_PEAK_SPOTS[i]||[50,94.7];
   b.classList.add('peak-button',...(secret?['secret-peak']:[]));
   b.style.setProperty('--peak-x',spot[0]+'%');b.style.setProperty('--peak-y',spot[1]+'%');
@@ -959,8 +955,7 @@ function renderMap(){
   if(canPlay)b.addEventListener('click',()=>loadLevel(i));
   el('mountainGrid').appendChild(b);
  }
- el('progress').textContent=`⛰️ ${cleared}/${MAIN_MOUNTAINS} cleared · 🧰 ${totalTreasures()} treasures · 🐺 ${coyoteCount()} coyotes · 💎 ${Number(secretUnlocked)+extraUnlocked.filter(Boolean).length}/3 secrets found${summitTrailUnlocked?' · 🔥 Skyfire trail open':''}`;
- el('secretTrail').hidden=!summitTrailUnlocked;
+ el('progress').textContent=`⛰️ ${cleared}/${MAIN_MOUNTAINS} cleared · 🧰 ${totalTreasures()} treasures · 🐺 ${coyoteCount()} coyotes · 💎 ${Number(secretUnlocked)+extraUnlocked.slice(0,2).filter(Boolean).length}/3 secrets found`;
  el('playBtn').textContent=cleared===MAIN_MOUNTAINS&&secretCleared?'▶ Replay Adventure':unlocked>1?'▶ Continue Adventure':'▶ Start Adventure';
 }
 let lastMapScrollY=0;
@@ -1003,7 +998,6 @@ function renderChallengePicker(){
  }
  el('challengeProgress').textContent=`🏆 ${challengeWins.size}/${LEVELS.length} challenges beaten`;
 }
-function takeSecretTrail(){if(summitTrailUnlocked)loadLevel(MAIN_MOUNTAINS-1);}
 function totalTreasures(){return Object.values(inventory).reduce((a,b)=>a+b,0);}
 function randomReachableSpot(){
  const options=[];
@@ -1078,7 +1072,7 @@ function toggleZoom(){
  else centerRunnerInZoom();
 }
 function loadLevel(i){
- if(!Number.isInteger(i)||i<0||i>=LEVELS.length||(!challengeMode&&(i>=MAIN_MOUNTAINS?(i===SECRET_LEVEL?!secretUnlocked:!extraUnlocked[i-SECRET_LEVEL-1]):i>=unlocked&&!(i===MAIN_MOUNTAINS-1&&summitTrailUnlocked))))return;
+ if(!Number.isInteger(i)||i<0||i>=LEVELS.length||(!challengeMode&&(i>=MAIN_MOUNTAINS?(i===SECRET_LEVEL?!secretUnlocked:!extraUnlocked[i-SECRET_LEVEL-1]):i>=unlocked)))return;
  pauseTimer();
  stopSecretAmbience();
  levelIndex=i;steps=0;lives=3;cooldown=0;mode='playing';runner={...START};secretHintPlayed=false;villagers.clear();makeTerrain(i);
@@ -1109,13 +1103,12 @@ function draw(){
  el('treasureStat').textContent=challengeMode?'🧑‍🌾 3 guards':levelIndex>=MAIN_MOUNTAINS?'🧰 No chests':`🧰 ${chestsOpened}/3 · 🎒 ${totalTreasures()}`;
  el('next').style.display=!challengeMode&&mode==='won'&&levelIndex<MAIN_MOUNTAINS-1?'inline-block':'none';
  el('next').textContent='NEXT MOUNTAIN →';
- el('secretNext').style.display=!challengeMode&&mode==='won'&&levelIndex===SECRET_LEVEL&&summitTrailUnlocked?'inline-block':'none';
  el('challengeChoose').style.display=challengeMode&&mode!=='playing'?'inline-block':'none';
  const sh=el('shout');sh.disabled=mode!=='playing'||cooldown>0;sh.textContent=cooldown?`📣 ${cooldown} steps`:'📣 SHOUT';
  const result=el('result');result.classList.toggle('visible',mode!=='playing');
  if(mode==='won'){
   el('resultTitle').textContent=challengeMode?'🏆 CHALLENGE CONQUERED!':levelIndex===SECRET_LEVEL?'🏆 THE HIDDEN HEART OF THE MOUNTAINS!':levelIndex>SECRET_LEVEL?'👻 SECRET WORLD CONQUERED!':levelIndex===MAIN_MOUNTAINS-1?(cleared===MAIN_MOUNTAINS?'🏆 ALL TEN PEAKS CONQUERED!':'🔥 SKYFIRE SUMMIT CONQUERED!'):levelIndex===SECRET_DOOR_MOUNTAIN?'🏁 MOUNTAIN 5 CLEARED!':'🏁 MOUNTAIN CLEARED!';
-  el('resultBody').textContent=challengeMode?'You beat 15 coyotes and slipped past the villagers with '+formatTime(timeRemainingMs)+' left! Choose another challenge or retry.':levelIndex===SECRET_LEVEL?'You found the hidden route from Hollow Mountain to Skyfire Summit! Follow the secret trail or choose Skyfire on the map.':levelIndex>SECRET_LEVEL?'You conquered '+LEVELS[levelIndex].name+'! This hidden world remains unlocked.':levelIndex===MAIN_MOUNTAINS-1?(cleared===MAIN_MOUNTAINS?'Ten peaks conquered! You can replay any mountain.':'Skyfire conquered using the secret trail! Mountains in between remain locked until you reach their flags.'):levelIndex===SECRET_DOOR_MOUNTAIN?'Mountain 6 is unlocked! The secret level is separate: return to Mountain 5 to find its hidden door.':'Your victory adds one coyote to EVERY mountain. A new peak awaits!';
+  el('resultBody').textContent=challengeMode?'You beat 15 coyotes and slipped past the villagers with '+formatTime(timeRemainingMs)+' left! Choose another challenge or retry.':levelIndex===SECRET_LEVEL?'You discovered the mandatory secret trail into Mistveil Lagoon!':levelIndex>SECRET_LEVEL?'You conquered '+LEVELS[levelIndex].name+'! This hidden world remains unlocked.':levelIndex===MAIN_MOUNTAINS-1?(cleared===MAIN_MOUNTAINS?'Ten peaks conquered! You can replay any mountain.':'Skyfire conquered using the secret trail! Mountains in between remain locked until you reach their flags.'):levelIndex===SECRET_DOOR_MOUNTAIN?'Mountain 6 is unlocked! The secret level is separate: return to Mountain 5 to find its hidden door.':'Your victory adds one coyote to EVERY mountain. A new peak awaits!';
  }else if(mode==='lost'){
   el('resultTitle').textContent='🐺 THE COYOTE ATE YOUR LUNCH!';
   el('resultBody').textContent='Try again. Use rocks, trees and your shout to stay safe.';
@@ -1199,7 +1192,7 @@ function move(dx,dy,allowObstacleLanding=false){
    challengeWins.add(levelIndex);
    try{localStorage.setItem(CHALLENGE_KEY,JSON.stringify([...challengeWins]));}catch(e){}
   }else if(levelIndex===SECRET_LEVEL){
-   secretCleared=true;summitTrailUnlocked=true;
+   secretCleared=true;
   }else if(levelIndex>SECRET_LEVEL){
    extraCleared[levelIndex-SECRET_LEVEL-1]=true;
   }else if(levelIndex===MAIN_MOUNTAINS-1){
@@ -1213,7 +1206,7 @@ function move(dx,dy,allowObstacleLanding=false){
   if(!challengeMode)coyoteVictories++; // Every win, including replays.
   saveProgress();
   playVictory();celebrate();
-  say(challengeMode?'🏆 CHALLENGE CLEARED! You escaped 15 coyotes and the villagers!':levelIndex===SECRET_LEVEL?'💎 SECRET TRAIL FOUND! Follow the path to Skyfire Summit!':levelIndex>SECRET_LEVEL?'👻 SECRET WORLD CONQUERED!':levelIndex===SECRET_DOOR_MOUNTAIN?'🏁 MOUNTAIN 6 UNLOCKED! The hidden door on Mountain 5 is a separate challenge.':levelIndex===MAIN_MOUNTAINS-1?(cleared===MAIN_MOUNTAINS?'🏆 ALL TEN MOUNTAINS CLEARED!':'🔥 SKYFIRE CONQUERED VIA SECRET TRAIL!'):'🏁 Peak cleared! A coyote joins the pack across every mountain!');
+  say(challengeMode?'🏆 CHALLENGE CLEARED! You escaped 15 coyotes and the villagers!':levelIndex===SECRET_LEVEL?'💎 SECRET TRAIL FOUND! Into Mistveil Lagoon!':levelIndex>SECRET_LEVEL?'👻 SECRET WORLD CONQUERED!':levelIndex===SECRET_DOOR_MOUNTAIN?'🏁 MOUNTAIN 6 UNLOCKED! The hidden door on Mountain 5 is a separate challenge.':levelIndex===MAIN_MOUNTAINS-1?(cleared===MAIN_MOUNTAINS?'🏆 ALL TEN MOUNTAINS CLEARED!':'🔥 SKYFIRE CONQUERED VIA SECRET TRAIL!'):'🏁 Peak cleared! A coyote joins the pack across every mountain!');
  }else if(coyotes.some(c=>same(c,runner)))tagged();
  else if(steps%LEVELS[levelIndex].speed===0)moveCoyotes();
  else if(levelIndex===SECRET_DOOR_MOUNTAIN&&distance(runner,SECRET_DOOR)<=3){
