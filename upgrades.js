@@ -135,7 +135,7 @@ LEVELS.push(...BONUS_CONFIGS);
  document.head.append(trailStyles);
  // The original SVG atlas has 13 silhouettes. Reuse a mountain landscape for the bonus village.
  const originalMountainSVG=mountainSVG;
- mountainSVG=function(i){return originalMountainSVG(i===VILLAGE_INDEX?1:i>=BONUS_START?i-14+4:i);};
+ mountainSVG=function(i){return originalMountainSVG(i===VILLAGE_INDEX?1:i>=BONUS_START?(i-BONUS_START+4)%MAIN_MOUNTAINS:i);};
  const gallery=document.createElement('dialog');
  gallery.id='fieldGuide';
  gallery.setAttribute('aria-label','Collected coyote facts');
