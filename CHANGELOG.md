@@ -4,6 +4,30 @@ All notable changes to Gray Coyote Mountains are recorded here. This is a
 human-readable release log; Git commit history is the authoritative version
 history and enables rollback of individual changes.
 
+## [1.8.1] - 2026-10-24
+
+### Changed
+- Winning The Hollow Mountain now **automatically** travels along the
+  non-optional secret trail to **Mistveil Lagoon** (bonus Expedition 1),
+  immediately starting its playable level.
+- The victory still saves as completed and awards its Adventure coyote
+  growth; Mistveil Lagoon and Echo Fern Forest become unlocked first,
+  including when replaying Hollow Mountain.
+- Removed the optional "Hollow Mountain → Skyfire Summit" shortcut banner,
+  win-screen button, and early Skyfire unlock condition. Skyfire is now
+  reached through the ordinary mountain climb.
+- Old shortcut save flags are read but no longer unlock Skyfire. Anyone who
+  **already won Skyfire** using the previous shortcut can still replay their
+  completed mountain without losing that victory.
+- Other secret doors retain their optional bonus/secret destination choices;
+  Coyote Mode, the paraglider, facts, Challenge and all other paths unchanged.
+- Added tests for mandatory entry, old saved victories, absence of Skyfire
+  skip, and continued play in Mistveil.
+
+### Rollback
+- Stable v1.8.0 commit: `ff9f9222994a6c8fb8327061fa9697bfae067c4f`.
+  Reverting this patch restores the earlier optional shortcut.
+
 ## [1.8.0] - 2026-10-24
 
 ### Added
