@@ -8,22 +8,31 @@ const VILLAGE_INDEX=13;
 const BONUS_START=14;
 const BONUS_KEY='gray-coyote-mountains-branch-expeditions-v1';
 const BONUS_BY_SECRET={10:[14,15],11:[16,17],12:[18]};
-const BONUS_PARENT={14:10,15:10,16:11,17:11,18:12};
+// Five extra paths branch from normal Mountains 2, 4, 6, 8 and 10,
+// complementing the first five secret-victory expeditions.
+const BONUS_BY_MOUNTAIN={1:19,3:20,5:21,7:22,9:23};
+const SECOND_BONUS_START=19;
+const BONUS_PARENT={14:10,15:10,16:11,17:11,18:12,19:1,20:3,21:5,22:7,23:9};
 const BONUS_CONFIGS=[
  {name:'Mistveil Lagoon',trees:23,rocks:15,alert:5,speed:3,sky1:'#8ed0d4',sky2:'#e6e4b3',peak:'#689c96',shade:'#386e72',snow:'#f5efcf',icon:'🦆',desc:'Mist rolls across the hidden lagoon'},
  {name:'Echo Fern Forest',trees:39,rocks:12,alert:6,speed:3,sky1:'#a4cfb8',sky2:'#d0daa5',peak:'#528771',shade:'#2b6451',snow:'#e8e9cc',icon:'🌿',desc:'Secret fern groves echo through the trees'},
  {name:'Crystal Icefall',trees:17,rocks:33,alert:7,speed:2,sky1:'#9ac0e0',sky2:'#d4e3f7',peak:'#7c9ab7',shade:'#486b91',snow:'#fbfcfc',icon:'🧊',desc:'A frozen trail above glittering icefalls'},
  {name:'Moonshadow Caverns',trees:24,rocks:37,alert:7,speed:2,sky1:'#41496c',sky2:'#8f7baf',peak:'#655d89',shade:'#303657',snow:'#c8c9ee',icon:'🦇',desc:'Dark passages and shimmering stone'},
- {name:'Starfall Observatory',trees:24,rocks:28,alert:8,speed:2,sky1:'#394c7c',sky2:'#8d83bb',peak:'#6b719c',shade:'#394672',snow:'#f4ecff',icon:'🌠',desc:'The final hidden peak beneath the stars'}
+ {name:'Starfall Observatory',trees:24,rocks:28,alert:8,speed:2,sky1:'#394c7c',sky2:'#8d83bb',peak:'#6b719c',shade:'#394672',snow:'#f4ecff',icon:'🌠',desc:'The final hidden peak beneath the stars'},
+ {name:'Tidepool Terrace',trees:21,rocks:29,alert:5,speed:3,sky1:'#99d7dc',sky2:'#d9e5ae',peak:'#79ada5',shade:'#447f7e',snow:'#e8f4da',icon:'🦀',desc:'A hidden shoreline among tidepools'},
+ {name:'Redwood Ravine',trees:47,rocks:12,alert:6,speed:3,sky1:'#90c4b0',sky2:'#d0dc9c',peak:'#568870',shade:'#245845',snow:'#dde4b9',icon:'🌲',desc:'Giant trees shade a twisting canyon'},
+ {name:'Thunderstone Pass',trees:19,rocks:41,alert:7,speed:2,sky1:'#788ba7',sky2:'#d4c8a8',peak:'#7b7d86',shade:'#485b70',snow:'#f1e7d1',icon:'⛈️',desc:'Rumbling clouds above ancient boulders'},
+ {name:'Sunflower Bluff',trees:32,rocks:20,alert:7,speed:2,sky1:'#add7c3',sky2:'#f8e09a',peak:'#a7ae64',shade:'#6b8954',snow:'#fff0b5',icon:'🌻',desc:'Sunny hills hide a flowered ledge'},
+ {name:'Aurora Crown',trees:28,rocks:38,alert:8,speed:2,sky1:'#586db0',sky2:'#a1b4d9',peak:'#747faf',shade:'#464f84',snow:'#f2f6ff',icon:'🌌',desc:'A secret summit glowing after dusk'}
 ];
 let bonusUnlocked=new Set(),bonusCleared=new Set();
 try{
  const bonus=JSON.parse(localStorage.getItem(BONUS_KEY)||'{}');
- if(Array.isArray(bonus.unlocked))bonusUnlocked=new Set(bonus.unlocked.filter(i=>Number.isInteger(i)&&i>=BONUS_START&&i<BONUS_START+5));
- if(Array.isArray(bonus.cleared))bonusCleared=new Set(bonus.cleared.filter(i=>Number.isInteger(i)&&i>=BONUS_START&&i<BONUS_START+5));
+ if(Array.isArray(bonus.unlocked))bonusUnlocked=new Set(bonus.unlocked.filter(i=>Number.isInteger(i)&&i>=BONUS_START&&i<BONUS_START+BONUS_CONFIGS.length));
+ if(Array.isArray(bonus.cleared))bonusCleared=new Set(bonus.cleared.filter(i=>Number.isInteger(i)&&i>=BONUS_START&&i<BONUS_START+BONUS_CONFIGS.length));
 }catch(error){console.warn('Unable to restore bonus expeditions',error);}
 let collectedFacts=new Set(),equipment=null,ranger=null;
-let secretItem=null,secretChainDoor=null,villageFlag={x:3,y:3},villageGuards=new Set(),villageCleared=false;
+let secretItem=null,secretChainDoor=null,normalBonusDoor=null,villageFlag={x:3,y:3},villageGuards=new Set(),villageCleared=false;
 try {
  const saved=JSON.parse(localStorage.getItem(FACT_KEY)||'[]');
  if(Array.isArray(saved))for(const n of saved)if(Number.isInteger(n)&&n>=0&&n<COYOTE_FACTS.length)collectedFacts.add(n);
@@ -59,9 +68,10 @@ LEVELS.push(...BONUS_CONFIGS);
  // Their unlocks are stored separately from the legacy secret-world save.
  const bonusPanel=document.createElement('section');
  bonusPanel.id='bonusExpeditionPanel';bonusPanel.className='bonus-expedition-panel';
- bonusPanel.setAttribute('aria-label','Five unlockable secret expeditions');
- bonusPanel.innerHTML='<h3>🌟 Secret Expeditions</h3><p>Win a secret world to reveal its bonus mountains. Secret doors let you choose a new bonus path or another secret level.</p><div id="bonusExpeditionGrid" class="bonus-expedition-grid"></div><p id="bonusExpeditionProgress" class="bonus-expedition-progress"></p>';
- document.querySelector('#mapScreen .map-foot').before(bonusPanel);
+ bonusPanel.setAttribute('aria-label','Ten extra mountains on the illustrated Adventure map');
+ bonusPanel.innerHTML='<div class="bonus-map-heading"><h3>🌟 Hidden Mountain Trails</h3><p>Ten extra mountains continue the winding trail below. Five unlock by winning secret worlds; find the other five through hidden doors on Mountains 2, 4, 6, 8 and 10.</p></div><div id="bonusExpeditionGrid" class="bonus-expedition-grid" aria-label="Ten extra mountain locations"></div><p id="bonusExpeditionProgress" class="bonus-expedition-progress" aria-live="polite"></p>';
+ // Place the new peaks IN the Adventure map, continuing its vertical scenery.
+ document.querySelector('#mapScreen .map-scene .map-swipe-hint').before(bonusPanel);
  const branchDialog=document.createElement('dialog');
  branchDialog.id='secretBranchDialog';
  branchDialog.setAttribute('aria-label','Choose a secret door destination');
