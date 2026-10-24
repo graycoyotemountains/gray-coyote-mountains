@@ -130,6 +130,7 @@
    '#coyoteScreen #coyoteYip{min-width:92px}',
    '#coyoteScreen #coyoteMessage{min-height:46px;margin:10px 3px;text-align:center;color:#f6d59a;font-weight:750}',
    '#coyoteScreen #coyoteResult{padding:10px;border:1px solid #e9c57c;border-radius:12px;background:#2c5541}',
+   '#coyoteScreen #coyoteNext[hidden]{display:none!important}',
    '#coyoteScreen #coyoteResult strong{color:#fbe4a2}',
    '#coyoteScreen #coyoteResult p{margin:4px 0 0;font-size:.86rem}',
    '#coyoteScreen .coyote-education{color:#bed3c0;font-size:.78rem;line-height:1.4;margin:0}',
