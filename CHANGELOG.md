@@ -4,6 +4,29 @@ All notable changes to Gray Coyote Mountains are recorded here. This is a
 human-readable release log; Git commit history is the authoritative version
 history and enables rollback of individual changes.
 
+## [1.6.0] - 2026-10-24
+
+### Changed
+- Park rangers and visitors now move just like coyotes in Adventure Mode:
+  one unobstructed grid square per patrol turn, pathfinding toward the
+  player within an alert radius, and random wandering outside that radius.
+- Humans move every 2 or 3 player steps depending on the mountain, reflecting
+  the progression of coyote speeds and alert ranges in regular Adventure.
+- A YIP no longer removes people from the board. Nearby humans retreat up
+  to two squares immediately, then flee for three patrol turns before
+  resuming their normal movement.
+- Both cubs must still remain calm; moving people can now get close enough
+  to startle them. Adjusted final-mountain visitor placement to avoid
+  immediately trapping cubs near the starting square.
+- Added automated desktop Chrome, iPhone Safari and iPad Safari tests
+  for human pursuit, patrol movement, retreat behavior, and viable routes.
+
+### Compatibility and rollback
+- No changes to Adventure/Challenge movement, collectibles, existing
+  saved progress, map selection, or Coyote Mode unlocks.
+- Previous stable commit: `96d1c7b0de46adcb3cf086f9226a837ad4d1a385`
+  (v1.5.0). Revert the release merge to restore stationary humans.
+
 ## [1.5.0] - 2026-10-24
 
 ### Added

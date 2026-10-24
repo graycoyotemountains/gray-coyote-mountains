@@ -30,9 +30,12 @@ follow you. The cubs must **stay calm** throughout the trip.
 
 - Cubs follow at half your movement pace. Avoid bringing them next to park
   visitors and rangers, or they get frightened and that run ends.
-- Your **YIP** encourages people within four squares to retreat, but barking
-  within two squares of a cub frightens the cub and ends your run. You do
-  **not** have to scare any people to win.
+- Rangers and park visitors **move**, just like coyotes in Adventure Mode.
+  They patrol one square at a time every two or three player moves, approach
+  your coyote when nearby, and stay clear of trees, rocks, reeds and water.
+- Your **YIP** makes humans within four squares retreat for several patrol
+  turns instead of disappearing. Barking within two squares of a cub
+  frightens the cub and ends your run. You do **not** have to scare anyone to win.
 - You have **2 minutes 30 seconds** to reach the den. Arrow keys / WASD or
   touch buttons move one square at a time. The mode has its own victory counter.
 - Adventure, challenge trophies, collected facts, secret levels, treasure,
