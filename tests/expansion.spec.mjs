@@ -247,8 +247,9 @@ test('Paraglider survives a secret door, saved reload and one following level',a
 
 test('Paraglider carries into the next regular mountain and then expires',async({page})=>{
  await page.addInitScript(()=>{
-  repoProgress();
-  localStorage.setItem('gray-coyote-mountains-level-v1','9');
+  localStorage.setItem('gray-coyote-mountains-secret-found-v1','true');
+  localStorage.setItem('gray-coyote-mountains-extra-secrets-v1',JSON.stringify({unlocked:[true,true],cleared:[false,false]}));
+  localStorage.setItem('gray-sentinel-mountain-unlocked-v1','9');
  });
  await page.goto('/');
  await page.locator('#playBtn').click();
