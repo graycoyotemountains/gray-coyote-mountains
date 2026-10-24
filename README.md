@@ -140,3 +140,26 @@ secret level **and the next level you enter** (including through a secret door).
 It allows one-square movement over and onto obstacle squares. It expires when
 you enter another different level afterward. Your carried equipment is saved
 in the browser and retained through a reload.
+
+## Branching Secret Expeditions (v1.8.0)
+
+Five more Adventure levels appear in the **🌟 Secret Expeditions** section
+of the regular Mountain Map. They stay locked until you win their source
+secret levels:
+
+- **The Hollow Mountain:** 🦆 Mistveil Lagoon and 🌿 Echo Fern Forest.
+- **The Whispering Woods:** 🧊 Crystal Icefall and 🦇 Moonshadow Caverns.
+- **The Phantom Crater:** 🌠 Starfall Observatory.
+
+Each new mountain is a complete 18 × 14 level with its own terrain, flag,
+coyotes, three treasure chests (including a collectible fact), and a
+branching secret door. Previously completed secret worlds also qualify.
+
+When you step onto a secret door, a destination picker opens. Choose an
+**unlocked bonus expedition** or **a different existing secret world**. Your
+original secret chain (Hollow → Whispering Woods → Phantom Crater → Hollow)
+is still accessible as the alternate door route. If the bonus route is
+locked, reach the secret level's flag to unlock it, then retry the door.
+The five new levels, their wins and their unlocks are saved locally in
+this browser, independently of Coyote Mode and the existing Adventure
+progress keys. The new section scrolls vertically on phones.
