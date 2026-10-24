@@ -198,7 +198,7 @@ test('Village has gray pavement and individual solid house tiles',async({page})=
    individualHouses:houses.every(t=>t.textContent==='🏠'),
    blockedHouse:blocked(x,y),pavement:getComputedStyle(tiles[0]).backgroundColor};
  });
- expect(state).toEqual({zone:true,tiles:W*H,numberOfHouses:36,obstacles:36,
+ expect(state).toEqual({zone:true,tiles:252,numberOfHouses:36,obstacles:36,
   individualHouses:true,blockedHouse:true,pavement:'rgb(152, 157, 159)'});
  await page.evaluate(()=>loadLevel(0));
  expect(await page.locator('#gameFrame').evaluate(e=>e.classList.contains('village-zone'))).toBe(false);
