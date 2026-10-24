@@ -204,3 +204,60 @@ test('Village has gray pavement and individual solid house tiles',async({page})=
  expect(await page.locator('#gameFrame').evaluate(e=>e.classList.contains('village-zone'))).toBe(false);
  await expect(page.locator('#field .house')).toHaveCount(0);
 });
+
+test('Paraglider survives a secret door, saved reload and one following level',async({page})=>{
+ await page.addInitScript(repoProgress);
+ await page.goto('/');
+ await page.locator('#playBtn').click();
+ await page.evaluate(()=>loadLevel(11));
+ const pickup=await page.evaluate(()=>({...secretItem}));
+ await arrive(page,pickup);
+ expect(await page.evaluate(()=>equipment?.type)).toBe('glider');
+ // Travel through the actual secret door to the next secret map.
+ await page.evaluate(()=>{
+  const from=neighbors(secretChainDoor)[0];
+  if(!from)throw Error('No route to secret door');
+  runner={...from};coyotes=[];draw();
+  move(secretChainDoor.x-from.x,secretChainDoor.y-from.y);
+ });
+ expect(await page.evaluate(()=>levelIndex)).toBe(12);
+ expect(await page.evaluate(()=>equipment?.type)).toBe('glider');
+ await expect(page.locator('#field .runner')).toContainText('🪂');
+ // Landing on a blocked tile still works in the following map.
+ const flight=await page.evaluate(()=>{
+  const obstacle=[...trees,...rocks].map(k=>{
+   const [x,y]=k.split(',').map(Number);return {x,y};
+  }).find(p=>neighbors(p).length>0);
+  if(!obstacle)throw Error('No testable obstacle');
+  const from=neighbors(obstacle)[0];
+  runner={...from};coyotes=[];steps=0;draw();
+  move(obstacle.x-from.x,obstacle.y-from.y);
+  return {landed:same(runner,obstacle),steps,stillBlocked:blocked(obstacle.x,obstacle.y)};
+ });
+ expect(flight).toEqual({landed:true,steps:1,stillBlocked:true});
+ expect(JSON.parse(await page.evaluate(()=>localStorage.getItem(POWER_KEY))).equipment.type).toBe('glider');
+ await page.reload();
+ // Returning straight to the same following map must not consume the glider.
+ await page.evaluate(()=>loadLevel(12));
+ expect(await page.evaluate(()=>equipment?.type)).toBe('glider');
+ await expect(page.locator('#field .runner')).toContainText('🪂');
+ await page.evaluate(()=>loadLevel(10));
+ expect(await page.evaluate(()=>equipment)).toBeNull();
+});
+
+test('Paraglider carries into the next regular mountain and then expires',async({page})=>{
+ await page.addInitScript(()=>{
+  repoProgress();
+  localStorage.setItem('gray-coyote-mountains-level-v1','9');
+ });
+ await page.goto('/');
+ await page.locator('#playBtn').click();
+ await page.evaluate(()=>loadLevel(11));
+ await arrive(page,await page.evaluate(()=>({...secretItem})));
+ expect(await page.evaluate(()=>equipment?.type)).toBe('glider');
+ await page.evaluate(()=>loadLevel(7));
+ expect(await page.evaluate(()=>equipment?.type)).toBe('glider');
+ await expect(page.locator('#field .runner')).toContainText('🪂');
+ await page.evaluate(()=>loadLevel(8));
+ expect(await page.evaluate(()=>equipment)).toBeNull();
+});
