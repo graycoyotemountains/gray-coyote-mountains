@@ -14,25 +14,25 @@
  // All locations are playful, Shoreline/Baylands-inspired landscapes.
  // A wide obstacle-free border route remains available in each map.
  const MOUNTAINS=[
-  {name:'Baylands Trail',icon:'🌾',habitat:'baylands',detail:'Learn to lead your cubs past the Baylands',
+  {name:'Baylands Trail',alert:5,speed:3,icon:'🌾',habitat:'baylands',detail:'Learn to lead your cubs past the Baylands',
    start:START,den:DEN,cubs:CUB_START,people:PEOPLE,duration:150000,seed:912384,obstacles:.23,terrain:['tree','rock']},
-  {name:'Salt Marsh Lookout',icon:'🦆',habitat:'marsh',detail:'Winding marsh channels and taller reeds',
+  {name:'Salt Marsh Lookout',alert:5,speed:3,icon:'🦆',habitat:'marsh',detail:'Winding marsh channels and taller reeds',
    start:{x:16,y:12},den:{x:1,y:1},cubs:[{x:16,y:13},{x:15,y:12}],
    people:[{x:6,y:5,type:'ranger',icon:'🧑‍✈️',name:'ranger'},{x:10,y:7,type:'visitor',icon:'🚶',name:'visitor'},{x:14,y:5,type:'visitor',icon:'🚶‍♀️',name:'visitor'}],
    duration:145000,seed:728204,obstacles:.27,terrain:['brush','water','rock']},
-  {name:'Stevens Creek Pass',icon:'💧',habitat:'creek',detail:'Rocks and creekside trees make tight turns',
+  {name:'Stevens Creek Pass',alert:6,speed:3,icon:'💧',habitat:'creek',detail:'Rocks and creekside trees make tight turns',
    start:START,den:DEN,cubs:CUB_START,
    people:[{x:4,y:4,type:'visitor',icon:'🚶',name:'visitor'},{x:7,y:8,type:'ranger',icon:'🧑‍✈️',name:'ranger'},{x:13,y:6,type:'visitor',icon:'🚶‍♀️',name:'visitor'},{x:10,y:3,type:'visitor',icon:'🚶',name:'visitor'}],
    duration:140000,seed:822111,obstacles:.30,terrain:['tree','rock','water']},
-  {name:'Coyote Grasslands',icon:'🌿',habitat:'grassland',detail:'Wide grassland paths with more visitors',
+  {name:'Coyote Grasslands',alert:6,speed:2,icon:'🌿',habitat:'grassland',detail:'Wide grassland paths with more visitors',
    start:{x:16,y:12},den:{x:1,y:1},cubs:[{x:16,y:13},{x:15,y:12}],
    people:[{x:5,y:4,type:'visitor',icon:'🚶',name:'visitor'},{x:8,y:7,type:'ranger',icon:'🧑‍✈️',name:'ranger'},{x:12,y:8,type:'visitor',icon:'🚶‍♀️',name:'visitor'},{x:14,y:3,type:'visitor',icon:'🚶',name:'visitor'}],
    duration:135000,seed:994310,obstacles:.32,terrain:['brush','rock','tree']},
-  {name:'Sycamore Ridge',icon:'🌳',habitat:'woods',detail:'Dense tree cover and winding shortcuts',
+  {name:'Sycamore Ridge',alert:7,speed:2,icon:'🌳',habitat:'woods',detail:'Dense tree cover and winding shortcuts',
    start:START,den:DEN,cubs:CUB_START,
    people:[{x:5,y:8,type:'visitor',icon:'🚶',name:'visitor'},{x:6,y:4,type:'ranger',icon:'🧑‍✈️',name:'ranger'},{x:11,y:6,type:'visitor',icon:'🚶‍♀️',name:'visitor'},{x:14,y:3,type:'visitor',icon:'🚶',name:'visitor'},{x:10,y:9,type:'visitor',icon:'🚶‍♀️',name:'visitor'}],
    duration:130000,seed:323331,obstacles:.35,terrain:['tree','tree','rock']},
-  {name:'Shoreline Summit',icon:'⛰️',habitat:'summit',detail:'The final steep climb to the family den',
+  {name:'Shoreline Summit',alert:7,speed:2,icon:'⛰️',habitat:'summit',detail:'The final steep climb to the family den',
    start:{x:16,y:12},den:{x:1,y:1},cubs:[{x:16,y:13},{x:15,y:12}],
    people:[{x:4,y:4,type:'ranger',icon:'🧑‍✈️',name:'ranger'},{x:7,y:8,type:'visitor',icon:'🚶',name:'visitor'},{x:10,y:6,type:'ranger',icon:'🧑‍✈️',name:'ranger'},{x:13,y:9,type:'visitor',icon:'🚶‍♀️',name:'visitor'},{x:14,y:3,type:'visitor',icon:'🚶',name:'visitor'}],
    duration:125000,seed:711800,obstacles:.37,terrain:['rock','tree','brush']}
@@ -73,13 +73,13 @@
    '<div class="shell">',
    '<div class="topbar"><button class="btn secondary small" id="coyoteHome" type="button">← Mountain Map</button><div class="brand">🐺 COYOTE MODE</div></div>',
    '<div class="coyote-title"><div class="eyebrow" id="coyoteMountainNumber">Mountain 1 / 6</div><h2 id="coyoteMountainName">Baylands Trail</h2>',
-   '<p>Guide your two curious cubs to safety by reaching your den before time runs out. Keep the cubs calm! Rangers or park visitors can frighten them if they get too close. Your YIP sends people away, but YIP too close to a cub and it will panic.</p></div>',
+   '<p>Lead your two cubs safely to their den. Rangers and visitors now <strong>patrol the trails, follow your coyote when nearby, and retreat from a YIP</strong>, just like coyotes in Adventure Mode. Keep both cubs calm and avoid barking too close to them!</p></div>',
    '<div class="coyote-stats" aria-live="polite"><span id="coyoteLife">🐾 Cubs calm</span><span id="coyotePeople">🚶 0 visitors retreated</span><span id="coyoteTime">⏱️ 2:30</span><span id="coyoteMoves">👟 0</span><span id="coyoteWins">🏆 0 wins</span></div>',
    '<div class="coyote-layout"><div class="coyote-board-panel">',
    '<div class="coyote-board-viewport"><div id="coyoteField" role="img" aria-label="Coyote mode game board, 18 columns by 14 rows. Move with arrow keys or the touch controls."></div></div>',
    '<p id="coyoteMessage" role="status" aria-live="polite">Follow the trail!</p>',
    '</div><div class="coyote-side">',
-   '<div class="coyote-legend"><strong>Trail guide</strong><p>🐺 You · 🐾 Your two cubs · 🧑‍✈️ Ranger · 🚶 Visitors · 🕳️ Den</p><p>Cubs follow you every two steps. Keep them away from people! YIP drives nearby people away, but a cub within two squares will be frightened. You win by reaching the den with both cubs calm.</p></div>',
+   '<div class="coyote-legend"><strong>Trail guide</strong><p>🐺 You · 🐾 Your two cubs · 🧑‍✈️ Ranger · 🚶 Visitors · 🕳️ Den</p><p>Cubs follow every two steps. People move one square every two or three steps, patrol freely, and approach when they spot you. YIP makes nearby people retreat for a few turns, but barking within two squares of a cub frightens it. Reach the den with both cubs calm.</p></div>',
    '<div class="coyote-controls" aria-label="Coyote movement controls">',
    '<button class="btn" type="button" data-dx="0" data-dy="-1" aria-label="Coyote move up">⬆️</button><div>',
    '<button class="btn" type="button" data-dx="-1" data-dy="0" aria-label="Coyote move left">⬅️</button>',
@@ -123,6 +123,7 @@
    '#coyoteScreen .coyote-tile.coyote-player{background:#f4cf75;box-shadow:inset 0 0 0 2px #fbefbd}',
    '#coyoteScreen .coyote-tile.coyote-cub{background:#dabd96}',
    '#coyoteScreen .coyote-tile.coyote-person{background:#abcfd1}',
+   '#coyoteScreen .coyote-tile.coyote-person-retreating{background:#d4c29f;box-shadow:inset 0 0 0 2px #f3dfb1}',
    '#coyoteScreen .coyote-side{background:#203d35;border:1px solid #789179;border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:12px}',
    '#coyoteScreen .coyote-legend p{margin:6px 0 0;font-size:.86rem;color:#e5e9cf}',
    '#coyoteScreen .coyote-controls{text-align:center;white-space:nowrap}',
@@ -239,7 +240,7 @@
   const level=currentMountain();
   state={
    phase:'playing',position:{...level.start},obstacles:buildTerrain(),
-   people:level.people.map(p=>({...p,active:true})),
+   people:level.people.map(p=>({...p,active:true,scared:0,retreated:false})),
    cubs:level.cubs.map(p=>({...p})),
    moves:0,yipCooldown:0,scared:0,cubsCalm:true
   };
@@ -270,13 +271,13 @@
    .map(([dx,dy])=>({x:point.x+dx,y:point.y+dy}))
    .filter(p=>open(p.x,p.y));
  }
- function nextStep(from,target){
+ function nextStep(from,target,occupied=new Set()){
   const queue=[{...from}],seen=new Set([key(from.x,from.y)]),parents=new Map();
   for(let n=0;n<queue.length;n++){
    const current=queue[n];
    if(current.x===target.x&&current.y===target.y)break;
    for(const p of adjacent(current)){
-    const k=key(p.x,p.y);if(seen.has(k))continue;
+    const k=key(p.x,p.y);if(seen.has(k)||occupied.has(k))continue;
     seen.add(k);parents.set(k,current);queue.push(p);
    }
   }
@@ -294,6 +295,42 @@
   if(state.moves%2!==0)return;
   state.cubs.forEach(cub=>Object.assign(cub,nextStep(cub,state.position)));
  }
+ // Mirror Adventure coyote patrols: adjacent (one-square) movement, pathfinding
+ // when alerted, random wandering otherwise, and temporary fear after a YIP.
+ function peopleOptions(person){
+  const occupied=new Set(state.people.filter(other=>other!==person&&other.active).map(other=>key(other.x,other.y)));
+  return adjacent(person).filter(point=>!occupied.has(key(point.x,point.y)));
+ }
+ function movePersonAway(person,options){
+  if(!options.length)return false;
+  const furthest=Math.max(...options.map(p=>manhattan(p,state.position)));
+  const away=options.filter(p=>manhattan(p,state.position)===furthest);
+  Object.assign(person,away[Math.floor(Math.random()*away.length)]);
+  return true;
+ }
+ function movePeople(){
+  const level=currentMountain();
+  if(state.moves%level.speed!==0)return;
+  for(const person of state.people){
+   if(!person.active)continue;
+   const options=peopleOptions(person);
+   if(!options.length)continue;
+   let next=null;
+   if(person.scared>0){
+    movePersonAway(person,options);
+    person.scared--;
+   }else if(manhattan(person,state.position)<=level.alert){
+    const occupied=new Set(state.people.filter(other=>other!==person&&other.active).map(other=>key(other.x,other.y)));
+    next=nextStep(person,state.position,occupied);
+   }else if(Math.random()<.65){
+    next=options[Math.floor(Math.random()*options.length)];
+   }
+   if(next&&options.some(p=>p.x===next.x&&p.y===next.y))Object.assign(person,next);
+   // A moving ranger or visitor can frighten a cub, even if the player
+   // stays still. Never leave a lost run in a playing state.
+   if(cubIsFrightenedByPerson())return;
+  }
+ }
  function cubIsFrightenedByPerson(){
   return state.cubs.some(cub=>state.people.some(person=>person.active&&manhattan(person,cub)<=1));
  }
@@ -308,7 +345,11 @@
   state.position={x:nx,y:ny};state.moves++;
   state.yipCooldown=Math.max(0,state.yipCooldown-1);
   updateCubs();
-  if(cubIsFrightenedByPerson()){
+  // Check both before and after people move. They move on the same step
+  // cadence as Adventure coyotes, and cannot walk through obstacles.
+  const cubsAlreadyNearPeople=cubIsFrightenedByPerson();
+  if(!cubsAlreadyNearPeople)movePeople();
+  if(cubsAlreadyNearPeople||cubIsFrightenedByPerson()){
    state.cubsCalm=false;
    finish(false,'🐾 A cub got too close to a park visitor and was frightened! Try a safer path.');
   }else if(manhattan(state.position,currentMountain().den)===0){
@@ -324,22 +365,33 @@
   if(!state||state.phase!=='playing'||screen!=='coyote')return;
   tick();if(state.phase!=='playing')return;
   if(state.yipCooldown>0){message('🐺 Your YIP needs '+state.yipCooldown+' more move(s) to recharge.');return;}
-  // A loud bark may deter people, but startling the cubs loses the run.
+  // Same response as shouting at coyotes: people inside the sound radius
+  // move away by two squares immediately, then retreat for three patrol turns.
+  // Do not make them disappear; they return to patrolling afterward.
   if(cubTooCloseToYip()){
    state.cubsCalm=false;
    finish(false,'🐾 That YIP was too close! One of your cubs got scared. Try a quieter route.');
    return;
   }
   let count=0;
-  state.people.forEach(person=>{
-   if(person.active&&manhattan(person,state.position)<=4){
-    person.active=false;state.scared++;count++;
+  for(const person of state.people){
+   if(!person.active||manhattan(person,state.position)>4)continue;
+   person.scared=3;
+   if(!person.retreated){person.retreated=true;state.scared++;}
+   count++;
+   for(let step=0;step<2;step++){
+    if(!movePersonAway(person,peopleOptions(person)))break;
    }
-  });
+  }
   state.yipCooldown=4;
   if(typeof playCoyote==='function')try{playCoyote(true);}catch(error){}
-  if(count)message('🐺 YIP! '+count+' person'+(count===1?' retreats':' retreat')+' safely away. Your cubs remain calm.');
-  else message('🐺 YIP! Your call echoes across the hillside, but your cubs are safely distant.');
+  if(cubIsFrightenedByPerson()){
+   state.cubsCalm=false;
+   finish(false,'🐾 A retreating visitor got too close to a cub. Try a different YIP position.');
+   return;
+  }
+  if(count)message('🐺 YIP! '+count+' '+(count===1?'person retreats':'people retreat')+' along the trail. Stay ahead until they stop moving!');
+  else message('🐺 YIP! Your call echoes across the hillside. No people were close enough to retreat.');
   draw();
  }
  function finish(won,reason){
@@ -387,7 +439,7 @@
     tile.textContent='🕳️';
    }
    const visitor=state.people.find(p=>p.active&&p.x===x&&p.y===y);
-   if(visitor){tile.classList.add('coyote-person');tile.textContent=visitor.icon;}
+   if(visitor){tile.classList.add('coyote-person');if(visitor.scared>0)tile.classList.add('coyote-person-retreating');tile.textContent=visitor.icon;}
    if(state.cubs.some(p=>p.x===x&&p.y===y)){tile.classList.add('coyote-cub');tile.textContent='🐾';}
    if(state.position.x===x&&state.position.y===y){tile.classList.add('coyote-player');tile.textContent='🐺';}
    fragment.appendChild(tile);
@@ -411,14 +463,14 @@
   habitat:currentMountain().habitat,den:{...currentMountain().den},
   cubsCalm:state.cubsCalm,moves:state.moves,
   scared:state.scared,yipCooldown:state.yipCooldown,position:{...state.position},
-  people:state.people.map(p=>({x:p.x,y:p.y,active:p.active})),
+  people:state.people.map(p=>({x:p.x,y:p.y,active:p.active,scared:p.scared,retreated:p.retreated,type:p.type})),
   cubs:state.cubs.map(p=>({x:p.x,y:p.y})),
   wins
  }:null;
  window.coyoteMountainDefinitions=()=>MOUNTAINS.map((level,index)=>({
   index,name:level.name,habitat:level.habitat,start:{...level.start},
   den:{...level.den},duration:level.duration,visitorCount:level.people.length,
-  obstacleRate:level.obstacles
+  obstacleRate:level.obstacles,alert:level.alert,speed:level.speed
  }));
  createMarkup();
 })();
