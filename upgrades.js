@@ -323,6 +323,13 @@ LEVELS.push(...BONUS_CONFIGS);
    const p=findSpot([]);
    if(p)chests.set(key(p.x,p.y),'fact');
   }
+  if(levelIndex>=BONUS_START){
+   // Three rewards in each hidden route: a fact and two treasures.
+   for(let n=0;n<3;n++){
+    const spot=findSpot([]);
+    if(spot)chests.set(key(spot.x,spot.y),n===0?'fact':TREASURES[(levelIndex+n)%TREASURES.length].id);
+   }
+  }
   if(levelIndex===VILLAGE_INDEX){
    chests.clear();chestsOpened=0;
    for(let j=0;j<3;j++){
@@ -415,7 +422,7 @@ LEVELS.push(...BONUS_CONFIGS);
   }else if(!challengeMode&&levelIndex>=BONUS_START){
    el('mountainLabel').textContent='🌟 BONUS EXPEDITION '+(levelIndex-BONUS_START+1)+'/5';
    el('levelStat').textContent='🌟 Bonus';
-   el('treasureStat').textContent='🌟 '+(bonusCleared.has(levelIndex)?'Completed':'Find the flag')+' · 🚪 Branching door';
+   el('treasureStat').textContent='🧰 '+chestsOpened+'/3 · 🌟 '+(bonusCleared.has(levelIndex)?'Cleared':'Find the flag')+' · 📖 '+collectedFacts.size+'/50';
   }else if(!challengeMode&&levelIndex>=MAIN_MOUNTAINS){
    el('treasureStat').textContent='✨ '+(secretItem?'Find the hidden tool':'Tool found')+' · 🚪 Secret passage';
   }else if(!challengeMode){
@@ -481,6 +488,7 @@ LEVELS.push(...BONUS_CONFIGS);
   note(620,0,.12,{end:920,volume:.09});saveProgress();return true;
  }
  move=function(dx,dy){
+  if(branchDialog.open)return;
   if(!canTakeAction())return;
   if(Math.abs(dx)+Math.abs(dy)!==1)return;
   const gliding=!challengeMode&&equipment?.type==='glider';
