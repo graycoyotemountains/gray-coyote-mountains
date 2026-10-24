@@ -4,11 +4,13 @@ A browser adventure with **10 mountain levels, 3 secret worlds, treasure chests,
 
 **Play:** https://graycoyotemountains.github.io/gray-coyote-mountains/
 
-## Six coyote-family mountains (v1.5.0)
+## Six coyote-family mountains (v1.7.0)
 
-Open **🐺 Play as the Coyote** on the home screen to choose a mountain.
-Complete each to unlock the next. Your coyote wins, cleared mountains and
-available mountains remain saved in this browser.
+Open **🐺 Play as the Coyote** on the home screen to choose a mountain on
+an **illustrated Baylands shoreline map**. Follow the six trail stops from
+top to bottom, with only vertical scrolling on narrow iPhone screens.
+Complete each mountain to unlock the next. Your coyote wins, cleared mountains
+and available mountains remain saved in this browser.
 
 - 🌾 Baylands Trail: your original coyote rescue route.
 - 🦆 Salt Marsh Lookout: reeds, tidal water and a reversed trail.
@@ -130,3 +132,11 @@ When a coyote catches you, the game plays `assets/human-munch.wav`, a short **re
 - **🌍 Lifetime counters:** the home screen supports worldwide unique-browser count and total level-start count, including retries and Challenge runs. The static GitHub Pages site needs the separate Cloudflare Worker/D1 stats endpoint to supply truthful shared totals. Until connected, the interface explicitly says so. See [stats-backend instructions](stats-backend/README.md). Historical visits from before installation cannot be backfilled; anonymous IDs approximate unique players, not human identity.
 
 All existing Adventure, Challenge, coyote-reset, secret discovery, treasure and audio save keys remain compatible. Older saves are migrated to the new cumulative Adventure-win counter without erasing progress or reset history. The game includes additional Playwright coverage for the new expansion. The publishing workflow tests Desktop Chrome, iPad Safari and iPhone Safari before deploying to GitHub Pages.
+
+## Paraglider duration (v1.7.0)
+
+The 🪂 paraglider found in the hidden secret level remains equipped for that
+secret level **and the next level you enter** (including through a secret door).
+It allows one-square movement over and onto obstacle squares. It expires when
+you enter another different level afterward. Your carried equipment is saved
+in the browser and retained through a reload.

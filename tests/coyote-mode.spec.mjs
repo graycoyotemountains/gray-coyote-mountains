@@ -257,3 +257,57 @@ test('All six maps use the Adventure coyote movement cadence',async({page})=>{
   await page.locator('#coyoteHome').click();
  }
 });
+
+test('Coyote Mode selector is a unified Baylands map with six trail stops and no sideways scrolling',async({page})=>{
+ await page.goto('/');
+ await page.locator('#coyoteModeBtn').click();
+ await expect(page.locator('#coyoteMapScreen')).toBeVisible();
+ const map=page.locator('#coyoteMountainGrid');
+ await expect(map.locator('.coyote-mountain-card')).toHaveCount(6);
+ const measurements=await map.evaluate(el=>{
+  const cards=[...el.querySelectorAll('.coyote-mountain-card')];
+  const box=el.getBoundingClientRect();
+  return {
+   image:getComputedStyle(el).backgroundImage,
+   width:box.width,height:box.height,
+   pageWidth:document.documentElement.scrollWidth,windowWidth:window.innerWidth,
+   scrollHeight:document.documentElement.scrollHeight,windowHeight:window.innerHeight,
+   positions:cards.map(c=>{const r=c.getBoundingClientRect();return {
+    y:r.top+window.scrollY, left:r.left, right:r.right,
+    x:r.left+r.width/2
+   };})
+  };
+ });
+ expect(measurements.image).toContain('assets/coyote-bay-map.svg');
+ expect(measurements.height).toBeGreaterThan(1200);
+ expect(measurements.pageWidth).toBeLessThanOrEqual(measurements.windowWidth+2);
+ expect(measurements.scrollHeight).toBeGreaterThan(measurements.windowHeight);
+ for(let i=1;i<measurements.positions.length;i++)
+  expect(measurements.positions[i].y).toBeGreaterThan(measurements.positions[i-1].y+110);
+ for(const card of measurements.positions){
+  expect(card.left).toBeGreaterThanOrEqual(0);
+  expect(card.right).toBeLessThanOrEqual(measurements.windowWidth+1);
+ }
+ await expect(map.locator('.coyote-mountain-card').first()).toBeEnabled();
+ await expect(map.locator('.coyote-mountain-card').nth(1)).toBeDisabled();
+ const first=map.locator('.coyote-mountain-card').first();
+ await first.click();
+ await expect(page.locator('#coyoteScreen')).toBeVisible();
+ await expect(page.locator('#coyoteField .coyote-tile')).toHaveCount(252);
+});
+
+test('All Bay map markers remain tappable when campaign mountains are unlocked',async({page})=>{
+ await page.addInitScript(()=>localStorage.setItem('gray-coyote-mountains-coyote-unlocked-v1','6'));
+ await page.goto('/');
+ await page.locator('#coyoteModeBtn').click();
+ const cards=page.locator('#coyoteMountainGrid .coyote-mountain-card');
+ await expect(cards).toHaveCount(6);
+ for(let i=0;i<6;i++){
+  await expect(cards.nth(i)).toBeEnabled();
+  await cards.nth(i).click();
+  const snapshot=await page.evaluate(()=>window.coyoteModeSnapshot());
+  expect(snapshot.mountain).toBe(i);
+  await page.locator('#coyoteHome').click();
+  await expect(page.locator('#coyoteMapScreen')).toBeVisible();
+ }
+});

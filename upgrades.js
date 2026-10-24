@@ -121,7 +121,10 @@ LEVELS.push({
  function adjustPowerForLevel(power,i){
   if(!power)return null;
   if(i===power.currentLevel)return power;
-  if(power.type==='glider'||power.type==='radio')return null;
+  // Radio is a one-map pickup. Like the bicycle, the paraglider stays
+  // equipped on the first following level (including after a secret door),
+  // then expires when the player enters a different level again.
+  if(power.type==='radio')return null;
   if(power.nextLevel===null||power.nextLevel===undefined){
    power.nextLevel=i;power.currentLevel=i;return power;
   }
@@ -318,7 +321,7 @@ LEVELS.push({
   equipment={type,origin:levelIndex,currentLevel:levelIndex,nextLevel:null};
   secretItem=null;cooldown=0;
   if(type==='bike')say('🚲 BICYCLE FOUND! Ride with 🚴. Ring the bell every THREE steps. Keep your bicycle in the next level!');
-  else if(type==='glider')say('🪂 PARAGLIDER FOUND! Move ONE square at a time, even onto trees and rocks. Fly over obstacles!');
+  else if(type==='glider')say('🪂 PARAGLIDER FOUND! Fly ONE square at a time, even onto trees and rocks. Keep it in the next level!');
   else say('📻 RADIO FOUND! Press CALL RANGER to summon a ranger who protects you for this and the next map!');
   note(620,0,.12,{end:920,volume:.09});saveProgress();return true;
  }

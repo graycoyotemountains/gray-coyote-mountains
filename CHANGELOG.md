@@ -4,6 +4,31 @@ All notable changes to Gray Coyote Mountains are recorded here. This is a
 human-readable release log; Git commit history is the authoritative version
 history and enables rollback of individual changes.
 
+## [1.7.0] - 2026-10-24
+
+### Fixed
+- Corrected the paraglider power-up carry logic. The glider was mistakenly
+  discarded by any level transition, even immediately after collecting it.
+- Like the bicycle, the paraglider now persists throughout its origin secret
+  level **and one following level**, entered either through a secret door or
+  by selecting another unlocked level. It expires on the next different level.
+- Preserved the one-square-per-move glider controls and obstacle landing.
+  Carry state remains saved across browser reloads.
+
+### Changed
+- Replaced Coyote Mode's grid of six separate mountain cards with a continuous,
+  hand-illustrated San Francisco Bay/Baylands shoreline level-select map.
+  Six large accessible markers follow an illustrated marsh/levee trail,
+  top to bottom, without requiring horizontal scrolling on phones.
+- Preserved Coyote Mode mountain names, unlocks, victories and saved progress;
+  the only change to Coyote Mode is its level-selection presentation.
+- Added regression checks for glider persistence and bay map mobile usability.
+
+### Rollback
+- The previous release is available at Git commit
+  `386b56849f399b1ad95915efb8133907c3503702` (v1.6.0).
+  Revert this release's squash-merge to restore it.
+
 ## [1.6.0] - 2026-10-24
 
 ### Changed
