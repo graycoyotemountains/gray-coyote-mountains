@@ -127,11 +127,12 @@ test('new normal mountain doors do not affect existing secret doors or Challenge
  await page.locator('#playBtn').click();
  await page.evaluate(()=>loadLevel(4));
  expect(await page.evaluate(()=>normalBonusDoor)).toBeNull();
- await page.evaluate(()=>loadLevel(6));
- expect(await page.evaluate(()=>Boolean(extraDoor))).toBe(true);
+ await page.evaluate(()=>loadLevel(5)); // Mountain 6: new bonus door, no old portal.
  expect(await page.evaluate(()=>Boolean(normalBonusDoor))).toBe(true);
- const positions=await page.evaluate(()=>({old:extraDoor,other:normalBonusDoor}));
- expect(positions.old).not.toEqual(positions.other);
+ expect(await page.evaluate(()=>extraDoor)).toBeNull();
+ await page.evaluate(()=>loadLevel(6)); // Mountain 7: old Whispering Woods portal.
+ expect(await page.evaluate(()=>Boolean(extraDoor))).toBe(true);
+ expect(await page.evaluate(()=>normalBonusDoor)).toBeNull();
  await page.locator('#gameScreen button').filter({hasText:'Home'}).first().click();
  await page.locator('#challengeBtn').click();
  await expect(page.locator('#challengeGrid .mountain')).toHaveCount(13);
