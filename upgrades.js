@@ -5,6 +5,23 @@ const FACT_KEY='gray-coyote-mountains-facts-v1';
 const POWER_KEY='gray-coyote-mountains-powers-v1';
 const VILLAGE_KEY='gray-coyote-mountains-village-v1';
 const VILLAGE_INDEX=13;
+const BONUS_START=14;
+const BONUS_KEY='gray-coyote-mountains-branch-expeditions-v1';
+const BONUS_BY_SECRET={10:[14,15],11:[16,17],12:[18]};
+const BONUS_PARENT={14:10,15:10,16:11,17:11,18:12};
+const BONUS_CONFIGS=[
+ {name:'Mistveil Lagoon',trees:23,rocks:15,alert:5,speed:3,sky1:'#8ed0d4',sky2:'#e6e4b3',peak:'#689c96',shade:'#386e72',snow:'#f5efcf',icon:'🦆',desc:'Mist rolls across the hidden lagoon'},
+ {name:'Echo Fern Forest',trees:39,rocks:12,alert:6,speed:3,sky1:'#a4cfb8',sky2:'#d0daa5',peak:'#528771',shade:'#2b6451',snow:'#e8e9cc',icon:'🌿',desc:'Secret fern groves echo through the trees'},
+ {name:'Crystal Icefall',trees:17,rocks:33,alert:7,speed:2,sky1:'#9ac0e0',sky2:'#d4e3f7',peak:'#7c9ab7',shade:'#486b91',snow:'#fbfcfc',icon:'🧊',desc:'A frozen trail above glittering icefalls'},
+ {name:'Moonshadow Caverns',trees:24,rocks:37,alert:7,speed:2,sky1:'#41496c',sky2:'#8f7baf',peak:'#655d89',shade:'#303657',snow:'#c8c9ee',icon:'🦇',desc:'Dark passages and shimmering stone'},
+ {name:'Starfall Observatory',trees:24,rocks:28,alert:8,speed:2,sky1:'#394c7c',sky2:'#8d83bb',peak:'#6b719c',shade:'#394672',snow:'#f4ecff',icon:'🌠',desc:'The final hidden peak beneath the stars'}
+];
+let bonusUnlocked=new Set(),bonusCleared=new Set();
+try{
+ const bonus=JSON.parse(localStorage.getItem(BONUS_KEY)||'{}');
+ if(Array.isArray(bonus.unlocked))bonusUnlocked=new Set(bonus.unlocked.filter(i=>Number.isInteger(i)&&i>=BONUS_START&&i<BONUS_START+5));
+ if(Array.isArray(bonus.cleared))bonusCleared=new Set(bonus.cleared.filter(i=>Number.isInteger(i)&&i>=BONUS_START&&i<BONUS_START+5));
+}catch(error){console.warn('Unable to restore bonus expeditions',error);}
 let collectedFacts=new Set(),equipment=null,ranger=null;
 let secretItem=null,secretChainDoor=null,villageFlag={x:3,y:3},villageGuards=new Set(),villageCleared=false;
 try {
@@ -17,19 +34,44 @@ try {
 }catch(error){console.warn('Could not read expansion progress',error);}
 extraUnlocked[2]=collectedFacts.size===50;
 extraCleared[2]=villageCleared;
+// Existing secret victories also count: returning players need not replay
+// a level they have already won to unlock the new bonus expeditions.
+if(secretCleared)for(const i of BONUS_BY_SECRET[10])bonusUnlocked.add(i);
+if(extraCleared[0])for(const i of BONUS_BY_SECRET[11])bonusUnlocked.add(i);
+if(extraCleared[1])for(const i of BONUS_BY_SECRET[12])bonusUnlocked.add(i);
+for(const i of bonusCleared)bonusUnlocked.add(i);
+for(let n=0;n<BONUS_CONFIGS.length;n++){
+ extraUnlocked[3+n]=bonusUnlocked.has(BONUS_START+n);
+ extraCleared[3+n]=bonusCleared.has(BONUS_START+n);
+}
 LEVELS.push({
  name:'The Lunch Snatch Village',trees:22,rocks:14,alert:8,speed:2,
  sky1:'#b7d6b7',sky2:'#f4d89d',peak:'#859762',shade:'#416a4c',snow:'#ecedc8',
  icon:'🏘️',desc:'The villagers and coyotes team up!'
 });
+LEVELS.push(...BONUS_CONFIGS);
 (function installExpansion(){
  const baseSave=saveProgress,baseRenderMap=renderMap,baseRenderChallenge=renderChallengePicker;
  const baseLoad=loadLevel,baseDraw=draw,baseMove=move,baseMoveCoyotes=moveCoyotes;
  const baseGoal=activeGoal,baseChests=createChestsAndPortals,baseCollect=collectChest,baseShout=shout,baseTag=tagged;
  const baseBlocked=blocked;
+ // The bonus levels share the existing Adventure collision and timer rules.
+ // Their unlocks are stored separately from the legacy secret-world save.
+ const bonusPanel=document.createElement('section');
+ bonusPanel.id='bonusExpeditionPanel';bonusPanel.className='bonus-expedition-panel';
+ bonusPanel.setAttribute('aria-label','Five unlockable secret expeditions');
+ bonusPanel.innerHTML='<h3>🌟 Secret Expeditions</h3><p>Win a secret world to reveal its bonus mountains. Secret doors let you choose a new bonus path or another secret level.</p><div id="bonusExpeditionGrid" class="bonus-expedition-grid"></div><p id="bonusExpeditionProgress" class="bonus-expedition-progress"></p>';
+ document.querySelector('#mapScreen .map-foot').before(bonusPanel);
+ const branchDialog=document.createElement('dialog');
+ branchDialog.id='secretBranchDialog';
+ branchDialog.setAttribute('aria-label','Choose a secret door destination');
+ branchDialog.innerHTML='<div class="branch-dialog-head"><h2>🚪 Choose Your Secret Trail</h2><p id="secretBranchIntro"></p></div><div class="branch-option"><strong>🌟 New bonus expedition</strong><div id="secretBonusChoices"></div></div><div class="branch-option"><strong>🔮 Another secret level</strong><div id="secretExistingChoices"></div></div><button type="button" class="btn secondary" id="cancelSecretBranch">Keep exploring</button>';
+ document.body.append(branchDialog);
+ document.getElementById('cancelSecretBranch').addEventListener('click',()=>branchDialog.close());
+ branchDialog.addEventListener('click',event=>{if(event.target===branchDialog)branchDialog.close();});
  // The original SVG atlas has 13 silhouettes. Reuse a mountain landscape for the bonus village.
  const originalMountainSVG=mountainSVG;
- mountainSVG=function(i){return originalMountainSVG(i===VILLAGE_INDEX?1:i);};
+ mountainSVG=function(i){return originalMountainSVG(i===VILLAGE_INDEX?1:i>=BONUS_START?i-14+4:i);};
  const gallery=document.createElement('dialog');
  gallery.id='fieldGuide';
  gallery.setAttribute('aria-label','Collected coyote facts');
@@ -111,6 +153,70 @@ LEVELS.push({
   }
   return null;
  }
+
+ function bonusUnlockedAt(i){return bonusUnlocked.has(i);}
+ function markBonusUnlocked(i){
+  if(i<BONUS_START||i>=BONUS_START+5)return;
+  bonusUnlocked.add(i);extraUnlocked[i-SECRET_LEVEL-1]=true;
+ }
+ function markSecretVictory(i){
+  for(const n of BONUS_BY_SECRET[i]||[])markBonusUnlocked(n);
+ }
+ function renderBonusPanel(){
+  const grid=document.getElementById('bonusExpeditionGrid');
+  grid.replaceChildren();
+  BONUS_CONFIGS.forEach((cfg,j)=>{
+   const i=BONUS_START+j,source=BONUS_PARENT[i];
+   const unlocked=bonusUnlockedAt(i),done=bonusCleared.has(i);
+   const button=document.createElement('button');
+   button.type='button';button.className='bonus-expedition-route';
+   button.disabled=!unlocked;
+   button.setAttribute('aria-label',(j+1)+' of 5, '+cfg.name+', '+(done?'completed':unlocked?'available':'locked')+'. Win '+LEVELS[source].name+' to unlock.');
+   button.innerHTML='<span class="bonus-expedition-icon">'+cfg.icon+'</span><span class="bonus-expedition-info"><strong>'+cfg.name+'</strong><small>'+cfg.desc+'</small><small>🔑 '+LEVELS[source].name+'</small><span class="bonus-expedition-status">'+(done?'🏁 Cleared':unlocked?'🔓 Play':'🔒 Win secret level')+'</span></span>';
+   if(unlocked)button.addEventListener('click',()=>loadLevel(i));
+   grid.append(button);
+  });
+  document.getElementById('bonusExpeditionProgress').textContent='🏆 '+bonusCleared.size+'/5 completed · 🔓 '+bonusUnlocked.size+'/5 unlocked';
+ }
+ function enterBranch(i){
+  if(!Number.isInteger(i)||i<10||i>=LEVELS.length)return;
+  branchDialog.close();
+  // Preserve the original secret chain unlock behavior.
+  if(i>=10&&i<=12)grantSecretAccess(i);
+  loadLevel(i);
+  if(levelIndex===i)say('🚪 SECRET TRAIL! Welcome to '+LEVELS[i].name+'!');
+ }
+ function openBranchChoices(){
+  if(challengeMode||levelIndex<10||levelIndex===VILLAGE_INDEX)return;
+  const source=levelIndex;
+  const newChoices=(source>=BONUS_START?BONUS_CONFIGS.map((_,j)=>BONUS_START+j).filter(i=>i!==source&&bonusUnlockedAt(i)):BONUS_BY_SECRET[source]||[]);
+  const existing=source>=BONUS_START?BONUS_PARENT[source]:nextSecret(source);
+  document.getElementById('secretBranchIntro').textContent='From '+LEVELS[source].name+', pick a different destination. Bonus routes are unlocked by winning secret levels.';
+  const bonusChoices=document.getElementById('secretBonusChoices');
+  bonusChoices.replaceChildren();
+  let choices=0;
+  for(const i of newChoices){
+   if(!bonusUnlockedAt(i))continue;
+   const b=document.createElement('button');b.type='button';b.className='btn primary';
+   b.textContent=LEVELS[i].icon+' '+LEVELS[i].name;
+   b.addEventListener('click',()=>enterBranch(i));
+   bonusChoices.append(b);choices++;
+  }
+  if(!choices){
+   const locked=document.createElement('p');
+   locked.className='bonus-lock-hint';
+   locked.textContent=source>=BONUS_START?'Win more secret levels to unlock other bonus routes.':'🏁 Reach this secret level’s flag to unlock its new bonus routes.';
+   bonusChoices.append(locked);
+  }
+  const existingChoices=document.getElementById('secretExistingChoices');
+  existingChoices.replaceChildren();
+  const other=document.createElement('button');other.type='button';other.className='btn secondary';
+  other.textContent='🚪 '+LEVELS[existing].name;
+  other.addEventListener('click',()=>enterBranch(existing));
+  existingChoices.append(other);
+  if(!branchDialog.open)branchDialog.showModal();
+ }
+
  function nextSecret(i){return i===10?11:i===11?12:10;}
  function grantSecretAccess(i){
   if(i===10)secretUnlocked=true;
