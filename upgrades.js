@@ -106,6 +106,33 @@ LEVELS.push(...BONUS_CONFIGS);
  @media(max-width:600px){.bonus-expedition-grid{grid-template-columns:1fr}.bonus-expedition-panel{padding:13px}.bonus-expedition-route{min-height:90px}}
  `;
  document.head.append(routeStyles);
+ // Extend the same illustrated vertical mountain map instead of displaying
+ // ten disconnected cards. Buttons remain native touch/keyboard controls.
+ const trailStyles=document.createElement('style');
+ trailStyles.textContent=`
+ #mapScreen .bonus-expedition-panel{width:100%;max-width:none;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:#83a8a0;overflow:visible}
+ #mapScreen .bonus-map-heading{padding:19px 14px 13px;text-align:center;background:linear-gradient(160deg,#284f47,#365d6b);border-top:3px solid #c6ab79;border-bottom:3px solid #c6ab79}
+ #mapScreen .bonus-expedition-panel h3{margin:0 0 7px;color:#f7d995;font-size:clamp(1.3rem,4.3vw,2rem)}
+ #mapScreen .bonus-expedition-panel .bonus-map-heading p{max-width:620px;margin:0 auto;color:#d9e7db;font-size:.88rem}
+ #mapScreen .bonus-expedition-grid{position:relative;display:block;width:100%;height:2550px;min-width:0;max-width:none;margin:0;overflow:hidden;border:0;border-radius:0;background:#789e9e url("assets/ten-hidden-peaks.svg") center top / 100% 100% no-repeat}
+ #mapScreen .bonus-expedition-route{position:absolute;z-index:2;left:var(--trail-x);top:var(--trail-y);transform:translate(-50%,-50%);width:clamp(122px,38%,230px);min-width:0;min-height:135px;max-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 7px;text-align:center;border:3px solid #775738;border-radius:16px;background:linear-gradient(160deg,#fff2d4,#ddc38f);color:#283e37;box-shadow:0 4px 0 #74563c,0 9px 13px #193a386b}
+ #mapScreen .bonus-expedition-route:not(:disabled):hover{transform:translate(-50%,calc(-50% - 3px));background:#ffefbd}
+ #mapScreen .bonus-expedition-route:disabled{opacity:.9;background:linear-gradient(160deg,#e0e0d4,#afb9b4);filter:saturate(.65)}
+ #mapScreen .bonus-expedition-route:focus-visible{outline:4px solid #fff0a9;outline-offset:3px}
+ #mapScreen .bonus-expedition-icon{font-size:clamp(1.45rem,4.2vw,2rem);line-height:1.05}
+ #mapScreen .bonus-expedition-info{display:flex;align-items:center;gap:3px;min-width:0;max-width:100%}
+ #mapScreen .bonus-expedition-info strong{font-size:clamp(.76rem,2.2vw,1rem);line-height:1.15;overflow-wrap:break-word}
+ #mapScreen .bonus-expedition-info small{font-size:clamp(.63rem,1.7vw,.76rem);line-height:1.2}
+ #mapScreen .bonus-expedition-status{font-size:clamp(.7rem,2vw,.82rem);font-weight:900;color:#22533d}
+ #mapScreen .bonus-expedition-progress{display:block;margin:0;padding:15px 8px;text-align:center;color:#fae6b7;background:#29453d;font-weight:800}
+ @media(max-width:420px){
+  #mapScreen .bonus-expedition-route{width:42%;min-height:139px;max-height:195px;padding:7px 4px;border-width:2px;border-radius:12px}
+  #mapScreen .bonus-expedition-info small{font-size:.64rem}
+  #mapScreen .bonus-expedition-info strong{font-size:.77rem}
+ }
+ @media(prefers-reduced-motion:reduce){#mapScreen .bonus-expedition-route{transition:none}}
+ `;
+ document.head.append(trailStyles);
  // The original SVG atlas has 13 silhouettes. Reuse a mountain landscape for the bonus village.
  const originalMountainSVG=mountainSVG;
  mountainSVG=function(i){return originalMountainSVG(i===VILLAGE_INDEX?1:i>=BONUS_START?i-14+4:i);};
@@ -207,18 +234,25 @@ LEVELS.push(...BONUS_CONFIGS);
  function renderBonusPanel(){
   const grid=document.getElementById('bonusExpeditionGrid');
   grid.replaceChildren();
+  const stops=[[29,10],[71,19],[29,28],[71,37],[29,46],[71,59],[29,68],[71,77],[29,86],[71,95]];
   BONUS_CONFIGS.forEach((cfg,j)=>{
    const i=BONUS_START+j,source=BONUS_PARENT[i];
+   const sourceIsNormal=source<MAIN_MOUNTAINS;
+   const sourceName=sourceIsNormal?'Mountain '+(source+1):LEVELS[source].name;
    const unlocked=bonusUnlockedAt(i),done=bonusCleared.has(i);
    const button=document.createElement('button');
+   const [x,y]=stops[j];
    button.type='button';button.className='bonus-expedition-route';
+   button.style.setProperty('--trail-x',x+'%');
+   button.style.setProperty('--trail-y',y+'%');
    button.disabled=!unlocked;
-   button.setAttribute('aria-label',(j+1)+' of 5, '+cfg.name+', '+(done?'completed':unlocked?'available':'locked')+'. Win '+LEVELS[source].name+' to unlock.');
-   button.innerHTML='<span class="bonus-expedition-icon">'+cfg.icon+'</span><span class="bonus-expedition-info"><strong>'+cfg.name+'</strong><small>'+cfg.desc+'</small><small>🔑 '+LEVELS[source].name+'</small><span class="bonus-expedition-status">'+(done?'🏁 Cleared':unlocked?'🔓 Play':'🔒 Win secret level')+'</span></span>';
+   button.dataset.bonusLevel=String(i);
+   button.setAttribute('aria-label','Bonus mountain '+(j+1)+' of 10: '+cfg.name+', '+(done?'completed':unlocked?'available':'locked')+'. '+(sourceIsNormal?'Find a hidden door on ':'Win ')+sourceName+' to unlock.');
+   button.innerHTML='<span class="bonus-expedition-icon">'+cfg.icon+'</span><span class="bonus-expedition-info"><strong>'+cfg.name+'</strong><small>'+cfg.desc+'</small><small>🔑 '+(sourceIsNormal?'Door: ':'Win: ')+sourceName+'</small><span class="bonus-expedition-status">'+(done?'🏁 Cleared':unlocked?'🔓 Play':sourceIsNormal?'🔒 Find door':'🔒 Win secret')+'</span></span>';
    if(unlocked)button.addEventListener('click',()=>loadLevel(i));
    grid.append(button);
   });
-  document.getElementById('bonusExpeditionProgress').textContent='🏆 '+bonusCleared.size+'/5 completed · 🔓 '+bonusUnlocked.size+'/5 unlocked';
+  document.getElementById('bonusExpeditionProgress').textContent='🏆 '+bonusCleared.size+'/10 completed · 🔓 '+bonusUnlocked.size+'/10 unlocked';
  }
  function enterBranch(i){
   if(!Number.isInteger(i)||i<10||i>=LEVELS.length)return;
@@ -380,7 +414,7 @@ LEVELS.push(...BONUS_CONFIGS);
   try{baseRenderMap();}finally{LEVELS.push(...extras);}
   renderBonusPanel();
   const secretsFound=Number(secretUnlocked)+Number(Boolean(extraUnlocked[0]))+Number(Boolean(extraUnlocked[1]));
-  el('progress').textContent='⛰️ '+cleared+'/10 cleared · 🧰 '+totalTreasures()+' treasures · 🐺 '+coyoteCount()+' coyotes · 💎 '+secretsFound+'/3 secrets · 🌟 '+bonusUnlocked.size+'/5 bonus trails · 📖 '+collectedFacts.size+'/50 facts';
+  el('progress').textContent='⛰️ '+cleared+'/10 cleared · 🧰 '+totalTreasures()+' treasures · 🐺 '+coyoteCount()+' coyotes · 💎 '+secretsFound+'/3 secrets · 🌟 '+bonusUnlocked.size+'/10 bonus trails · 📖 '+collectedFacts.size+'/50 facts';
   const cards=el('mountainGrid').children;
   if(extraUnlocked[2]&&cards.length){
    const card=cards[cards.length-1];
@@ -430,7 +464,7 @@ LEVELS.push(...BONUS_CONFIGS);
    el('levelStat').textContent='🏘️ Village';
    el('treasureStat').textContent='🧰 '+chestsOpened+'/3 · 🎒 '+totalTreasures()+' · 📖 '+collectedFacts.size+'/50';
   }else if(!challengeMode&&levelIndex>=BONUS_START){
-   el('mountainLabel').textContent='🌟 BONUS EXPEDITION '+(levelIndex-BONUS_START+1)+'/5';
+   el('mountainLabel').textContent='🌟 BONUS EXPEDITION '+(levelIndex-BONUS_START+1)+'/10';
    el('levelStat').textContent='🌟 Bonus';
    el('treasureStat').textContent='🧰 '+chestsOpened+'/3 · 🌟 '+(bonusCleared.has(levelIndex)?'Cleared':'Find the flag')+' · 📖 '+collectedFacts.size+'/50';
   }else if(!challengeMode&&levelIndex>=MAIN_MOUNTAINS){
