@@ -4,6 +4,35 @@ All notable changes to Gray Coyote Mountains are recorded here. This is a
 human-readable release log; Git commit history is the authoritative version
 history and enables rollback of individual changes.
 
+## [1.8.0] - 2026-10-24
+
+### Added
+- Five playable bonus mountains: Mistveil Lagoon, Echo Fern Forest, Crystal
+  Icefall, Moonshadow Caverns, and Starfall Observatory (19 Adventure levels
+  including the 50-fact village).
+- Win The Hollow Mountain to unlock Mistveil Lagoon and Echo Fern Forest;
+  win The Whispering Woods to unlock Crystal Icefall and Moonshadow Caverns;
+  win The Phantom Crater to unlock Starfall Observatory.
+- Existing secret victories unlock their corresponding bonus worlds
+  automatically, even for returning players with older save data.
+- Secret doors in all three secret worlds and the five new bonus worlds
+  now open a destination dialog. Choose an unlocked bonus mountain or an
+  alternate existing secret world; the original secret-world chain remains.
+- Five new routes live in their own accessible, vertically scrolling
+  "Secret Expeditions" section beneath the illustrated Adventure map;
+  no overlapping peak markers or horizontal mobile scrolling.
+- Each bonus level has distinct terrain and three collectible chests
+  including a Coyote Field Guide fact.
+- Separate persistent completion/unlock records and tests for branching,
+  retroactive unlocks, saved victories, and the existing power-ups.
+
+### Compatibility and rollback
+- Main Adventure levels, 50-fact village, original secret tools, paraglider
+  carry duration, and Coyote Mode are unchanged.
+- Previous stable main: `bbb26f6f5bd9387c32391b48b60d60e3957e8723`.
+  Revert the release merge to restore version 1.7.0 without changing the
+  existing Adventure progress keys.
+
 ## [1.7.0] - 2026-10-24
 
 ### Fixed
