@@ -939,7 +939,7 @@ function renderMap(){
  for(let i=0;i<LEVELS.length;i++){
   if(i>=MAIN_MOUNTAINS&&!(i===SECRET_LEVEL?secretUnlocked:extraUnlocked[i-SECRET_LEVEL-1]))continue;
   const cfg=LEVELS[i],secret=i>=MAIN_MOUNTAINS;
-  const canPlay=secret?(i===SECRET_LEVEL?secretUnlocked:extraUnlocked[i-SECRET_LEVEL-1]):i<unlocked;
+  const canPlay=secret?(i===SECRET_LEVEL?secretUnlocked:extraUnlocked[i-SECRET_LEVEL-1]):i<unlocked||(i===MAIN_MOUNTAINS-1&&summitShortcutCleared);
   const done=secret?(i===SECRET_LEVEL?secretCleared:extraCleared[i-SECRET_LEVEL-1]):i<cleared||(i===MAIN_MOUNTAINS-1&&summitShortcutCleared);
   const b=document.createElement('button');
   b.type='button';b.className='mountain'+(!canPlay?' locked':'')+(done?' done':'');
@@ -1072,7 +1072,7 @@ function toggleZoom(){
  else centerRunnerInZoom();
 }
 function loadLevel(i){
- if(!Number.isInteger(i)||i<0||i>=LEVELS.length||(!challengeMode&&(i>=MAIN_MOUNTAINS?(i===SECRET_LEVEL?!secretUnlocked:!extraUnlocked[i-SECRET_LEVEL-1]):i>=unlocked)))return;
+ if(!Number.isInteger(i)||i<0||i>=LEVELS.length||(!challengeMode&&(i>=MAIN_MOUNTAINS?(i===SECRET_LEVEL?!secretUnlocked:!extraUnlocked[i-SECRET_LEVEL-1]):i>=unlocked&&!(i===MAIN_MOUNTAINS-1&&summitShortcutCleared))))return;
  pauseTimer();
  stopSecretAmbience();
  levelIndex=i;steps=0;lives=3;cooldown=0;mode='playing';runner={...START};secretHintPlayed=false;villagers.clear();makeTerrain(i);
