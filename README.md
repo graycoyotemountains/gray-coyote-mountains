@@ -4,6 +4,26 @@ A browser adventure with **10 mountain levels, 3 secret worlds, treasure chests,
 
 **Play:** https://graycoyotemountains.github.io/gray-coyote-mountains/
 
+## Play as the Coyote 🐺
+
+Select **🐺 Play as the Coyote** from the home screen to explore a separate
+Shoreline adventure as the coyote. Reach your 🕳️ den while your two 🐾 cubs
+follow you. The cubs must **stay calm** throughout the trip.
+
+- Cubs follow at half your movement pace. Avoid bringing them next to park
+  visitors and rangers, or they get frightened and that run ends.
+- Your **YIP** encourages people within four squares to retreat, but barking
+  within two squares of a cub frightens the cub and ends your run. You do
+  **not** have to scare any people to win.
+- You have **2 minutes 30 seconds** to reach the den. Arrow keys / WASD or
+  touch buttons move one square at a time. The mode has its own victory counter.
+- Adventure, challenge trophies, collected facts, secret levels, treasure,
+  and existing progress are unaffected.
+
+This is playful fiction. Real coyotes generally avoid people; never approach
+or feed wild coyotes.
+
+
 ## Paraglider, village and search discoverability (v1.3.0)
 
 - The paraglider now moves one square per direction and can land on tree and
