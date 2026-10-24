@@ -34,7 +34,7 @@ jobs:
       - uses: actions/configure-pages@v5
         with:
           enablement: true
-      - run: mkdir -p dist && cp index.html facts.js upgrades.js stats-config.js stats.js sitemap.xml 17c4c3d616e7b88e64408357575008c5.txt dist/ && cp -R assets dist/assets
+      - run: mkdir -p dist && cp index.html facts.js upgrades.js coyote-mode.js stats-config.js stats.js sitemap.xml 17c4c3d616e7b88e64408357575008c5.txt dist/ && cp -R assets dist/assets
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
