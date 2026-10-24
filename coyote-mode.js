@@ -116,7 +116,7 @@
   if(!state||state.phase!=='playing')return;
   if(screen!=='coyote'||document.hidden){pause();return;}
   remainingMs=Math.max(0,deadline-Date.now());
-  if(remainingMs<=0){finish(false,'⏳ Time is up! The cubs found your trail.');return;}
+  if(remainingMs<=0){finish(false,'⏳ Time is up! You did not reach the den before sunset. The cubs are still calm.');return;}
   updateHud();
  }
  function start(){
@@ -229,7 +229,7 @@
    try{localStorage.setItem(WIN_KEY,String(wins));}catch(error){}
   }
   elem('coyoteResult').hidden=false;
-  elem('coyoteResultTitle').textContent=won?'🏆 SAFE AT THE DEN!':'🐾 THE CUBS GOT SCARED!';
+  elem('coyoteResultTitle').textContent=won?'🏆 SAFE AT THE DEN!':state.cubsCalm?'⏳ COYOTE RUN OVER!':'😨 THE CUBS GOT SCARED!';
   elem('coyoteResultBody').textContent=reason;
   message(reason);
   draw();
