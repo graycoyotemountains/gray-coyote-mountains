@@ -4,6 +4,34 @@ All notable changes to Gray Coyote Mountains are recorded here. This is a
 human-readable release log; Git commit history is the authoritative version
 history and enables rollback of individual changes.
 
+## [1.9.0] - 2026-10-24
+
+### Added
+- Five more full Adventure bonus levels: **Tidepool Terrace**, **Redwood
+  Ravine**, **Thunderstone Pass**, **Sunflower Bluff**, and **Aurora Crown**.
+- These are discovered through hidden one-square doors on regular Mountains
+  **2, 4, 6, 8 and 10**, respectively. Finding a door immediately unlocks
+  its bonus destination and enters it. Returning to the map lets players
+  replay all previously unlocked extras.
+- The five previous secret-victory bonus levels are preserved.
+- All **ten** bonus mountain buttons now appear on an illustrated, vertical
+  second section of the actual Adventure mountain map, rather than detached
+  cards. Locked peaks remain visible with their unlock source; mobile users
+  can use the "See 10 extra peaks" jump link.
+- Each new mountain retains the complete 18x14 playfield, coyote difficulty,
+  flag victory, three chests including a field guide fact, and a branching
+  secret door, with separate saved unlock/clear records.
+- Additional desktop Chrome, iPad and iPhone browser coverage for all ten
+  markers, all five normal-level doors, saves, Challenge Mode and original
+  secret paths.
+
+### Compatibility and rollback
+- Prior five secret-victory expeditions, mandatory Hollow→Mistveil path,
+  normal levels, Coyote Mode, village and carried equipment are unchanged.
+- Existing bonus save key retained: `gray-coyote-mountains-branch-expeditions-v1`.
+- Pre-release stable commit `464314fa60966787c1e79b61cdd0b65daeb4d924`.
+  Revert the release merge to restore v1.8.1.
+
 ## [1.8.1] - 2026-10-24
 
 ### Changed
