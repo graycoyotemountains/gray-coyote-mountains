@@ -14,7 +14,8 @@ history and enables rollback of individual changes.
   one-square house obstacles. Existing obstacle collision and level topology
   are preserved.
 - Added canonical URL, page description, social sharing metadata, and XML
-  sitemap so public search engines can discover the game more easily.
+  sitemap and an automated IndexNow notification on publication to help
+  participating search engines discover the game.
 - Added multi-device automated tests for movement and village rendering.
 
 ### Rollback
