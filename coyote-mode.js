@@ -163,14 +163,53 @@
   elem('coyoteYip').addEventListener('click',yip);
   section.querySelectorAll('[data-dx]').forEach(button=>button.addEventListener('click',()=>move(Number(button.dataset.dx),Number(button.dataset.dy))));
  }
+ function renderPicker(){
+  const grid=elem('coyoteMountainGrid');
+  grid.replaceChildren();
+  MOUNTAINS.forEach((level,index)=>{
+   const enabled=index<unlockedMountain,done=clearedMountains.has(index);
+   const card=document.createElement('button');
+   card.type='button';card.className='coyote-mountain-card';card.disabled=!enabled;
+   card.dataset.habitat=level.habitat;
+   card.setAttribute('aria-label','Mountain '+(index+1)+': '+level.name+', '+(done?'completed':enabled?'available':'locked'));
+   const status=done?'🏁 Completed':enabled?'🔓 Play':'🔒 Locked';
+   card.innerHTML='<span class="coyote-card-art" aria-hidden="true"><span>⛰️</span><span>'+level.icon+'</span><span>🐺</span></span>'+
+    '<span class="coyote-card-text"><strong>'+(index+1)+'. '+level.name+'</strong><small>'+level.detail+'</small>'+
+    '<small>⏱️ '+Math.floor(level.duration/60000)+':'+String(Math.ceil(level.duration%60000/1000)).padStart(2,'0')+
+    ' · 🚶 '+level.people.length+' visitors</small><span class="coyote-card-status">'+status+'</span></span>';
+   if(enabled)card.addEventListener('click',()=>start(index));
+   grid.appendChild(card);
+  });
+  elem('coyoteMapProgress').textContent='🏁 '+clearedMountains.size+'/'+MOUNTAINS.length+' mountains completed · 🔓 '+unlockedMountain+' unlocked';
+ }
+ function openPicker(){
+  pause();
+  // The original Adventure screen handler only knows the original four screens.
+  // Visit home first, then display the independent campaign selector.
+  if(screen==='coyote')elem('coyoteScreen').classList.remove('active');
+  if(screen==='coyote-map')elem('coyoteMapScreen').classList.remove('active');
+  showScreen('home');
+  elem('homeScreen').classList.remove('active');
+  renderPicker();
+  elem('coyoteMapScreen').classList.add('active');
+  screen='coyote-map';
+  try{window.scrollTo(0,0);}catch(error){}
+ }
  function buildTerrain(){
-  const blocked=new Map(), protectedPoints=[START,DEN].concat(PEOPLE,CUB_START);
-  let seed=912384;
+  const level=currentMountain();
+  const blocked=new Map();
+  const protectedPoints=[level.start,level.den].concat(level.people,level.cubs);
+  let seed=level.seed>>>0;
   const random=()=>{seed=(Math.imul(1664525,seed)+1013904223)>>>0;return seed/4294967296;};
   for(let y=0;y<HEIGHT;y++)for(let x=0;x<WIDTH;x++){
+   // Each map guarantees a tree-free family trail: row 12 and the den column.
+   // It remains possible to reach the den without frightening either cub.
    if(x===1||x===8||x===16||y===1||y===12)continue;
    if(protectedPoints.some(p=>manhattan(p,{x,y})<=2))continue;
-   if(random()<.23)blocked.set(key(x,y),random()<.67?'tree':'rock');
+   if(random()<level.obstacles){
+    const types=level.terrain;
+    blocked.set(key(x,y),types[Math.floor(random()*types.length)]);
+   }
   }
   return blocked;
  }
@@ -191,22 +230,29 @@
   if(remainingMs<=0){finish(false,'⏳ Time is up! You did not reach the den before sunset. The cubs are still calm.');return;}
   updateHud();
  }
- function start(){
+ function start(index=activeMountain){
+  if(!Number.isInteger(index)||index<0||index>=MOUNTAINS.length||index>=unlockedMountain)return;
   pause();
-  // Make sure the original game timer and sounds obey the existing home-screen transition.
   showScreen('home');
+  activeMountain=index;
+  const level=currentMountain();
   state={
-   phase:'playing',position:{...START},obstacles:buildTerrain(),
-   people:PEOPLE.map(p=>({...p,active:true})),
-   cubs:CUB_START.map(p=>({...p})),
+   phase:'playing',position:{...level.start},obstacles:buildTerrain(),
+   people:level.people.map(p=>({...p,active:true})),
+   cubs:level.cubs.map(p=>({...p})),
    moves:0,yipCooldown:0,scared:0,cubsCalm:true
   };
-  remainingMs=DURATION;
+  remainingMs=level.duration;
   elem('homeScreen').classList.remove('active');
+  elem('coyoteMapScreen').classList.remove('active');
   elem('coyoteScreen').classList.add('active');
-  screen='coyote';
+  elem('coyoteScreen').dataset.habitat=level.habitat;
+  elem('coyoteMountainNumber').textContent='MOUNTAIN '+(index+1)+' OF '+MOUNTAINS.length;
+  elem('coyoteMountainName').textContent=level.icon+' '+level.name;
   elem('coyoteResult').hidden=true;
-  message('🐺 Get to the den while BOTH cubs stay calm! They follow every two steps. Avoid visitors, and be careful where you YIP.');
+  elem('coyoteNext').hidden=true;
+  message('🐺 Find the den with BOTH cubs calm. Watch for '+level.people.length+' park visitors along the mountain.');
+  screen='coyote';
   draw();
   resume();
   try{window.scrollTo(0,0);}catch(error){}
@@ -214,6 +260,7 @@
  function leave(){
   pause();
   elem('coyoteScreen').classList.remove('active');
+  elem('coyoteMapScreen').classList.remove('active');
   showScreen('home');
  }
  function open(x,y){return inside(x,y)&&!state.obstacles.has(key(x,y));}
@@ -263,7 +310,7 @@
   if(cubIsFrightenedByPerson()){
    state.cubsCalm=false;
    finish(false,'🐾 A cub got too close to a park visitor and was frightened! Try a safer path.');
-  }else if(manhattan(state.position,DEN)===0){
+  }else if(manhattan(state.position,currentMountain().den)===0){
    finish(true,'🏡 You reached the den with both cubs calm! Your coyote family is safe.');
   }else if(cubTooCloseToYip()){
    message('🐾 Your cubs are close! Avoid a loud YIP right now.');
@@ -298,8 +345,15 @@
   state.phase=won?'won':'lost';pause();
   if(won){
    wins++;
-   try{localStorage.setItem(WIN_KEY,String(wins));}catch(error){}
+   clearedMountains.add(activeMountain);
+   unlockedMountain=Math.max(unlockedMountain,Math.min(MOUNTAINS.length,activeMountain+2));
+   try{
+    localStorage.setItem(WIN_KEY,String(wins));
+    localStorage.setItem(UNLOCK_KEY,String(unlockedMountain));
+    localStorage.setItem(CLEARED_KEY,JSON.stringify([...clearedMountains]));
+   }catch(error){}
   }
+  elem('coyoteNext').hidden=!(won&&activeMountain<MOUNTAINS.length-1);
   elem('coyoteResult').hidden=false;
   elem('coyoteResultTitle').textContent=won?'🏆 SAFE AT THE DEN!':state.cubsCalm?'⏳ COYOTE RUN OVER!':'😨 THE CUBS GOT SCARED!';
   elem('coyoteResultBody').textContent=reason;
@@ -313,22 +367,22 @@
   const seconds=Math.ceil(remainingMs/1000);
   elem('coyoteTime').textContent='⏱️ '+Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
   elem('coyoteMoves').textContent='👟 '+state.moves;
-  elem('coyoteWins').textContent='🏆 '+wins+' wins';
+  elem('coyoteWins').textContent='🏆 '+wins+' wins · 🏔️ '+(activeMountain+1)+'/'+MOUNTAINS.length;
   const button=elem('coyoteYip');
   button.disabled=state.phase!=='playing'||state.yipCooldown>0;
   button.textContent=state.yipCooldown?'🐺 YIP '+state.yipCooldown:'🐺 YIP!';
  }
  function draw(){
   if(!state)return;
-  const fragment=document.createDocumentFragment();
+  const fragment=document.createDocumentFragment(),level=currentMountain();
   for(let y=0;y<HEIGHT;y++)for(let x=0;x<WIDTH;x++){
    const tile=document.createElement('div');
    tile.className='coyote-tile';
    const terrain=state.obstacles.get(key(x,y));
-   if(terrain){tile.classList.add('coyote-'+terrain);tile.textContent=terrain==='tree'?'🌲':'🪨';}
+   if(terrain){tile.classList.add('coyote-'+terrain);tile.textContent=({tree:'🌲',rock:'🪨',brush:'🌾',water:'🌊'})[terrain];}
    else if(y===1||y===12||x===8){tile.classList.add('coyote-path');}
-   if(x===DEN.x&&y===DEN.y){
-    tile.classList.add('coyote-den'+(state.scared===PEOPLE.length?'-ready':''));
+   if(x===level.den.x&&y===level.den.y){
+    tile.classList.add('coyote-den-ready');
     tile.textContent='🕳️';
    }
    const visitor=state.people.find(p=>p.active&&p.x===x&&p.y===y);
@@ -345,17 +399,25 @@
   const direction=controls[event.key]||controls[event.key.toLowerCase()];
   if(direction){event.preventDefault();move(...direction);}
   else if(event.code==='Space'){event.preventDefault();yip();}
-  else if(event.key==='Escape'){event.preventDefault();leave();}
-  else if(event.key==='Enter'&&state&&state.phase!=='playing'){event.preventDefault();start();}
+  else if(event.key==='Escape'){event.preventDefault();openPicker();}
+  else if(event.key==='Enter'&&state&&state.phase!=='playing'){event.preventDefault();start(activeMountain);}
  });
  document.addEventListener('visibilitychange',()=>{if(document.hidden)pause();else resume();});
  // A read-only snapshot makes regression tests possible without editing live state.
  window.coyoteModeSnapshot=()=>state?{
-  phase:state.phase,cubsCalm:state.cubsCalm,moves:state.moves,
+  phase:state.phase,mountain:activeMountain,mountainCount:MOUNTAINS.length,
+  unlockedMountain,clearedMountains:[...clearedMountains].sort((a,b)=>a-b),
+  habitat:currentMountain().habitat,den:{...currentMountain().den},
+  cubsCalm:state.cubsCalm,moves:state.moves,
   scared:state.scared,yipCooldown:state.yipCooldown,position:{...state.position},
   people:state.people.map(p=>({x:p.x,y:p.y,active:p.active})),
   cubs:state.cubs.map(p=>({x:p.x,y:p.y})),
   wins
  }:null;
+ window.coyoteMountainDefinitions=()=>MOUNTAINS.map((level,index)=>({
+  index,name:level.name,habitat:level.habitat,start:{...level.start},
+  den:{...level.den},duration:level.duration,visitorCount:level.people.length,
+  obstacleRate:level.obstacles
+ }));
  createMarkup();
 })();
