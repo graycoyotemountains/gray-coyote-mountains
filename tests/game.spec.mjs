@@ -194,6 +194,43 @@ test('Legacy Hollow and Skyfire shortcut saves retain progress without an option
  expect(await page.evaluate(()=>summitTrailUnlocked)).toBe(true); // Historical flag kept without enabling shortcut.
 });
 
+test('Players who previously completed Skyfire through the old shortcut can still replay it',async({page})=>{
+ await page.addInitScript(()=>{
+  localStorage.setItem('gray-sentinel-mountain-unlocked-v1','5');
+  localStorage.setItem('gray-sentinel-mountain-cleared-v1','4');
+  localStorage.setItem('gray-coyote-mountains-secret-cleared-v1','true');
+  localStorage.setItem('gray-coyote-mountains-summit-trail-v1','true');
+  localStorage.setItem('gray-coyote-mountains-summit-shortcut-cleared-v1','true');
+ });
+ await page.goto('/');
+ await page.locator('#homeScreen button').filter({hasText:'Mountain Map'}).click();
+ await expect(page.locator('#secretTrail')).toHaveCount(0);
+ await expect(page.locator('.mountain').nth(9)).toBeEnabled();
+ await expect(page.locator('.mountain').nth(9)).toHaveClass(/done/);
+ await expect(page.locator('.mountain').nth(5)).toBeDisabled();
+ await page.locator('.mountain').nth(9).click();
+ await expect(page.locator('#subtitle')).toHaveText('Skyfire Summit');
+});
+
+test('Hollow mandatory trail carries the bicycle to Mistveil for one more level',async({page})=>{
+ await page.addInitScript(()=>localStorage.setItem('gray-coyote-mountains-secret-found-v1','true'));
+ await page.goto('/');
+ await page.locator('#playBtn').click();
+ await page.evaluate(()=>{
+  loadLevel(10);
+  // The original secret-level bicycle is carried into one additional level.
+  equipment={type:'bike',origin:10,currentLevel:10,nextLevel:null};
+  coyotes=[];runner={x:1,y:0};draw();move(-1,0);
+ });
+ await expect(page.locator('#subtitle')).toHaveText('Mistveil Lagoon');
+ expect(await page.evaluate(()=>equipment?.type)).toBe('bike');
+ await expect(page.locator('#field .runner')).toContainText('🚴');
+ await expect(page.locator('#shout')).toContainText('BIKE BELL');
+ expect(await page.evaluate(()=>equipment?.nextLevel)).toBe(14);
+ await page.evaluate(()=>loadLevel(15));
+ expect(await page.evaluate(()=>equipment)).toBeNull();
+});
+
 test('Secret door plays its special sound and coyote collision plays munch', async ({page}) => {
   await page.addInitScript(()=>{
     localStorage.setItem('gray-sentinel-mountain-unlocked-v1','5');
