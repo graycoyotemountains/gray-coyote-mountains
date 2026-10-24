@@ -4,6 +4,24 @@ A browser adventure with **10 mountain levels, 3 secret worlds, treasure chests,
 
 **Play:** https://graycoyotemountains.github.io/gray-coyote-mountains/
 
+## Six coyote-family mountains (v1.5.0)
+
+Open **🐺 Play as the Coyote** on the home screen to choose a mountain.
+Complete each to unlock the next. Your coyote wins, cleared mountains and
+available mountains remain saved in this browser.
+
+- 🌾 Baylands Trail: your original coyote rescue route.
+- 🦆 Salt Marsh Lookout: reeds, tidal water and a reversed trail.
+- 💧 Stevens Creek Pass: rock and creekside trees.
+- 🌿 Coyote Grasslands: denser grass cover and more visitors.
+- 🌳 Sycamore Ridge: crowded woodland paths.
+- ⛰️ Shoreline Summit: the final rocky mountain.
+
+The objective never changes: **reach your den without frightening either cub**.
+Each mountain has a safe path; use keyboard arrows or the touch buttons.
+Use YIP carefully to encourage people to move away when cubs are safely
+outside the bark's range. No other game modes are affected.
+
 ## Play as the Coyote 🐺
 
 Select **🐺 Play as the Coyote** from the home screen to explore a separate
