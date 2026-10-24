@@ -63,7 +63,7 @@
   const picker=document.createElement('section');
   picker.id='coyoteMapScreen';picker.className='screen';
   picker.setAttribute('aria-label','Coyote mountain selection');
-  picker.innerHTML='<div class="shell"><div class="topbar"><button class="btn secondary small" type="button" id="coyoteMapHome">← Home</button><div class="brand">🐺 COYOTE FAMILY TRAIL</div></div><div class="coyote-map-intro"><div class="eyebrow">One den at a time</div><h2>Six mountains. Two cubs. One family.</h2><p>Reach each den with both cubs calm to unlock the next mountain. Every habitat brings new paths and park visitors.</p><span id="coyoteMapProgress" class="progress"></span></div><div id="coyoteMountainGrid" class="coyote-mountain-grid" aria-label="Six coyote mode mountains"></div><p class="coyote-map-fact">🌿 Coyotes live in family groups, and real coyotes generally avoid people. Keep your distance from wildlife when visiting the Baylands.</p></div>';
+  picker.innerHTML='<div class="shell"><div class="topbar"><button class="btn secondary small" type="button" id="coyoteMapHome">← Home</button><div class="brand">🐺 COYOTE FAMILY TRAIL</div></div><div class="coyote-map-intro"><div class="eyebrow">One den at a time</div><h2>Explore Coyote Bay</h2><p>Follow the Baylands shoreline through six mountain adventures. Reach each den with both cubs calm to unlock the next stop.</p><span id="coyoteMapProgress" class="progress"></span></div><div id="coyoteMountainGrid" class="coyote-mountain-grid" aria-label="Illustrated Baylands map with six selectable coyote mountains, following a winding shoreline from top to bottom"></div><p class="coyote-map-fact">🌿 Coyotes live in family groups, and real coyotes generally avoid people. Keep your distance from wildlife when visiting the Baylands.</p></div>';
   document.querySelector('main').appendChild(picker);
   elem('coyoteMapHome').addEventListener('click',leave);
   const section=document.createElement('section');
@@ -156,7 +156,23 @@
    '#coyoteMapScreen .coyote-map-fact{text-align:center;color:#c8d9c5;margin:23px auto;max-width:740px;font-size:.86rem}',
    '@media(max-width:600px){#coyoteMapScreen .coyote-mountain-grid{grid-template-columns:minmax(0,1fr);gap:13px}#coyoteMapScreen .coyote-card-art{min-height:84px;font-size:2.5rem}#coyoteMapScreen .coyote-card-text{padding:10px 14px 13px}}',
    '@media(max-width:850px){#coyoteScreen .coyote-layout{grid-template-columns:minmax(0,1fr)}#coyoteScreen .coyote-side{max-width:100%}#coyoteScreen .coyote-controls .btn{min-width:54px}}',
-   '@media(max-width:500px){#coyoteScreen .coyote-tile{font-size:clamp(10px,3vw,15px)}#coyoteScreen .coyote-board-viewport{padding:3px}#coyoteScreen #coyoteField{gap:1px}#coyoteScreen .coyote-title h2{font-size:1.85rem}}'
+   '@media(max-width:500px){#coyoteScreen .coyote-tile{font-size:clamp(10px,3vw,15px)}#coyoteScreen .coyote-board-viewport{padding:3px}#coyoteScreen #coyoteField{gap:1px}#coyoteScreen .coyote-title h2{font-size:1.85rem}}',
+   /* Coyote Bay is one continuous portrait map, like the Adventure selector.
+      Native buttons float above the illustrated shoreline; no sideways scrolling. */
+   '#coyoteMapScreen .coyote-mountain-grid{position:relative;display:block;width:100%;max-width:720px;min-width:0;height:1500px;margin:0 auto;border:3px solid #bba878;border-radius:22px;box-shadow:0 12px 28px #0b262550;background:#70ada7 url("assets/coyote-bay-map.svg") center top / 100% 100% no-repeat;overflow:hidden;isolation:isolate}',
+   '#coyoteMapScreen .coyote-mountain-card{position:absolute;z-index:2;left:var(--bay-x);top:var(--bay-y);transform:translate(-50%,-50%);width:clamp(136px,41%,224px);min-width:0;min-height:125px;max-height:172px;display:flex;align-items:center;justify-content:center;padding:8px;border:3px solid #694d34;border-radius:15px;background:linear-gradient(160deg,#fff0cc,#ecd29a 85%);color:#284539;box-shadow:0 4px 0 #6c513d,0 8px 14px #113d3b85;text-align:center}',
+   '#coyoteMapScreen .coyote-mountain-card:not(:disabled):hover{transform:translate(-50%,calc(-50% - 3px));box-shadow:0 7px 0 #6c513d,0 11px 16px #113d3b85}',
+   '#coyoteMapScreen .coyote-mountain-card:disabled{opacity:.9;filter:saturate(.75);background:linear-gradient(150deg,#e7e2d4,#bfc2b2)}',
+   '#coyoteMapScreen .coyote-mountain-card:focus-visible{outline:4px solid #f7d971;outline-offset:3px}',
+   '#coyoteMapScreen .coyote-map-number{width:30px;height:30px;flex:none;display:grid;place-items:center;border-radius:50%;border:2px solid #6e5130;background:#4c7860;color:#fff4cb;font-size:.95rem;font-weight:950;box-shadow:0 1px 3px #20382c77}',
+   '#coyoteMapScreen .coyote-card-art{display:none}',
+   '#coyoteMapScreen .coyote-card-text{padding:4px;gap:3px;align-items:center;text-align:center}',
+   '#coyoteMapScreen .coyote-card-text strong{font-size:clamp(.78rem,2.25vw,1rem);line-height:1.15}',
+   '#coyoteMapScreen .coyote-card-text small{font-size:clamp(.64rem,1.65vw,.77rem);line-height:1.2}',
+   '#coyoteMapScreen .coyote-card-status{font-size:clamp(.68rem,2vw,.8rem)}',
+   '#coyoteMapScreen .coyote-map-fact{max-width:720px}',
+   '@media(max-width:440px){#coyoteMapScreen .coyote-mountain-grid{border-radius:13px;border-width:2px}#coyoteMapScreen .coyote-mountain-card{min-height:125px;padding:5px 3px;border-width:2px;border-radius:12px}#coyoteMapScreen .coyote-card-text{padding:2px}#coyoteMapScreen .coyote-card-text small{font-size:.68rem}}',
+   '@media(prefers-reduced-motion:reduce){#coyoteMapScreen .coyote-mountain-card{transition:none}}'
   ].join('');
   document.head.append(style);
   elem('coyoteHome').addEventListener('click',openPicker);
@@ -175,8 +191,12 @@
    card.dataset.habitat=level.habitat;
    card.setAttribute('aria-label','Mountain '+(index+1)+': '+level.name+', '+(done?'completed':enabled?'available':'locked'));
    const status=done?'🏁 Completed':enabled?'🔓 Play':'🔒 Locked';
-   card.innerHTML='<span class="coyote-card-art" aria-hidden="true"><span>⛰️</span><span>'+level.icon+'</span><span>🐺</span></span>'+
-    '<span class="coyote-card-text"><strong>'+(index+1)+'. '+level.name+'</strong><small>'+level.detail+'</small>'+
+   // Level markers wind down a single Baylands shoreline illustration.
+   const bayStop=[[28,17],[72,29],[28,42],[72,55],[28,68],[72,82]][index];
+   card.style.setProperty('--bay-x',bayStop[0]+'%');
+   card.style.setProperty('--bay-y',bayStop[1]+'%');
+   card.innerHTML='<span class="coyote-map-number" aria-hidden="true">'+(index+1)+'</span>'+
+    '<span class="coyote-card-text"><strong>'+level.icon+' '+level.name+'</strong><small>'+level.detail+'</small>'+
     '<small>⏱️ '+Math.floor(level.duration/60000)+':'+String(Math.ceil(level.duration%60000/1000)).padStart(2,'0')+
     ' · 🚶 '+level.people.length+' visitors</small><span class="coyote-card-status">'+status+'</span></span>';
    if(enabled)card.addEventListener('click',()=>start(index));
