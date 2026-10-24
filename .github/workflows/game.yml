@@ -34,7 +34,7 @@ jobs:
       - uses: actions/configure-pages@v5
         with:
           enablement: true
-      - run: mkdir -p dist && cp index.html facts.js upgrades.js stats-config.js stats.js dist/ && cp -R assets dist/assets
+      - run: mkdir -p dist && cp index.html facts.js upgrades.js stats-config.js stats.js sitemap.xml dist/ && cp -R assets dist/assets
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
