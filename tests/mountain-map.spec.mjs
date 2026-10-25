@@ -41,7 +41,7 @@ test('portrait map has vertical-only scrolling, jump navigation, and reachable l
   expect(measurements.documentWidth).toBeLessThanOrEqual(measurements.windowWidth + 2);
   expect(measurements.documentHeight).toBeGreaterThan(measurements.windowHeight);
   expect(measurements.height).toBeGreaterThan(1800);
-  await page.locator('.map-jump').click();
+  await page.locator('.map-jump').filter({hasText:'Latest unlocked'}).click();
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(800);
   await page.locator('#mountainGrid .mountain').nth(9).click();
   await expect(page.locator('#gameScreen')).toBeVisible();
