@@ -27,12 +27,12 @@ const useDoor=async(page)=>{
 };
 test('Five new bonus levels are individually locked and portrait map stays phone-friendly',async({page})=>{
  await page.goto('/');
- expect(await page.evaluate(()=>LEVELS.length)).toBe(19);
+ expect(await page.evaluate(()=>LEVELS.length)).toBe(24);
  await page.locator('#homeScreen button').filter({hasText:'Mountain Map'}).click();
  const cards=page.locator('#bonusExpeditionGrid .bonus-expedition-route');
- await expect(cards).toHaveCount(5);
- for(let i=0;i<5;i++)await expect(cards.nth(i)).toBeDisabled();
- await expect(page.locator('#bonusExpeditionProgress')).toContainText('0/5 unlocked');
+ await expect(cards).toHaveCount(10);
+ for(let i=0;i<10;i++)await expect(cards.nth(i)).toBeDisabled();
+ await expect(page.locator('#bonusExpeditionProgress')).toContainText('0/10 unlocked');
  const data=await page.evaluate(()=>({
   width:document.documentElement.scrollWidth,screen:innerWidth,
   mapCards:document.querySelectorAll('#mountainGrid .mountain').length,
@@ -40,7 +40,7 @@ test('Five new bonus levels are individually locked and portrait map stays phone
  }));
  expect(data.width).toBeLessThanOrEqual(data.screen+2);
  expect(data.mapCards).toBe(10);
- expect(new Set(data.labels).size).toBe(5);
+ expect(new Set(data.labels).size).toBe(10);
 });
 test('Winning Hollow Mountain unlocks two new levels, persisted after reload',async({page})=>{
  await page.addInitScript(secretSaves);
@@ -56,8 +56,8 @@ test('Winning Hollow Mountain unlocks two new levels, persisted after reload',as
  await page.locator('#homeScreen button').filter({hasText:'Mountain Map'}).click();
  const cards=page.locator('#bonusExpeditionGrid .bonus-expedition-route');
  for(let i=0;i<2;i++)await expect(cards.nth(i)).toBeEnabled();
- for(let i=2;i<5;i++)await expect(cards.nth(i)).toBeDisabled();
- await expect(page.locator('#bonusExpeditionProgress')).toContainText('2/5 unlocked');
+ for(let i=2;i<10;i++)await expect(cards.nth(i)).toBeDisabled();
+ await expect(page.locator('#bonusExpeditionProgress')).toContainText('2/10 unlocked');
  await cards.first().click();
  expect(await page.evaluate(()=>levelIndex)).toBe(14);
  await expect(page.locator('#field .tile')).toHaveCount(252);
@@ -71,9 +71,9 @@ test('Winning all three secret worlds reveals exactly five new adventures',async
  await page.reload();
  await page.locator('#homeScreen button').filter({hasText:'Mountain Map'}).click();
  const buttons=page.locator('#bonusExpeditionGrid .bonus-expedition-route');
- await expect(buttons).toHaveCount(5);
+ await expect(buttons).toHaveCount(10);
  for(let i=0;i<5;i++)await expect(buttons.nth(i)).toBeEnabled();
- await expect(page.locator('#bonusExpeditionProgress')).toContainText('5/5 unlocked');
+ await expect(page.locator('#bonusExpeditionProgress')).toContainText('5/10 unlocked');
 });
 test('Previous secret victories automatically unlock their bonus branches',async({page})=>{
  await page.addInitScript(()=>{
@@ -85,7 +85,9 @@ test('Previous secret victories automatically unlock their bonus branches',async
  const unlocked=await page.evaluate(()=>[...bonusUnlocked].sort((a,b)=>a-b));
  expect(unlocked).toEqual([14,15,16,17,18]);
  await page.locator('#homeScreen button').filter({hasText:'Mountain Map'}).click();
- for(const b of await page.locator('#bonusExpeditionGrid button').all())await expect(b).toBeEnabled();
+ const cards=page.locator('#bonusExpeditionGrid button');
+ for(let i=0;i<5;i++)await expect(cards.nth(i)).toBeEnabled();
+ for(let i=5;i<10;i++)await expect(cards.nth(i)).toBeDisabled();
 });
 test('Before victory a secret door offers the existing level but locks bonus routes',async({page})=>{
  await page.addInitScript(secretSaves);
