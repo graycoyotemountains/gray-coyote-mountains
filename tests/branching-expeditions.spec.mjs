@@ -32,7 +32,7 @@ test('Five new bonus levels are individually locked and portrait map stays phone
  const cards=page.locator('#bonusExpeditionGrid .bonus-expedition-route');
  await expect(cards).toHaveCount(10);
  for(let i=0;i<10;i++)await expect(cards.nth(i)).toBeDisabled();
- await expect(page.locator('#bonusExpeditionProgress')).toContainText('0/5 unlocked');
+ await expect(page.locator('#bonusExpeditionProgress')).toContainText('0/10 unlocked');
  const data=await page.evaluate(()=>({
   width:document.documentElement.scrollWidth,screen:innerWidth,
   mapCards:document.querySelectorAll('#mountainGrid .mountain').length,
@@ -57,7 +57,7 @@ test('Winning Hollow Mountain unlocks two new levels, persisted after reload',as
  const cards=page.locator('#bonusExpeditionGrid .bonus-expedition-route');
  for(let i=0;i<2;i++)await expect(cards.nth(i)).toBeEnabled();
  for(let i=2;i<10;i++)await expect(cards.nth(i)).toBeDisabled();
- await expect(page.locator('#bonusExpeditionProgress')).toContainText('2/5 unlocked');
+ await expect(page.locator('#bonusExpeditionProgress')).toContainText('2/10 unlocked');
  await cards.first().click();
  expect(await page.evaluate(()=>levelIndex)).toBe(14);
  await expect(page.locator('#field .tile')).toHaveCount(252);
@@ -73,7 +73,7 @@ test('Winning all three secret worlds reveals exactly five new adventures',async
  const buttons=page.locator('#bonusExpeditionGrid .bonus-expedition-route');
  await expect(buttons).toHaveCount(10);
  for(let i=0;i<5;i++)await expect(buttons.nth(i)).toBeEnabled();
- await expect(page.locator('#bonusExpeditionProgress')).toContainText('5/5 unlocked');
+ await expect(page.locator('#bonusExpeditionProgress')).toContainText('5/10 unlocked');
 });
 test('Previous secret victories automatically unlock their bonus branches',async({page})=>{
  await page.addInitScript(()=>{
