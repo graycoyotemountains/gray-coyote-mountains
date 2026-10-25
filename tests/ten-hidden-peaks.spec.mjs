@@ -23,7 +23,7 @@ test('all ten extra peaks are on the illustrated mountain map, accessible withou
   expect(info.cards[i].right).toBeLessThanOrEqual(info.viewport+2);
   if(i)expect(info.cards[i].centerY).toBeGreaterThan(info.cards[i-1].centerY+140);
  }
- await page.locator('button.map-jump').filter({hasText:'See 10 extra peaks'}).click();
+ await page.locator('button.bonus-map-jump').filter({hasText:'See 10 extra peaks'}).click();
  await expect.poll(()=>page.evaluate(()=>scrollY)).toBeGreaterThan(1700);
  await expect(page.locator('#mountainGrid .mountain')).toHaveCount(10);
 });
