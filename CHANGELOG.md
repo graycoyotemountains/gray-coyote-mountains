@@ -4,6 +4,29 @@ All notable changes to Gray Coyote Mountains are recorded here. This is a
 human-readable release log; Git commit history is the authoritative version
 history and enables rollback of individual changes.
 
+## [1.9.1] - 2026-10-31
+
+### Changed
+- Converted all ten extra mountains (Mistveil Lagoon through Aurora Crown)
+  from secret worlds into **regular Adventure mountain levels**.
+- They use the normal 18x14 grid, coyotes, three treasure/fact chests, flag,
+  ordinary mountain styling, standard countdown and victory chimes, rather
+  than secret-world ambience or special secret-door gameplay.
+- New extra mountains are reached through visible physical **🕳️ tunnels**.
+  Mountains 2, 4, 6, 8 and 10 lead to Tidepool Terrace, Redwood Ravine,
+  Thunderstone Pass, Sunflower Bluff and Aurora Crown, respectively.
+- The original three secret worlds have *separate* tunnels that offer their
+  already-unlocked regular mountain destinations (2, 2 and 1 respectively).
+  Each extra mountain has a return tunnel to its source.
+- Original secret doors continue to link only the three original secret
+  worlds. They no longer provide access to regular extra mountains.
+- Hollow Mountain's mandatory victory tunnel still immediately enters
+  Mistveil Lagoon. All unlocked and cleared extra mountains retain their
+  prior save IDs and their places on the illustrated map.
+
+### Rollback
+- Pre-release v1.9.0 commit: `0fe9c2d20397349a97825dc37ba0c837670f6967`.
+
 ## [1.9.0] - 2026-10-24
 
 ### Added
