@@ -167,7 +167,7 @@ test('Winning Hollow forces a transition into Mistveil Lagoon, not Skyfire', asy
    bonus:[...bonusUnlocked].sort((a,b)=>a-b),shortcut:summitTrailUnlocked}));
  expect(state).toMatchObject({levelIndex:14,mode:'playing',secretCleared:true,
    coyoteVictories:before+1,unlocked:5,bonus:[14,15],shortcut:false});
- await expect(page.locator('#message')).toContainText('MANDATORY SECRET TRAIL');
+ await expect(page.locator('#message')).toContainText('MANDATORY TUNNEL');
  await expect(page.locator('#secretNext')).toHaveCount(0);
  await page.locator('#gameScreen button').filter({hasText:'Mountain Map'}).first().click();
  await expect(page.locator('#secretTrail')).toHaveCount(0);
