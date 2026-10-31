@@ -227,7 +227,7 @@ test('Hollow mandatory trail carries the bicycle to Mistveil for one more level'
  await expect(page.locator('#field .runner')).toContainText('🚴');
  await expect(page.locator('#shout')).toContainText('BIKE BELL');
  expect(await page.evaluate(()=>equipment?.nextLevel)).toBe(14);
- await page.evaluate(()=>loadLevel(15));
+ await page.evaluate(()=>{markBonusUnlocked(15);saveProgress();loadLevel(15);});
  expect(await page.evaluate(()=>equipment)).toBeNull();
 });
 
@@ -540,8 +540,8 @@ test('The haunted atmosphere pauses in the background and stops on victory',asyn
  await page.evaluate(()=>{runner={x:1,y:0};draw();});
  await page.getByRole('button',{name:'Move left'}).click();
  await expect(page.locator('#subtitle')).toHaveText('Mistveil Lagoon');
- // Mistveil is another secret world, so the spooky ambient audio continues.
- await expect.poll(()=>page.evaluate(()=>Boolean(secretAmbience))).toBe(true);
+ // Mistveil is a regular tunnel branch, so secret-world ambience must stop.
+ await expect.poll(()=>page.evaluate(()=>Boolean(secretAmbience))).toBe(false);
 });
 
 test('Human shout audio is locally hosted and SHOUT triggers the recorded human voice',async({page})=>{
@@ -672,7 +672,7 @@ test('Original Hollow Mountain, secret trail and old save files still work',asyn
  await expect(page.locator('#subtitle')).toHaveText('Mistveil Lagoon');
  await expect(page.locator('#secretNext')).toHaveCount(0);
  await expect(page.evaluate(()=>localStorage.getItem(SECRET_CLEARED_KEY))).resolves.toBe('true');
- await expect(page.evaluate(()=>JSON.parse(localStorage.getItem(BONUS_KEY)).unlocked)).resolves.toEqual([14,15]);
+ await expect(page.evaluate(()=>JSON.parse(localStorage.getItem(BONUS_KEY)).unlocked)).resolves.toEqual([14]);
 });
 
 test('Coyote catch plays an actual bundled human munch sound rather than synthesis',async({page})=>{
