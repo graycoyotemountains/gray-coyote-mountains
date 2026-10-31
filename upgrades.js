@@ -140,6 +140,12 @@ LEVELS.push(...BONUS_CONFIGS);
  @media(prefers-reduced-motion:reduce){#mapScreen .bonus-expedition-route{transition:none}}
  `;
  document.head.append(trailStyles);
+ const tunnelStyles=document.createElement('style');
+ tunnelStyles.textContent=`
+ #gameScreen #field .tile.tunnel-entrance,#gameScreen #field .tile.tunnel-return{position:relative;background:#66594b;color:#ffe1ad;border:2px solid #e6bd79;border-radius:38%;box-shadow:inset 0 2px 7px #201d25,0 0 8px #d5bd6a88}
+ #gameScreen #field .tile.tunnel-entrance::after,#gameScreen #field .tile.tunnel-return::after{content:"";position:absolute;inset:8%;border:1px dashed #e6daac;border-radius:38%;pointer-events:none}
+ `;
+ document.head.append(tunnelStyles);
  // The original SVG atlas has 13 silhouettes. Reuse a mountain landscape for the bonus village.
  const originalMountainSVG=mountainSVG;
  mountainSVG=function(i){return originalMountainSVG(i===VILLAGE_INDEX?1:i>=BONUS_START?(i-BONUS_START+4)%MAIN_MOUNTAINS:i);};
@@ -458,6 +464,7 @@ LEVELS.push(...BONUS_CONFIGS);
   if(!challengeMode){
    if(i===VILLAGE_INDEX)el('gameHint').textContent='🏘️ Villagers relocate the flag every five steps. Avoid their ambushes and the coyotes!';
    else if(i>=BONUS_START)el('gameHint').textContent='⛰️ Regular branch mountain! Reach the flag to win, collect treasures and take the 🚇 return tunnel to Mountain '+(BONUS_PARENT[i]+1)+'.';
+   if(i>=BONUS_START)say('⛰️ NEW REGULAR MOUNTAIN: '+LEVELS[i].name+'. Find the flag, collect treasure or take the return tunnel!');
    else if(i>=MAIN_MOUNTAINS)el('gameHint').textContent='✨ Find the special tool and hidden secret door. These three worlds are different from the regular tunnel branches.';
    else if(Object.hasOwn(BONUS_BY_MOUNTAIN,i))el('gameHint').textContent='🚇 Find the hidden mountain tunnel to '+LEVELS[BONUS_BY_MOUNTAIN[i]].name+'! Get within three squares to reveal the entrance.';
   }
