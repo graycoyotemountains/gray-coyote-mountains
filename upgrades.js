@@ -7,12 +7,11 @@ const VILLAGE_KEY='gray-coyote-mountains-village-v1';
 const VILLAGE_INDEX=13;
 const BONUS_START=14;
 const BONUS_KEY='gray-coyote-mountains-branch-expeditions-v1';
-const BONUS_BY_SECRET={10:[14,15],11:[16,17],12:[18]};
-// Five extra paths branch from normal Mountains 2, 4, 6, 8 and 10,
-// complementing the first five secret-victory expeditions.
-const BONUS_BY_MOUNTAIN={1:19,3:20,5:21,7:22,9:23};
+// Ten regular side branches, one tunnel from each normal mountain.
+// Existing bonus-level indices and saves are retained for returning players.
+const BONUS_BY_MOUNTAIN={0:14,1:19,2:15,3:20,4:16,5:21,6:17,7:22,8:18,9:23};
 const SECOND_BONUS_START=19;
-const BONUS_PARENT={14:10,15:10,16:11,17:11,18:12,19:1,20:3,21:5,22:7,23:9};
+const BONUS_PARENT={14:0,15:2,16:4,17:6,18:8,19:1,20:3,21:5,22:7,23:9};
 const BONUS_CONFIGS=[
  {name:'Mistveil Lagoon',trees:23,rocks:15,alert:5,speed:3,sky1:'#8ed0d4',sky2:'#e6e4b3',peak:'#689c96',shade:'#386e72',snow:'#f5efcf',icon:'🦆',desc:'Mist rolls across the hidden lagoon'},
  {name:'Echo Fern Forest',trees:39,rocks:12,alert:6,speed:3,sky1:'#a4cfb8',sky2:'#d0daa5',peak:'#528771',shade:'#2b6451',snow:'#e8e9cc',icon:'🌿',desc:'Secret fern groves echo through the trees'},
@@ -32,7 +31,7 @@ try{
  if(Array.isArray(bonus.cleared))bonusCleared=new Set(bonus.cleared.filter(i=>Number.isInteger(i)&&i>=BONUS_START&&i<BONUS_START+BONUS_CONFIGS.length));
 }catch(error){console.warn('Unable to restore bonus expeditions',error);}
 let collectedFacts=new Set(),equipment=null,ranger=null;
-let secretItem=null,secretChainDoor=null,normalBonusDoor=null,villageFlag={x:3,y:3},villageGuards=new Set(),villageCleared=false;
+let secretItem=null,secretChainDoor=null,normalBonusTunnel=null,returnTunnel=null,villageFlag={x:3,y:3},villageGuards=new Set(),villageCleared=false;
 try {
  const saved=JSON.parse(localStorage.getItem(FACT_KEY)||'[]');
  if(Array.isArray(saved))for(const n of saved)if(Number.isInteger(n)&&n>=0&&n<COYOTE_FACTS.length)collectedFacts.add(n);
@@ -43,11 +42,9 @@ try {
 }catch(error){console.warn('Could not read expansion progress',error);}
 extraUnlocked[2]=collectedFacts.size===50;
 extraCleared[2]=villageCleared;
-// Existing secret victories also count: returning players need not replay
-// a level they have already won to unlock the new bonus expeditions.
-if(secretCleared)for(const i of BONUS_BY_SECRET[10])bonusUnlocked.add(i);
-if(extraCleared[0])for(const i of BONUS_BY_SECRET[11])bonusUnlocked.add(i);
-if(extraCleared[1])for(const i of BONUS_BY_SECRET[12])bonusUnlocked.add(i);
+// Retain saved branch unlocks and cleared levels. Existing victories remain
+// intact, but secret-world wins no longer automatically reveal regular tunnels.
+if(secretCleared)bonusUnlocked.add(BONUS_START); // Mandatory Hollow -> Mistveil story trail.
 for(const i of bonusCleared)bonusUnlocked.add(i);
 for(let n=0;n<BONUS_CONFIGS.length;n++){
  extraUnlocked[3+n]=bonusUnlocked.has(BONUS_START+n);
@@ -68,8 +65,8 @@ LEVELS.push(...BONUS_CONFIGS);
  // Their unlocks are stored separately from the legacy secret-world save.
  const bonusPanel=document.createElement('section');
  bonusPanel.id='bonusExpeditionPanel';bonusPanel.className='bonus-expedition-panel';
- bonusPanel.setAttribute('aria-label','Ten extra mountains on the illustrated Adventure map');
- bonusPanel.innerHTML='<div class="bonus-map-heading"><h3>🌟 Hidden Mountain Trails</h3><p>Ten extra mountains continue the winding trail below. Five unlock by winning secret worlds; find the other five through hidden doors on Mountains 2, 4, 6, 8 and 10.</p></div><div id="bonusExpeditionGrid" class="bonus-expedition-grid" aria-label="Ten extra mountain locations"></div><p id="bonusExpeditionProgress" class="bonus-expedition-progress" aria-live="polite"></p>';
+ bonusPanel.setAttribute('aria-label','Ten regular tunnel-branch mountains on the illustrated Adventure map');
+ bonusPanel.innerHTML='<div class="bonus-map-heading"><h3>🚇 Mountain Tunnel Trails</h3><p>Ten regular side mountains. Find a tunnel on each of Mountains 1–10 to reach its branch, then take the return tunnel home. The three original secret worlds remain separate.</p></div><div id="bonusExpeditionGrid" class="bonus-expedition-grid" aria-label="Ten regular mountain tunnel branches"></div><p id="bonusExpeditionProgress" class="bonus-expedition-progress" aria-live="polite"></p>';
  // Place the new peaks IN the Adventure map, continuing its vertical scenery.
  document.querySelector('#mapScreen .map-scene .map-swipe-hint').before(bonusPanel);
  const branchDialog=document.createElement('dialog');
@@ -229,7 +226,9 @@ LEVELS.push(...BONUS_CONFIGS);
   bonusUnlocked.add(i);extraUnlocked[i-SECRET_LEVEL-1]=true;
  }
  function markSecretVictory(i){
-  for(const n of BONUS_BY_SECRET[i]||[])markBonusUnlocked(n);
+  // Keep the Hollow -> Mistveil mandatory story trail, but all other
+  // regular branch levels now unlock only when their tunnel is entered.
+  if(i===SECRET_LEVEL)markBonusUnlocked(BONUS_START);
  }
  function renderBonusPanel(){
   const grid=document.getElementById('bonusExpeditionGrid');
