@@ -347,14 +347,14 @@ LEVELS.push(...BONUS_CONFIGS);
  }
  activeGoal=function(){return !challengeMode&&levelIndex===VILLAGE_INDEX?villageFlag:baseGoal();};
  createChestsAndPortals=function(){
-  normalBonusDoor=null;
+  normalBonusTunnel=null;returnTunnel=null;
   baseChests();
   if(challengeMode)return;
-  // The original secret portals on Mountains 5, 7 and 9 are unchanged.
-  // Five OTHER normal mountains have a separate discoverable extra door.
+  // A separate rock tunnel is hidden on EVERY regular Mountain (1-10).
+  // Existing secret doors on Mountains 5, 7, 9 stay distinct.
   if(Object.hasOwn(BONUS_BY_MOUNTAIN,levelIndex)){
-   normalBonusDoor=findSpot([START,GOAL,extraDoor,SECRET_DOOR,...SPAWNS]);
-   if(normalBonusDoor&&!connected(START,normalBonusDoor))normalBonusDoor=null;
+   normalBonusTunnel=findSpot([START,GOAL,extraDoor,SECRET_DOOR,...SPAWNS]);
+   if(normalBonusTunnel&&!connected(START,normalBonusTunnel))normalBonusTunnel=null;
   }
   if(levelIndex>=SECRET_LEVEL&&levelIndex<VILLAGE_INDEX){
    const p=findSpot([]);
@@ -433,21 +433,23 @@ LEVELS.push(...BONUS_CONFIGS);
   baseLoad(i);
   if(screen!=='game'||levelIndex!==i)return;
   secretChainDoor=null;secretItem=null;villageGuards.clear();
-  if(!challengeMode&&(i>=SECRET_LEVEL&&i<VILLAGE_INDEX||i>=BONUS_START)){
+  if(!challengeMode&&i>=SECRET_LEVEL&&i<VILLAGE_INDEX){
    secretChainDoor=findSpot([]);
-   if(i<VILLAGE_INDEX){
-    secretItem=findSpot([secretChainDoor]);
-    if(secretItem)secretItem={...secretItem,type:i===10?'bike':i===11?'glider':'radio'};
-   }
+   secretItem=findSpot([secretChainDoor]);
+   if(secretItem)secretItem={...secretItem,type:i===10?'bike':i===11?'glider':'radio'};
+  }
+  if(!challengeMode&&i>=BONUS_START){
+   // Branch mountains are regular levels with a tunnel BACK to their origin.
+   returnTunnel=findSpot([START,GOAL,...SPAWNS]);
   }
   if(!challengeMode&&i===VILLAGE_INDEX){chooseVillageFlag();}
   if(ranger&&!challengeMode){Object.assign(ranger,initialRangerSpot());repelCoyotes();}
   saveExtras();
   if(!challengeMode){
    if(i===VILLAGE_INDEX)el('gameHint').textContent='🏘️ Villagers relocate the flag every five steps. Avoid their ambushes and the coyotes!';
-   else if(i>=BONUS_START)el('gameHint').textContent='🌟 Bonus expedition! Reach the flag to win. Find the branching door to choose another hidden route.';
-   else if(i>=MAIN_MOUNTAINS)el('gameHint').textContent='✨ Find the special tool and hidden door. Win this secret level to unlock new bonus mountains, then choose your path at the door!';
-   else if(Object.hasOwn(BONUS_BY_MOUNTAIN,i))el('gameHint').textContent='🌀 A hidden doorway to '+LEVELS[BONUS_BY_MOUNTAIN[i]].name+' is somewhere on this mountain. Get close to discover it!';
+   else if(i>=BONUS_START)el('gameHint').textContent='⛰️ Regular branch mountain! Reach the flag to win, collect treasures and take the 🚇 return tunnel to Mountain '+(BONUS_PARENT[i]+1)+'.';
+   else if(i>=MAIN_MOUNTAINS)el('gameHint').textContent='✨ Find the special tool and hidden secret door. These three worlds are different from the regular tunnel branches.';
+   else if(Object.hasOwn(BONUS_BY_MOUNTAIN,i))el('gameHint').textContent='🚇 Find the hidden mountain tunnel to '+LEVELS[BONUS_BY_MOUNTAIN[i]].name+'! Get within three squares to reveal the entrance.';
   }
   draw();
  };
@@ -458,8 +460,8 @@ LEVELS.push(...BONUS_CONFIGS);
    el('levelStat').textContent='🏘️ Village';
    el('treasureStat').textContent='🧰 '+chestsOpened+'/3 · 🎒 '+totalTreasures()+' · 📖 '+collectedFacts.size+'/50';
   }else if(!challengeMode&&levelIndex>=BONUS_START){
-   el('mountainLabel').textContent='🌟 BONUS EXPEDITION '+(levelIndex-BONUS_START+1)+'/10';
-   el('levelStat').textContent='🌟 Bonus';
+   el('mountainLabel').textContent='⛰️ REGULAR TUNNEL BRANCH '+(levelIndex-BONUS_START+1)+'/10';
+   el('levelStat').textContent='⛰️ Branch Level';
    el('treasureStat').textContent='🧰 '+chestsOpened+'/3 · 🌟 '+(bonusCleared.has(levelIndex)?'Cleared':'Find the flag')+' · 📖 '+collectedFacts.size+'/50';
   }else if(!challengeMode&&levelIndex>=MAIN_MOUNTAINS){
    el('treasureStat').textContent='✨ '+(secretItem?'Find the hidden tool':'Tool found')+' · 🚪 Secret passage';
@@ -471,8 +473,8 @@ LEVELS.push(...BONUS_CONFIGS);
    if(equipment?.type==='bike'){sh.textContent=cooldown?'🔔 Bell in '+cooldown:'🔔 BIKE BELL';sh.disabled=mode!=='playing'||cooldown>0;}
    else if(equipment?.type==='radio'){sh.textContent='📻 CALL RANGER';sh.disabled=mode!=='playing';}
    if(levelIndex>=BONUS_START&&mode==='won'){
-    el('resultTitle').textContent='🌟 SECRET EXPEDITION CONQUERED!';
-    el('resultBody').textContent='You conquered '+LEVELS[levelIndex].name+'! Return to the mountain map to choose another bonus trail.';
+    el('resultTitle').textContent='🏁 MOUNTAIN BRANCH CLEARED!';
+    el('resultBody').textContent='You completed the regular mountain '+LEVELS[levelIndex].name+'! Explore more tunnels and mountain branches on the map.';
    }
    if(levelIndex===VILLAGE_INDEX&&mode==='won'){
     el('resultTitle').textContent='🏘️ VILLAGE ESCAPED!';
@@ -495,8 +497,9 @@ LEVELS.push(...BONUS_CONFIGS);
    tile.textContent=emoji;tile.classList.add(cls);
   }
   if(!challengeMode){
-   if(secretChainDoor&&distance(runner,secretChainDoor)<=3)setAt(secretChainDoor,levelIndex>=BONUS_START?'🌀':'🚪','secret-chain');
-   if(normalBonusDoor&&distance(runner,normalBonusDoor)<=3)setAt(normalBonusDoor,'🌀','secret-chain');
+   if(secretChainDoor&&distance(runner,secretChainDoor)<=3)setAt(secretChainDoor,'🚪','secret-chain');
+   if(normalBonusTunnel&&distance(runner,normalBonusTunnel)<=3)setAt(normalBonusTunnel,'🚇','tunnel-entrance');
+   if(returnTunnel&&distance(runner,returnTunnel)<=3)setAt(returnTunnel,'🚇','tunnel-return');
    if(secretItem)setAt(secretItem,secretItem.type==='bike'?'🚲':secretItem.type==='glider'?'🪂':'📻','special-item');
    if(ranger)setAt(ranger,'👮','ranger');
    for(const k of villageGuards){const a=k.split(',').map(Number);setAt({x:a[0],y:a[1]},'🧑‍🌾','village-guard');}
@@ -541,13 +544,18 @@ LEVELS.push(...BONUS_CONFIGS);
     openBranchChoices();
     break;
    }
-   if(!challengeMode&&normalBonusDoor&&same(target,normalBonusDoor)){
+   if(!challengeMode&&normalBonusTunnel&&same(target,normalBonusTunnel)){
     const bonus=BONUS_BY_MOUNTAIN[levelIndex];
     markBonusUnlocked(bonus);
     saveProgress();
-    playSecret(true);
     loadLevel(bonus);
-    if(levelIndex===bonus)say('🌀 NEW SECRET EXPEDITION! '+LEVELS[bonus].name+' unlocked from Mountain '+(BONUS_PARENT[bonus]+1)+'!');
+    if(levelIndex===bonus)say('🚇 TUNNEL FOUND! Welcome to the regular mountain '+LEVELS[bonus].name+'! The tunnel remains unlocked on your map.');
+    break;
+   }
+   if(!challengeMode&&returnTunnel&&same(target,returnTunnel)){
+    const source=BONUS_PARENT[levelIndex];
+    loadLevel(source);
+    if(levelIndex===source)say('🚇 BACK THROUGH THE TUNNEL! Returned to Mountain '+(source+1)+'.');
     break;
    }
    const previous={...runner},beforeLives=lives,beforeLevel=levelIndex;
