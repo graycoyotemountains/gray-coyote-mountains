@@ -115,7 +115,10 @@ test('all previously created regular levels retain fact chests and return tunnel
  }
 });
 test('a branch victory remains saved and does not alter the 13 Challenge mountains',async({page})=>{
- await page.addInitScript(()=>localStorage.setItem('gray-coyote-mountains-branch-expeditions-v1',JSON.stringify({unlocked:[14],cleared:[]})));
+ await page.addInitScript(()=>{
+  if(!localStorage.getItem('gray-coyote-mountains-branch-expeditions-v1'))
+   localStorage.setItem('gray-coyote-mountains-branch-expeditions-v1',JSON.stringify({unlocked:[14],cleared:[]}));
+ });
  await page.goto('/');await page.locator('#playBtn').click();
  await page.evaluate(()=>{loadLevel(14);runner={x:1,y:0};coyotes=[];draw();move(-1,0);});
  expect(await page.evaluate(()=>mode)).toBe('won');
