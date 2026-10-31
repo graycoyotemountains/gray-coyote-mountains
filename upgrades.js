@@ -72,7 +72,7 @@ LEVELS.push(...BONUS_CONFIGS);
  const branchDialog=document.createElement('dialog');
  branchDialog.id='secretBranchDialog';
  branchDialog.setAttribute('aria-label','Choose a secret door destination');
- branchDialog.innerHTML='<div class="branch-dialog-head"><h2>🚪 Choose Your Secret Trail</h2><p id="secretBranchIntro"></p></div><div class="branch-option"><strong>🌟 New bonus expedition</strong><div id="secretBonusChoices"></div></div><div class="branch-option"><strong>🔮 Another secret level</strong><div id="secretExistingChoices"></div></div><button type="button" class="btn secondary" id="cancelSecretBranch">Keep exploring</button>';
+ branchDialog.innerHTML='<div class="branch-dialog-head"><h2>🚪 Choose a Secret World</h2><p id="secretBranchIntro"></p></div><div class="branch-option"><strong>🚇 Regular tunnel branches</strong><div id="secretBonusChoices"></div></div><div class="branch-option"><strong>🔮 Next secret level</strong><div id="secretExistingChoices"></div></div><button type="button" class="btn secondary" id="cancelSecretBranch">Keep exploring</button>';
  document.body.append(branchDialog);
  document.getElementById('cancelSecretBranch').addEventListener('click',()=>branchDialog.close());
  branchDialog.addEventListener('click',event=>{if(event.target===branchDialog)branchDialog.close();});
@@ -236,8 +236,7 @@ LEVELS.push(...BONUS_CONFIGS);
   const stops=[[29,10],[71,19],[29,28],[71,37],[29,46],[71,59],[29,68],[71,77],[29,86],[71,95]];
   BONUS_CONFIGS.forEach((cfg,j)=>{
    const i=BONUS_START+j,source=BONUS_PARENT[i];
-   const sourceIsNormal=source<MAIN_MOUNTAINS;
-   const sourceName=sourceIsNormal?'Mountain '+(source+1):LEVELS[source].name;
+   const sourceName='Mountain '+(source+1);
    const unlocked=bonusUnlockedAt(i),done=bonusCleared.has(i);
    const button=document.createElement('button');
    const [x,y]=stops[j];
@@ -246,48 +245,36 @@ LEVELS.push(...BONUS_CONFIGS);
    button.style.setProperty('--trail-y',y+'%');
    button.disabled=!unlocked;
    button.dataset.bonusLevel=String(i);
-   button.setAttribute('aria-label','Bonus mountain '+(j+1)+' of 10: '+cfg.name+', '+(done?'completed':unlocked?'available':'locked')+'. '+(sourceIsNormal?'Find a hidden door on ':'Win ')+sourceName+' to unlock.');
-   button.innerHTML='<span class="bonus-expedition-icon">'+cfg.icon+'</span><span class="bonus-expedition-info"><strong>'+cfg.name+'</strong><small>'+cfg.desc+'</small><small>🔑 '+(sourceIsNormal?'Door: ':'Win: ')+sourceName+'</small><span class="bonus-expedition-status">'+(done?'🏁 Cleared':unlocked?'🔓 Play':sourceIsNormal?'🔒 Find door':'🔒 Win secret')+'</span></span>';
+   button.setAttribute('aria-label','Regular tunnel branch '+(j+1)+' of 10: '+cfg.name+', '+(done?'completed':unlocked?'available':'locked')+'. Find the tunnel on '+sourceName+' to unlock.');
+   button.innerHTML='<span class="bonus-expedition-icon">'+cfg.icon+'</span><span class="bonus-expedition-info"><strong>'+cfg.name+'</strong><small>'+cfg.desc+'</small><small>🚇 Tunnel from '+sourceName+'</small><span class="bonus-expedition-status">'+(done?'🏁 Cleared':unlocked?'🔓 Play':'🔒 Find tunnel')+'</span></span>';
    if(unlocked)button.addEventListener('click',()=>loadLevel(i));
    grid.append(button);
   });
-  document.getElementById('bonusExpeditionProgress').textContent='🏆 '+bonusCleared.size+'/10 completed · 🔓 '+bonusUnlocked.size+'/10 unlocked';
+  document.getElementById('bonusExpeditionProgress').textContent='🏁 '+bonusCleared.size+'/10 regular branches completed · 🚇 '+bonusUnlocked.size+'/10 tunnels discovered';
  }
  function enterBranch(i){
-  if(!Number.isInteger(i)||i<10||i>=LEVELS.length)return;
+  if(!Number.isInteger(i)||i<SECRET_LEVEL||i>=VILLAGE_INDEX)return;
   branchDialog.close();
-  // Preserve the original secret chain unlock behavior.
-  if(i>=10&&i<=12)grantSecretAccess(i);
+  grantSecretAccess(i);
   loadLevel(i);
-  if(levelIndex===i)say('🚪 SECRET TRAIL! Welcome to '+LEVELS[i].name+'!');
+  if(levelIndex===i)say('🚪 SECRET WORLD! Welcome to '+LEVELS[i].name+'!');
  }
  function openBranchChoices(){
-  if(challengeMode||levelIndex<10||levelIndex===VILLAGE_INDEX)return;
+  if(challengeMode||levelIndex<SECRET_LEVEL||levelIndex>=VILLAGE_INDEX)return;
   const source=levelIndex;
-  const newChoices=(source>=BONUS_START?BONUS_CONFIGS.map((_,j)=>BONUS_START+j).filter(i=>i!==source&&bonusUnlockedAt(i)):BONUS_BY_SECRET[source]||[]);
-  const existing=source>=BONUS_START?BONUS_PARENT[source]:nextSecret(source);
-  document.getElementById('secretBranchIntro').textContent='From '+LEVELS[source].name+', pick a different destination. Bonus routes are unlocked by winning secret levels.';
+  document.getElementById('secretBranchIntro').textContent='Choose your next true secret world from '+LEVELS[source].name+'. Regular mountain branches are reached through tunnels on Mountains 1–10.';
   const bonusChoices=document.getElementById('secretBonusChoices');
   bonusChoices.replaceChildren();
-  let choices=0;
-  for(const i of newChoices){
-   if(!bonusUnlockedAt(i))continue;
-   const b=document.createElement('button');b.type='button';b.className='btn primary';
-   b.textContent=LEVELS[i].icon+' '+LEVELS[i].name;
-   b.addEventListener('click',()=>enterBranch(i));
-   bonusChoices.append(b);choices++;
-  }
-  if(!choices){
-   const locked=document.createElement('p');
-   locked.className='bonus-lock-hint';
-   locked.textContent=source>=BONUS_START?'Win more secret levels to unlock other bonus routes.':'🏁 Reach this secret level’s flag to unlock its new bonus routes.';
-   bonusChoices.append(locked);
-  }
+  const hint=document.createElement('p');
+  hint.className='bonus-lock-hint';
+  hint.textContent='🚇 Regular tunnel branches are on the main mountain map.';
+  bonusChoices.append(hint);
   const existingChoices=document.getElementById('secretExistingChoices');
   existingChoices.replaceChildren();
   const other=document.createElement('button');other.type='button';other.className='btn secondary';
-  other.textContent='🚪 '+LEVELS[existing].name;
-  other.addEventListener('click',()=>enterBranch(existing));
+  const destination=nextSecret(source);
+  other.textContent='🚪 '+LEVELS[destination].name;
+  other.addEventListener('click',()=>enterBranch(destination));
   existingChoices.append(other);
   if(!branchDialog.open)branchDialog.showModal();
  }
@@ -420,7 +407,7 @@ LEVELS.push(...BONUS_CONFIGS);
   try{baseRenderMap();}finally{LEVELS.push(...extras);}
   renderBonusPanel();
   const secretsFound=Number(secretUnlocked)+Number(Boolean(extraUnlocked[0]))+Number(Boolean(extraUnlocked[1]));
-  el('progress').textContent='⛰️ '+cleared+'/10 cleared · 🧰 '+totalTreasures()+' treasures · 🐺 '+coyoteCount()+' coyotes · 💎 '+secretsFound+'/3 secrets · 🌟 '+bonusUnlocked.size+'/10 bonus trails · 📖 '+collectedFacts.size+'/50 facts';
+  el('progress').textContent='⛰️ '+cleared+'/10 main peaks · 🚇 '+bonusUnlocked.size+'/10 tunnels · 🏁 '+bonusCleared.size+'/10 branches · 🐺 '+coyoteCount()+' coyotes · 💎 '+secretsFound+'/3 secrets · 📖 '+collectedFacts.size+'/50 facts';
   const cards=el('mountainGrid').children;
   if(extraUnlocked[2]&&cards.length){
    const card=cards[cards.length-1];
