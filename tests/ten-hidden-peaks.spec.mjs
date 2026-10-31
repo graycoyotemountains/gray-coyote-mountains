@@ -43,7 +43,7 @@ test('five existing extras retain their unlocks; new five require doors on norma
  await expect(page.locator('#bonusExpeditionProgress')).toContainText('5/10 unlocked');
 });
 
-test('each new secret door launches its own bonus mountain, with persistent unlocks',async({page})=>{
+test('each new tunnel launches its own regular mountain, with persistent unlocks',async({page})=>{
  test.setTimeout(110000);
  await page.addInitScript(unlockedTen);
  await page.goto('/');
@@ -53,7 +53,7 @@ test('each new secret door launches its own bonus mountain, with persistent unlo
   const result=await page.evaluate(normal=>{
    loadLevel(normal);
    if(levelIndex!==normal)throw Error('Normal level not loaded');
-   if(!normalBonusDoor)throw Error('Normal bonus door absent');
+   if(!normalBonusDoor)throw Error('Normal mountain tunnel absent');
    const from=neighbors(normalBonusDoor)[0];
    if(!from)throw Error('Hidden door unreachable');
    runner={...from};coyotes=[];draw();
@@ -86,7 +86,7 @@ test('five new mountains each have full playable board, collectible chests and f
    loadLevel(i);
    items.push({index:levelIndex,title:LEVELS[i].name,mode,connected:connected(START,GOAL),
     tiles:document.querySelectorAll('#field .tile').length,
-    chests:chests.size,door:secretChainDoor!==null,
+    chests:chests.size,tunnel:bonusTunnel!==null,door:secretChainDoor!==null,secretZone:el('gameFrame').classList.contains('secret-zone'),
     source:BONUS_PARENT[i],bonusLabel:document.getElementById('mountainLabel').textContent});
   }
   return items;
@@ -99,9 +99,11 @@ test('five new mountains each have full playable board, collectible chests and f
   expect(i.connected).toBe(true);
   expect(i.tiles).toBe(252);
   expect(i.chests).toBe(3);
-  expect(i.door).toBe(true);
+  expect(i.tunnel).toBe(true);
+  expect(i.door).toBe(false);
+  expect(i.secretZone).toBe(false);
   expect(i.source).toBe([1,3,5,7,9][n]);
-  expect(i.bonusLabel).toContain('/10');
+  expect(i.bonusLabel).toContain('/20');
  }
  expect(new Set(info.map(i=>i.title)).size).toBe(5);
 });
