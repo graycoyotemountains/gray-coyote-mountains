@@ -120,7 +120,10 @@ test('all ten branch levels are ordinary playable levels with chests, flags and 
 });
 
 test('branch victory saves permanent completion and the regular mountain styling',async({page})=>{
- await page.addInitScript(()=>localStorage.setItem('gray-coyote-mountains-branch-expeditions-v1',JSON.stringify({unlocked:[19],cleared:[]})));
+ await page.addInitScript(()=>{
+  if(!localStorage.getItem('gray-coyote-mountains-branch-expeditions-v1'))
+   localStorage.setItem('gray-coyote-mountains-branch-expeditions-v1',JSON.stringify({unlocked:[19],cleared:[]}));
+ });
  await page.goto('/');
  await page.locator('#playBtn').click();
  await page.evaluate(()=>{loadLevel(19);coyotes=[];runner={x:1,y:0};draw();move(-1,0);});
