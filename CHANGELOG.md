@@ -4,6 +4,35 @@ All notable changes to Gray Coyote Mountains are recorded here. This is a
 human-readable release log; Git commit history is the authoritative version
 history and enables rollback of individual changes.
 
+## [1.10.0] - 2026-10-31
+
+### Changed
+- Converted all ten additional mountains from bonus/secret expeditions
+  into **regular, playable branch mountain levels**. They now appear as
+  regular mountain destinations on the illustrated map with ten tunnel
+  source labels, ordinary ambience, flags, coyotes and collectible chests.
+- Added a discoverable **🚇 stone tunnel to each normal Mountain 1–10**
+  and a return tunnel inside each regular branch level, maintaining
+  separate routes for the three true secret worlds.
+- Tunnel connections (main → branch): 1→Mistveil Lagoon, 2→Tidepool
+  Terrace, 3→Echo Fern Forest, 4→Redwood Ravine, 5→Crystal Icefall,
+  6→Thunderstone Pass, 7→Moonshadow Caverns, 8→Sunflower Bluff,
+  9→Starfall Observatory, 10→Aurora Crown.
+- Only the three original secret levels retain secret-door navigation
+  and spooky soundscapes. Bonus branch doors and secret-world choice
+  buttons were replaced by visually distinct stone tunnels.
+- Existing unlocked/cleared saves continue using the original key, and
+  a one-time legacy migration preserves all bonus access previously
+  earned from secret victories. The special mandatory Hollow→Mistveil
+  transition remains as an existing story exception.
+- Added browser regression coverage for all ten two-way routes,
+  ordinary (non-haunted) gameplay, saved unlocks, retroactive saves,
+  and the untouched secret and Challenge modes.
+
+### Rollback
+- Stable v1.9.0 commit: `0fe9c2d20397349a97825dc37ba0c837670f6967`.
+  Reverting this release restores the previous bonus/secret door structure.
+
 ## [1.9.0] - 2026-10-24
 
 ### Added
