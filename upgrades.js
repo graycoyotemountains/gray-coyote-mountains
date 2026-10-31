@@ -32,7 +32,7 @@ try{
  if(Array.isArray(bonus.cleared))bonusCleared=new Set(bonus.cleared.filter(i=>Number.isInteger(i)&&i>=BONUS_START&&i<BONUS_START+BONUS_CONFIGS.length));
 }catch(error){console.warn('Unable to restore bonus expeditions',error);}
 let collectedFacts=new Set(),equipment=null,ranger=null;
-let secretItem=null,secretChainDoor=null,normalBonusDoor=null,villageFlag={x:3,y:3},villageGuards=new Set(),villageCleared=false;
+let secretItem=null,secretChainDoor=null,normalBonusDoor=null,bonusTunnel=null,villageFlag={x:3,y:3},villageGuards=new Set(),villageCleared=false;
 try {
  const saved=JSON.parse(localStorage.getItem(FACT_KEY)||'[]');
  if(Array.isArray(saved))for(const n of saved)if(Number.isInteger(n)&&n>=0&&n<COYOTE_FACTS.length)collectedFacts.add(n);
@@ -69,16 +69,25 @@ LEVELS.push(...BONUS_CONFIGS);
  const bonusPanel=document.createElement('section');
  bonusPanel.id='bonusExpeditionPanel';bonusPanel.className='bonus-expedition-panel';
  bonusPanel.setAttribute('aria-label','Ten extra mountains on the illustrated Adventure map');
- bonusPanel.innerHTML='<div class="bonus-map-heading"><h3>🌟 Hidden Mountain Trails</h3><p>Ten extra mountains continue the winding trail below. Five unlock by winning secret worlds; find the other five through hidden doors on Mountains 2, 4, 6, 8 and 10.</p></div><div id="bonusExpeditionGrid" class="bonus-expedition-grid" aria-label="Ten extra mountain locations"></div><p id="bonusExpeditionProgress" class="bonus-expedition-progress" aria-live="polite"></p>';
+ bonusPanel.innerHTML='<div class="bonus-map-heading"><h3>⛰️ Tunnel Mountains</h3><p>Ten regular mountains continue below. Reach them through tunnels from the three original secret levels and from regular Mountains 2, 4, 6, 8 and 10.</p></div><div id="bonusExpeditionGrid" class="bonus-expedition-grid" aria-label="Ten extra mountain locations"></div><p id="bonusExpeditionProgress" class="bonus-expedition-progress" aria-live="polite"></p>';
  // Place the new peaks IN the Adventure map, continuing its vertical scenery.
  document.querySelector('#mapScreen .map-scene .map-swipe-hint').before(bonusPanel);
  const branchDialog=document.createElement('dialog');
  branchDialog.id='secretBranchDialog';
  branchDialog.setAttribute('aria-label','Choose a secret door destination');
- branchDialog.innerHTML='<div class="branch-dialog-head"><h2>🚪 Choose Your Secret Trail</h2><p id="secretBranchIntro"></p></div><div class="branch-option"><strong>🌟 New bonus expedition</strong><div id="secretBonusChoices"></div></div><div class="branch-option"><strong>🔮 Another secret level</strong><div id="secretExistingChoices"></div></div><button type="button" class="btn secondary" id="cancelSecretBranch">Keep exploring</button>';
+ branchDialog.innerHTML='<div class="branch-dialog-head"><h2>🚪 Original Secret Passage</h2><p id="secretBranchIntro"></p></div><div class="branch-option"><strong>🔮 Continue to another secret level</strong><div id="secretExistingChoices"></div></div><button type="button" class="btn secondary" id="cancelSecretBranch">Keep exploring</button>';
  document.body.append(branchDialog);
  document.getElementById('cancelSecretBranch').addEventListener('click',()=>branchDialog.close());
  branchDialog.addEventListener('click',event=>{if(event.target===branchDialog)branchDialog.close();});
+ const tunnelDialog=document.createElement('dialog');
+ tunnelDialog.id='regularTunnelDialog';tunnelDialog.setAttribute('aria-label','Choose mountain tunnel');
+ tunnelDialog.innerHTML='<h2>🕳️ Mountain Tunnel</h2><p id="regularTunnelIntro"></p><div id="regularTunnelChoices"></div><button type="button" class="btn secondary" id="cancelRegularTunnel">Keep exploring</button>';
+ document.body.append(tunnelDialog);
+ document.getElementById('cancelRegularTunnel').addEventListener('click',()=>tunnelDialog.close());
+ tunnelDialog.addEventListener('click',event=>{if(event.target===tunnelDialog)tunnelDialog.close();});
+ const tunnelStyles=document.createElement('style');
+ tunnelStyles.textContent='#regularTunnelDialog{width:min(550px,94vw);max-height:90dvh;overflow:auto;background:#243f36;color:#f9ebcf;border:3px solid #d1ae78;border-radius:17px;padding:20px;box-shadow:0 20px 55px #071a16}#regularTunnelDialog::backdrop{background:#061a1dcc}#regularTunnelDialog h2{color:#f9d995;margin:0 0 8px}#regularTunnelChoices{display:flex;flex-wrap:wrap;gap:9px;margin:13px 0}#regularTunnelChoices button{white-space:normal;min-height:48px}.tunnel-marker{background:#cfb88c!important;border-radius:4px!important;box-shadow:inset 0 0 0 2px #775d43}';
+ document.head.append(tunnelStyles);
  const routeStyles=document.createElement('style');
  routeStyles.textContent=`
  .bonus-expedition-panel{max-width:100%;margin:22px auto;padding:19px 17px;background:linear-gradient(145deg,#22483d,#234d59);border:2px solid #b19a6e;border-radius:20px}
@@ -247,8 +256,8 @@ LEVELS.push(...BONUS_CONFIGS);
    button.style.setProperty('--trail-y',y+'%');
    button.disabled=!unlocked;
    button.dataset.bonusLevel=String(i);
-   button.setAttribute('aria-label','Bonus mountain '+(j+1)+' of 10: '+cfg.name+', '+(done?'completed':unlocked?'available':'locked')+'. '+(sourceIsNormal?'Find a hidden door on ':'Win ')+sourceName+' to unlock.');
-   button.innerHTML='<span class="bonus-expedition-icon">'+cfg.icon+'</span><span class="bonus-expedition-info"><strong>'+cfg.name+'</strong><small>'+cfg.desc+'</small><small>🔑 '+(sourceIsNormal?'Door: ':'Win: ')+sourceName+'</small><span class="bonus-expedition-status">'+(done?'🏁 Cleared':unlocked?'🔓 Play':sourceIsNormal?'🔒 Find door':'🔒 Win secret')+'</span></span>';
+   button.setAttribute('aria-label','Bonus mountain '+(j+1)+' of 10: '+cfg.name+', '+(done?'completed':unlocked?'available':'locked')+'. '+(sourceIsNormal?'Find a tunnel on ':'Win ')+sourceName+' to unlock.');
+   button.innerHTML='<span class="bonus-expedition-icon">'+cfg.icon+'</span><span class="bonus-expedition-info"><strong>'+cfg.name+'</strong><small>'+cfg.desc+'</small><small>🕳️ '+(sourceIsNormal?'Tunnel: ':'After winning: ')+sourceName+'</small><span class="bonus-expedition-status">'+(done?'🏁 Cleared':unlocked?'🔓 Play':sourceIsNormal?'🔒 Find tunnel':'🔒 Win secret')+'</span></span>';
    if(unlocked)button.addEventListener('click',()=>loadLevel(i));
    grid.append(button);
   });
@@ -263,34 +272,31 @@ LEVELS.push(...BONUS_CONFIGS);
   if(levelIndex===i)say('🚪 SECRET TRAIL! Welcome to '+LEVELS[i].name+'!');
  }
  function openBranchChoices(){
-  if(challengeMode||levelIndex<10||levelIndex===VILLAGE_INDEX)return;
-  const source=levelIndex;
-  const newChoices=(source>=BONUS_START?BONUS_CONFIGS.map((_,j)=>BONUS_START+j).filter(i=>i!==source&&bonusUnlockedAt(i)):BONUS_BY_SECRET[source]||[]);
-  const existing=source>=BONUS_START?BONUS_PARENT[source]:nextSecret(source);
-  document.getElementById('secretBranchIntro').textContent='From '+LEVELS[source].name+', pick a different destination. Bonus routes are unlocked by winning secret levels.';
-  const bonusChoices=document.getElementById('secretBonusChoices');
-  bonusChoices.replaceChildren();
-  let choices=0;
-  for(const i of newChoices){
-   if(!bonusUnlockedAt(i))continue;
-   const b=document.createElement('button');b.type='button';b.className='btn primary';
-   b.textContent=LEVELS[i].icon+' '+LEVELS[i].name;
-   b.addEventListener('click',()=>enterBranch(i));
-   bonusChoices.append(b);choices++;
-  }
-  if(!choices){
-   const locked=document.createElement('p');
-   locked.className='bonus-lock-hint';
-   locked.textContent=source>=BONUS_START?'Win more secret levels to unlock other bonus routes.':'🏁 Reach this secret level’s flag to unlock its new bonus routes.';
-   bonusChoices.append(locked);
-  }
-  const existingChoices=document.getElementById('secretExistingChoices');
-  existingChoices.replaceChildren();
-  const other=document.createElement('button');other.type='button';other.className='btn secondary';
-  other.textContent='🚪 '+LEVELS[existing].name;
-  other.addEventListener('click',()=>enterBranch(existing));
-  existingChoices.append(other);
+  // Legacy secret doors lead only to other secret worlds. New regular
+  // mountain levels are reached through a physically separate tunnel.
+  if(challengeMode||levelIndex<SECRET_LEVEL||levelIndex>=VILLAGE_INDEX)return;
+  const next=nextSecret(levelIndex);
+  document.getElementById('secretBranchIntro').textContent='The secret passage leads to '+LEVELS[next].name+'.';
+  const choices=document.getElementById('secretExistingChoices');
+  choices.replaceChildren();
+  const button=document.createElement('button');button.type='button';button.className='btn primary';
+  button.textContent='🚪 '+LEVELS[next].name;
+  button.addEventListener('click',()=>enterBranch(next));choices.append(button);
   if(!branchDialog.open)branchDialog.showModal();
+ }
+ function openTunnelChoices(){
+  if(challengeMode||!bonusTunnel)return;
+  const choices=document.getElementById('regularTunnelChoices');
+  choices.replaceChildren();
+  const targets=levelIndex>=BONUS_START?[BONUS_PARENT[levelIndex]]:(BONUS_BY_SECRET[levelIndex]||[]).filter(i=>bonusUnlockedAt(i));
+  document.getElementById('regularTunnelIntro').textContent=targets.length?'Choose a mountain at the other end of the tunnel.':'Reach this secret level’s flag first to unlock the regular mountain tunnels.';
+  for(const target of targets){
+   const button=document.createElement('button');button.type='button';button.className='btn primary';
+   button.textContent=LEVELS[target].icon+' '+LEVELS[target].name;
+   button.addEventListener('click',()=>{tunnelDialog.close();loadLevel(target);if(levelIndex===target)say('🕳️ TUNNEL EXIT! Welcome to '+LEVELS[target].name+'!');});
+   choices.append(button);
+  }
+  if(!tunnelDialog.open)tunnelDialog.showModal();
  }
 
  function nextSecret(i){return i===10?11:i===11?12:10;}
@@ -437,6 +443,7 @@ LEVELS.push(...BONUS_CONFIGS);
  };
  loadLevel=function(i){
   if(branchDialog.open)branchDialog.close();
+  if(tunnelDialog.open)tunnelDialog.close();
   if(i>=BONUS_START&&challengeMode)return;
   if(i===VILLAGE_INDEX&&(challengeMode||collectedFacts.size!==50))return;
   if(!Number.isInteger(i)||i<0||i>=LEVELS.length)return;
@@ -446,22 +453,22 @@ LEVELS.push(...BONUS_CONFIGS);
   if(!challengeMode){equipment=adjustPowerForLevel(equipment,i);adjustRangerForLevel(i);}
   baseLoad(i);
   if(screen!=='game'||levelIndex!==i)return;
-  secretChainDoor=null;secretItem=null;villageGuards.clear();
-  if(!challengeMode&&(i>=SECRET_LEVEL&&i<VILLAGE_INDEX||i>=BONUS_START)){
-   secretChainDoor=findSpot([]);
-   if(i<VILLAGE_INDEX){
-    secretItem=findSpot([secretChainDoor]);
-    if(secretItem)secretItem={...secretItem,type:i===10?'bike':i===11?'glider':'radio'};
-   }
+  secretChainDoor=null;secretItem=null;bonusTunnel=null;villageGuards.clear();
+  if(!challengeMode&&i>=SECRET_LEVEL&&i<VILLAGE_INDEX){
+   secretChainDoor=findSpot([]);bonusTunnel=findSpot([secretChainDoor]);
+   secretItem=findSpot([secretChainDoor,bonusTunnel]);
+   if(secretItem)secretItem={...secretItem,type:i===10?'bike':i===11?'glider':'radio'};
+  }else if(!challengeMode&&i>=BONUS_START){
+   bonusTunnel=findSpot([]);
   }
   if(!challengeMode&&i===VILLAGE_INDEX){chooseVillageFlag();}
   if(ranger&&!challengeMode){Object.assign(ranger,initialRangerSpot());repelCoyotes();}
   saveExtras();
   if(!challengeMode){
    if(i===VILLAGE_INDEX)el('gameHint').textContent='🏘️ Villagers relocate the flag every five steps. Avoid their ambushes and the coyotes!';
-   else if(i>=BONUS_START)el('gameHint').textContent='🌟 Bonus expedition! Reach the flag to win. Find the branching door to choose another hidden route.';
+   else if(i>=BONUS_START)el('gameHint').textContent='⛰️ Regular mountain! Collect three chests, reach the flag, or use the tunnel to return.';
    else if(i>=MAIN_MOUNTAINS)el('gameHint').textContent='✨ Find the special tool and hidden door. Win this secret level to unlock new bonus mountains, then choose your path at the door!';
-   else if(Object.hasOwn(BONUS_BY_MOUNTAIN,i))el('gameHint').textContent='🌀 A hidden doorway to '+LEVELS[BONUS_BY_MOUNTAIN[i]].name+' is somewhere on this mountain. Get close to discover it!';
+   else if(Object.hasOwn(BONUS_BY_MOUNTAIN,i))el('gameHint').textContent='🕳️ Find the tunnel to '+LEVELS[BONUS_BY_MOUNTAIN[i]].name+' on this mountain!';
   }
   draw();
  };
@@ -472,8 +479,8 @@ LEVELS.push(...BONUS_CONFIGS);
    el('levelStat').textContent='🏘️ Village';
    el('treasureStat').textContent='🧰 '+chestsOpened+'/3 · 🎒 '+totalTreasures()+' · 📖 '+collectedFacts.size+'/50';
   }else if(!challengeMode&&levelIndex>=BONUS_START){
-   el('mountainLabel').textContent='🌟 BONUS EXPEDITION '+(levelIndex-BONUS_START+1)+'/10';
-   el('levelStat').textContent='🌟 Bonus';
+   el('mountainLabel').textContent='⛰️ EXTRA MOUNTAIN '+(levelIndex-BONUS_START+11)+'/20';
+   el('levelStat').textContent='⛰️ Mountain '+(levelIndex-BONUS_START+11);
    el('treasureStat').textContent='🧰 '+chestsOpened+'/3 · 🌟 '+(bonusCleared.has(levelIndex)?'Cleared':'Find the flag')+' · 📖 '+collectedFacts.size+'/50';
   }else if(!challengeMode&&levelIndex>=MAIN_MOUNTAINS){
    el('treasureStat').textContent='✨ '+(secretItem?'Find the hidden tool':'Tool found')+' · 🚪 Secret passage';
@@ -485,8 +492,8 @@ LEVELS.push(...BONUS_CONFIGS);
    if(equipment?.type==='bike'){sh.textContent=cooldown?'🔔 Bell in '+cooldown:'🔔 BIKE BELL';sh.disabled=mode!=='playing'||cooldown>0;}
    else if(equipment?.type==='radio'){sh.textContent='📻 CALL RANGER';sh.disabled=mode!=='playing';}
    if(levelIndex>=BONUS_START&&mode==='won'){
-    el('resultTitle').textContent='🌟 SECRET EXPEDITION CONQUERED!';
-    el('resultBody').textContent='You conquered '+LEVELS[levelIndex].name+'! Return to the mountain map to choose another bonus trail.';
+    el('resultTitle').textContent='🏁 MOUNTAIN CLEARED!';
+    el('resultBody').textContent='You beat '+LEVELS[levelIndex].name+' like a regular Adventure mountain! Progress is saved.';
    }
    if(levelIndex===VILLAGE_INDEX&&mode==='won'){
     el('resultTitle').textContent='🏘️ VILLAGE ESCAPED!';
@@ -509,8 +516,9 @@ LEVELS.push(...BONUS_CONFIGS);
    tile.textContent=emoji;tile.classList.add(cls);
   }
   if(!challengeMode){
-   if(secretChainDoor&&distance(runner,secretChainDoor)<=3)setAt(secretChainDoor,levelIndex>=BONUS_START?'🌀':'🚪','secret-chain');
-   if(normalBonusDoor&&distance(runner,normalBonusDoor)<=3)setAt(normalBonusDoor,'🌀','secret-chain');
+   if(secretChainDoor&&distance(runner,secretChainDoor)<=3)setAt(secretChainDoor,'🚪','secret-chain');
+   if(bonusTunnel)setAt(bonusTunnel,'🕳️','tunnel-marker');
+   if(normalBonusDoor)setAt(normalBonusDoor,'🕳️','tunnel-marker');
    if(secretItem)setAt(secretItem,secretItem.type==='bike'?'🚲':secretItem.type==='glider'?'🪂':'📻','special-item');
    if(ranger)setAt(ranger,'👮','ranger');
    for(const k of villageGuards){const a=k.split(',').map(Number);setAt({x:a[0],y:a[1]},'🧑‍🌾','village-guard');}
@@ -541,7 +549,7 @@ LEVELS.push(...BONUS_CONFIGS);
   note(620,0,.12,{end:920,volume:.09});saveProgress();return true;
  }
  move=function(dx,dy){
-  if(branchDialog.open)return;
+  if(branchDialog.open||tunnelDialog.open)return;
   if(!canTakeAction())return;
   if(Math.abs(dx)+Math.abs(dy)!==1)return;
   const gliding=!challengeMode&&equipment?.type==='glider';
@@ -555,13 +563,17 @@ LEVELS.push(...BONUS_CONFIGS);
     openBranchChoices();
     break;
    }
+   if(!challengeMode&&bonusTunnel&&same(target,bonusTunnel)){
+    openTunnelChoices();
+    break;
+   }
    if(!challengeMode&&normalBonusDoor&&same(target,normalBonusDoor)){
     const bonus=BONUS_BY_MOUNTAIN[levelIndex];
     markBonusUnlocked(bonus);
     saveProgress();
-    playSecret(true);
+    note(420,0,.18,{end:610,type:'triangle',volume:.1});
     loadLevel(bonus);
-    if(levelIndex===bonus)say('🌀 NEW SECRET EXPEDITION! '+LEVELS[bonus].name+' unlocked from Mountain '+(BONUS_PARENT[bonus]+1)+'!');
+    if(levelIndex===bonus)say('🕳️ MOUNTAIN TUNNEL! '+LEVELS[bonus].name+' unlocked from Mountain '+(BONUS_PARENT[bonus]+1)+'!');
     break;
    }
    const previous={...runner},beforeLives=lives,beforeLevel=levelIndex;
@@ -639,7 +651,7 @@ LEVELS.push(...BONUS_CONFIGS);
     // enter the first new bonus mountain automatically without a choice.
     loadLevel(BONUS_START);
     if(levelIndex===BONUS_START){
-     say('🌟 MANDATORY SECRET TRAIL! Hollow Mountain leads to Mistveil Lagoon. Find the next flag!');
+     say('🕳️ MANDATORY TUNNEL! Hollow Mountain leads to regular Mountain 11: Mistveil Lagoon. Find the flag!');
      draw();
     }
    }else{
