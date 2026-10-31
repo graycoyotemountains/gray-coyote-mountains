@@ -191,3 +191,21 @@ map. It can be replayed afterward. Finding these doors does **not**
 replace the original hidden doors on Mountains 5, 7 or 9. Every extra
 mountain has a flag, coyotes, three collectible chests and branching
 paths. All previously saved game and bonus-level progress is retained.
+
+## Regular mountains through tunnels (v1.9.1)
+
+The ten extra mountains on the illustrated map are **regular Adventure levels**,
+not secret worlds. They use normal mountain gameplay, chests, flags, timers,
+coyotes and victory music. Find the **🕳️ mountain tunnel** on a source
+mountain to reach its destination. Normal Mountains 2, 4, 6, 8 and 10
+have tunnels to the five most recently added mountains. The original secret
+worlds Hollow Mountain, Whispering Woods and Phantom Crater also have
+separate tunnels to their five previously added regular mountain destinations,
+unlocked when their secret-world flag is reached.
+
+The old **🚪 secret doors** still connect only the original three secret worlds;
+no extra regular level is accessed through them. Each of the ten added
+mountains has a tunnel back to its source mountain, and unlocked mountains
+can also be replayed from the illustrated map. Winning Hollow Mountain
+still automatically travels through its mandatory tunnel to Mistveil Lagoon.
+All prior saved unlocks, cleared levels and collected equipment are retained.
