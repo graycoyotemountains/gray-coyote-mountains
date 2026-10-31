@@ -1,0 +1,195 @@
+(()=>{'use strict';
+const $=id=>document.getElementById(id), canvas=$('game'),ctx=canvas.getContext('2d',{alpha:false});
+const W=960,H=600,TAU=Math.PI*2;
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
+const rand=(a,b)=>a+Math.random()*(b-a);
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const levels=[
+ {name:'Dawn Patrol',zone:'Azure Coast',color:'#1b567b',accent:'#82f1ff',desc:'A distress beacon flickers over the western sea. Scramble your jet and clear the coast of enemy fighters.',duration:23,extra:'Pilots, this is your first flight. Stay low, fly true, and bring everyone home.'},
+ {name:'Red Mesa',zone:'Scarlet Canyons',color:'#713c4f',accent:'#ffbc7b',desc:'The enemy has cut through the red canyons. Their interceptor wings are faster than anything we have seen.',duration:25,extra:'The canyon walls hide a fleet of shadow jets. Watch for incoming squadrons.'},
+ {name:'Thunder Gate',zone:'Storm Frontier',color:'#37416f',accent:'#c4d9ff',desc:'A storm-bound fortress blocks the pass. Its guardian, TEMPEST WARDEN, has never lost a fight.',duration:27,boss:'TEMPEST WARDEN',extra:'Lightning coils around the gate. The first guardian is awake.'},
+ {name:'Emerald Reach',zone:'Jade Wilds',color:'#206259',accent:'#90ffbf',desc:'An ancient forest shelters civilians below. Defend the skies and avoid being pinned down by enemy bombers.',duration:27,extra:'The jungle canopy hides a resistance signal. They are depending on us.'},
+ {name:'The White Line',zone:'Frost Divide',color:'#547d94',accent:'#c6f8ff',desc:'Cross the frozen mountains. Supply caches contain new flight systems, but rival aces are hunting them too.',duration:29,extra:'Your instruments frost over. Below, a mountain chain stretches into the clouds.'},
+ {name:'Ember Strait',zone:'Molten Crossing',color:'#8d4034',accent:'#ffb166',desc:'The volcano fleet ignites the strait. Defeat ASH HYDRA before it burns the passage shut.',duration:30,boss:'ASH HYDRA',extra:'Something enormous rises from the ash. Squadron, brace for the second guardian.'},
+ {name:'Midnight City',zone:'Neon Metropolis',color:'#423c87',accent:'#fb86ee',desc:'Enemy aces patrol the sleeping city. Dash between their formations and rescue the final evacuation ships.',duration:31,extra:'The city lights blink in a secret pattern: the people below are cheering for you.'},
+ {name:'Beyond the Blue',zone:'Stratosphere',color:'#29375e',accent:'#d0beff',desc:'Climb beyond the clouds. Experimental fighters protect a route to the enemy command fleet.',duration:32,extra:'The sky darkens to indigo. You can see the curve of the world.'},
+ {name:'Iron Armada',zone:'High Fleet',color:'#574264',accent:'#ffc3a8',desc:'The airborne navy arrives. Its huge flagship LEVIATHAN is the final shield before the citadel.',duration:34,boss:'LEVIATHAN',extra:'A mile-long shadow crosses the horizon. The armada is here.'},
+ {name:'Skyfire Citadel',zone:'Final Horizon',color:'#4d315c',accent:'#ffe49a',desc:'The last fortress opens its gates. Destroy ATLAS PRIME and return the skies to everyone.',duration:37,boss:'ATLAS PRIME',extra:'The last sunrise waits beyond this battle. All wings, with us!'},
+ {name:'Shattered Dawn',zone:'Broken Sunrise',color:'#76516f',accent:'#ffb6d6',desc:'A hidden signal survives beyond the citadel. The war is not over: another command fleet has awakened. Begin the Fractured Horizon campaign.',duration:32,extra:'New transmissions split in two directions. Which route will your squadron take?'},
+ {name:'Glass Reef',zone:'Prism Ocean',color:'#19718a',accent:'#a3fff3',desc:'Take the sea route through towering glass-blue clouds. Steal an energy core from the enemy resupply wing.',duration:34,extra:'Two paths lie ahead. A mirage shimmers over the water.'},
+ {name:'Iron Tempest',zone:'Obsidian Peaks',color:'#6d3859',accent:'#ff9bc6',desc:'Take the mountain route and face the steel aces of the storm fleet. Victory can open a risky shortcut.',duration:35,extra:'The ridge is guarded by the feared ace squadron, the Iron Talons.'},
+ {name:'Mirage Crossing',zone:'Sunfire Flats',color:'#a16b3a',accent:'#ffe69a',desc:'Follow the desert mirage to recover a lost flight recorder containing Omega’s secret weakness.',duration:35,extra:'The sky reflects a hundred impossible suns. One path is real.'},
+ {name:'The Hidden Hangar',zone:'Underground Airbase',color:'#346558',accent:'#afffc4',desc:'Enter the concealed hangar to prepare for the final campaign. The sentinel IRON ORACLE protects its launch codes.',duration:37,boss:'IRON ORACLE',extra:'The old maps lead here. Behind the hangar door is the route to the final five missions.'},
+ {name:'The Last Signal',zone:'Aurora Reach',color:'#275b85',accent:'#a9ecff',desc:'The final five-level campaign begins. Reassemble the alliance’s fleet before the Omega command system gains control.',duration:35,extra:'The skies are divided. A single alliance signal can reunite every squadron.'},
+ {name:'Three Destinies',zone:'Crossroads of Stars',color:'#484886',accent:'#d4c6ff',desc:'Fight to the Celestial Junction and choose one of three different final air routes. Each leads to a different battle and ending.',duration:37,boss:'TRIAD SENTINEL',extra:'Three gates open: dawn, lightning, and darkness. Your choices decide how the story ends.'},
+ {name:'Dawn Accord',zone:'Golden Dawn Route',color:'#91653f',accent:'#ffe5a0',desc:'ENDING A: Face NEXUS OMEGA in the dawn light and free the captive squadrons. Win a peaceful united-skies ending.',duration:36,boss:'NEXUS OMEGA · DAWN',ending:'dawn',extra:'Choose hope. End Omega’s control without destroying the skies it holds hostage.'},
+ {name:'Stormbreak',zone:'Thunderstorm Route',color:'#3a5985',accent:'#b4ddff',desc:'ENDING B: Chase NEXUS OMEGA into a superstorm and defeat its storm crown to end the war with a thunderous victory.',duration:38,boss:'NEXUS OMEGA · STORM',ending:'storm',extra:'Choose courage. The storm must be broken before it can swallow the entire fleet.'},
+ {name:'Black Star',zone:'Void Route',color:'#493050',accent:'#ff98d8',desc:'ENDING C: Dive into Omega’s black star fortress and challenge the strongest version of the BOSS OF BOSSES.',duration:40,boss:'NEXUS OMEGA · VOID',ending:'void',extra:'Choose the final risk. Beyond this gate waits Omega’s true form and the secret ending.'}
+];
+// Mission routes are directed. Completing a parent opens its child, never all later nodes.
+const routes={1:[2],2:[3],3:[4],4:[5],5:[6],6:[7],7:[8],8:[9],9:[10],10:[11],11:[12,13],12:[14],13:[14,15],14:[15],15:[16],16:[17],17:[18,19,20],18:[],19:[],20:[]};
+const mapPositions={
+  0:{1:[11,72],2:[24,52],3:[37,29],4:[51,55],5:[65,76],6:[77,55],7:[86,28],8:[70,14],9:[49,12],10:[25,14]},
+  1:{11:[8,50],12:[24,22],13:[24,77],14:[42,23],15:[47,76],16:[64,56],17:[78,52],18:[92,15],19:[92,50],20:[92,85]}
+};
+const endingScripts={
+ dawn:{title:'ENDING A · THE DAWN ACCORD',body:'Omega’s armored wings open and release their captive pilots. In the sunrise, both sides lay down their weapons. The skies belong to everyone, and a new alliance begins.',label:'THE PEACEFUL ENDING',symbol:'☀'},
+ storm:{title:'ENDING B · THE STORMBREAKER',body:'The storm crown shatters in a blinding flash. All of Omega’s lightning engines go dark. Across the world, people watch the storm clouds part. The squadrons return as heroes.',label:'THE HEROIC ENDING',symbol:'⚡'},
+ void:{title:'ENDING C · THE BLACK STAR SECRET',body:'Deep inside the black star, you discover Omega’s true heart: a stolen beacon designed to connect every sky. You free the beacon, and the fortress becomes a shining new star of peace.',label:'THE SECRET ENDING',symbol:'✦'}
+};
+const OVERLAYS={home:'homeOverlay',map:'mapOverlay',scene:'sceneOverlay',clear:'endOverlay',gameover:'endOverlay',finish:'endOverlay',pause:'endOverlay'};
+let saved={unlocked:1,completed:[],bestScore:0,sound:false,endings:[]};
+try{const x=JSON.parse(localStorage.getItem('skyfire_squadron_v1'));if(x&&typeof x==='object')saved={...saved,...x};}catch(e){}
+saved.unlocked=clamp(Number(saved.unlocked)||1,1,10);
+if(!Array.isArray(saved.completed))saved.completed=[];
+if(!Array.isArray(saved.endings))saved.endings=[];
+saved.completed=[...new Set(saved.completed.filter(n=>Number.isInteger(n)&&n>=1&&n<=20))];
+// In the first version, the unlocked level may be ahead of the last completed one.
+// Preserve that legitimate old progress when evaluating missions 1–10.
+let mapChapter=saved.completed.some(n=>n>10)?1:0;
+const save=()=>{try{localStorage.setItem('skyfire_squadron_v1',JSON.stringify(saved));}catch(e){}};
+let screen='home',selected=0,scene=null,sceneEnd=0,endAction=null,game=null,soundOn=Boolean(saved.sound),soundCtx=null;
+let vw=1,vh=1,scale=1,offsetX=0,offsetY=0,now=0,last=0,worldTime=0,flash=0,shake=0,toaster=0;
+const controls={keys:new Set(),aim:null,dragging:false,touchFire:false};
+const stars=Array.from({length:90},()=>({x:rand(0,W),y:rand(0,H),r:rand(.6,2.2),speed:rand(12,95),phase:rand(0,TAU)}));
+const clouds=Array.from({length:18},()=>({x:rand(0,W),y:rand(0,H),r:rand(45,140),speed:rand(12,45),alpha:rand(.035,.13)}));
+const terrain=Array.from({length:18},(_,i)=>({x:i*65,y:rand(0,1)}));
+function audio(freq=330,dur=.07,type='sine',volume=.035,slide=1){if(!soundOn)return;try{soundCtx=soundCtx||new (window.AudioContext||window.webkitAudioContext)();if(soundCtx.state==='suspended')soundCtx.resume();const osc=soundCtx.createOscillator(),gain=soundCtx.createGain();osc.type=type;osc.frequency.setValueAtTime(freq,soundCtx.currentTime);osc.frequency.exponentialRampToValueAtTime(Math.max(30,freq*slide),soundCtx.currentTime+dur);gain.gain.setValueAtTime(volume,soundCtx.currentTime);gain.gain.exponentialRampToValueAtTime(.0001,soundCtx.currentTime+dur);osc.connect(gain);gain.connect(soundCtx.destination);osc.start();osc.stop(soundCtx.currentTime+dur);}catch(e){}}
+function toast(msg){$('toast').textContent=msg;$('toast').classList.add('on');toaster=2.2;}
+function setScreen(s){screen=s;for(let k of Object.keys(OVERLAYS))$(OVERLAYS[k]).classList.remove('show');if(OVERLAYS[s])$(OVERLAYS[s]).classList.add('show');$('hud').classList.toggle('visible',s==='play');$('touchControls').classList.toggle('playing',s==='play');$('orientationHint').classList.toggle('playing',s==='play');$('pauseBtn').style.display=(s==='play'||s==='pause')?'':'none';$('pauseBtn').textContent=s==='pause'?'▶ RESUME':'Ⅱ PAUSE';}
+function isAvailable(mission){
+  if(mission===1||saved.completed.includes(mission))return true;
+  if(mission<=10&&mission<=saved.unlocked)return true; // original save support
+  return Object.entries(routes).some(([from,targets])=>targets.includes(mission)&&saved.completed.includes(Number(from)));
+}
+function makeMap(){
+  const positions=mapPositions[mapChapter],ids=Object.keys(positions).map(Number);
+  $('mapTitle').textContent=mapChapter?'FRACTURED HORIZON · 3 ENDINGS':'THE TEN SKIES';
+  $('chapterOne').classList.toggle('active',mapChapter===0);$('chapterTwo').classList.toggle('active',mapChapter===1);
+  $('mapHint').textContent=mapChapter?'Explore different routes: 11 splits into 12 or 13, and 17 branches to three different endings. Swipe sideways to view the map on a phone.':'Complete Mission 10 to unlock the new campaign. Earlier missions stay playable.';
+  $('endingCount').textContent=`FINALES DISCOVERED: ${saved.endings.length} / 3`;
+  let svg='';for(const n of ids){for(const target of routes[n]||[]){if(!positions[target])continue;const a=positions[n],b=positions[target],won=saved.completed.includes(n)&&saved.completed.includes(target),ready=isAvailable(target);svg+=`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" class="${won?'routeWon':ready?'routeOpen':'routeLocked'}" stroke-width=".85" stroke-dasharray="2 1.2" opacity=".9" />`;}}
+  $('routeLines').innerHTML=svg;
+  $('mapWorld').querySelectorAll('.node').forEach(n=>n.remove());
+  ids.forEach(id=>{const i=id-1,lev=levels[i],b=document.createElement('button'),available=isAvailable(id),done=saved.completed.includes(id),final=!!lev.ending;
+    b.className='node'+(lev.boss?' boss':'')+(final?' final':'')+(done?' done':'')+(!available?' locked':'')+(available&&!done?' next':'');
+    b.style.left=positions[id][0]+'%';b.style.top=positions[id][1]+'%';
+    b.title=`Mission ${id}: ${lev.name}${lev.ending?' · '+endingScripts[lev.ending].label:lev.boss?' · BOSS':''}`;
+    b.setAttribute('aria-label',b.title+(!available?' · LOCKED':''));
+    b.innerHTML=`<small>${done?'✓ ':final?'◆ ':lev.boss?'★ ':''}${final?'END '+String.fromCharCode(65+id-18):'LEVEL'}</small><strong>${id}</strong>`;
+    b.disabled=!available;b.onclick=()=>openMission(i);$('mapWorld').appendChild(b);
+  });
+  $('levelMap').scrollLeft=0;
+}
+function openMap(chapter){if(typeof chapter==='number')mapChapter=chapter;else if(saved.completed.includes(10)&&mapChapter===0&&!isAvailable(11))mapChapter=0;makeMap();setScreen('map');}
+function openMission(i){if(!isAvailable(i+1))return;selected=i;const l=levels[i];showScene({title:`MISSION ${String(i+1).padStart(2,'0')} · ${l.name.toUpperCase()}`,text:l.desc+' '+l.extra,kicker:`INCOMING TRANSMISSION · ${l.zone.toUpperCase()}`,duration:6.9,next:()=>startLevel(i)});}
+function showScene(s){scene=s;sceneEnd=0;setScreen('scene');$('sceneTitle').textContent=s.title;$('sceneText').textContent=s.text;$('sceneKicker').textContent=s.kicker||'CINEMATIC • WATCH ONLY';$('sceneProgress').style.width='0';}
+function skipScene(){if(screen!=='scene'||!scene)return;let n=scene.next;scene=null;sceneEnd=0; if(n)n();}
+function newGame(i){return{index:i,score:0,hp:100,shield:0,rapid:0,spread:0,overdrive:0,wingman:0,wingCD:0,missiles:2,elapsed:0,spawnTimer:1,pickupTimer:4,fireCD:0,boss:null,bossSpawned:false,player:{x:150,y:300,r:18,invul:1.7},enemies:[],shots:[],foeShots:[],pickups:[],particles:[],explosions:[],kills:0,combo:0,comboTimer:0,done:false,waveNum:0};}
+function startLevel(i){game=newGame(i);controls.aim=null;selected=i;flash=.18;toast(`MISSION ${i+1}: ${levels[i].name.toUpperCase()}`);setScreen('play');updateHud();}
+function updateHud(){if(!game)return;$('hpNum').textContent=Math.max(0,Math.ceil(game.hp))+'%';$('hpFill').style.width=clamp(game.hp,0,100)+'%';$('shieldStatus').textContent=[game.shield>0?'◆ SHIELD':'',game.rapid>0?'⚡ RAPID':'',game.spread>0?'✦ TRIPLE':'',game.overdrive>0?'🔥 OVERDRIVE':'',game.wingman>0?'✈ WINGMAN':''].filter(Boolean).slice(0,2).join(' · ');$('hudLevel').textContent=String(game.index+1).padStart(2,'0')+' / 20';$('scoreNum').textContent=game.score.toLocaleString();$('missileNum').textContent=game.missiles;$('threatNum').textContent=Math.round(Math.min(100,100*game.elapsed/levels[game.index].duration))+'%';}
+function showEnd(which,title,msg,primaryLabel,action,stars='✦ ✦ ✦'){$('endKicker').textContent=which==='gameover'?'JET LOST · MISSION FAILED':which==='finish'?'CAMPAIGN COMPLETE':'MISSION REPORT';$('endTitle').textContent=title;$('endText').textContent=msg;$('endPrimary').textContent=primaryLabel;$('resultStars').textContent=stars;endAction=action;$('routeChoices').classList.remove('show');$('routeChoices').replaceChildren();setScreen(which);}
+function showRouteChoices(i){
+  const next=routes[i+1]||[],wrap=$('routeChoices');wrap.replaceChildren();
+  if(next.length<2)return;
+  const lead=document.createElement('div');lead.className='routeLead';lead.textContent=next.some(id=>levels[id-1].ending)?'CHOOSE ONE OF THREE FINAL DESTINIES':'YOUR NEXT ROUTE · CHOOSE A MISSION';wrap.append(lead);
+  for(const id of next){if(!isAvailable(id))continue;const lev=levels[id-1],b=document.createElement('button');b.className='routePick'+(lev.ending?' finalPick':'');
+    b.textContent=`${lev.ending?endingScripts[lev.ending].symbol:'✈'} ${String(id).padStart(2,'0')} · ${lev.name.toUpperCase()}`;
+    b.onclick=()=>openMission(id-1);wrap.append(b);
+  }wrap.classList.add('show');
+}
+function finishEnding(i){
+  const ending=levels[i].ending,script=endingScripts[ending];
+  showScene({title:script.title,text:script.body,kicker:'FINAL CINEMATIC · WATCH ONLY · SKIPPABLE',duration:10,
+  next:()=>showEnd('finish',script.label,`The Boss of Bosses has fallen. You unlocked ${saved.endings.length} of 3 finales. Final score: ${game.score.toLocaleString()}. Replay from the mission map to discover the others.`, 'EXPLORE OTHER ENDINGS',()=>openMap(1),'★ ★ ★ ★ ★')});
+}
+function cleared(){
+  if(!game||game.done)return;game.done=true;const i=game.index,id=i+1,lev=levels[i];
+  const bonus=Math.round(game.hp)*30+game.missiles*150;game.score+=bonus;
+  if(id<=10)saved.unlocked=Math.max(saved.unlocked,Math.min(10,id+1));
+  if(!saved.completed.includes(id))saved.completed.push(id);
+  if(lev.ending&&!saved.endings.includes(lev.ending))saved.endings.push(lev.ending);
+  saved.bestScore=Math.max(saved.bestScore,game.score);save();audio(650,.22,'sine',.07,1.7);
+  const nextIds=routes[id]||[];
+  const next=()=>{
+    if(lev.ending){finishEnding(i);return;}
+    if(id===10){showScene({title:'A SIGNAL BEYOND THE SUNRISE',text:'Atlas Prime has fallen, but new transmissions reach the squadron. A hidden fleet has split the horizon into rival air routes. The next campaign begins now!',kicker:'CHAPTER II CINEMATIC · WATCH ONLY',duration:7,next:()=>openMission(10)});return;}
+    if(nextIds.length>1){openMap(id>=11?1:0);return;}
+    if(!nextIds.length){openMap(id>=11?1:0);return;}
+    if(lev.boss){showScene({title:'THE GUARDIAN HAS FALLEN',text:`${lev.boss} is defeated. The next sky route is clear. Destination: ${levels[nextIds[0]-1].zone}.`,kicker:'VICTORY CINEMATIC · WATCH ONLY',duration:5.7,next:()=>openMission(nextIds[0]-1)});return;}
+    openMission(nextIds[0]-1);
+  };
+  const title=lev.ending?'THE BOSS OF BOSSES FALLS':id===10?'THE STORY CONTINUES':'SKY SECURED';
+  const message=`Mission ${id} cleared · ${game.kills} enemy fighters destroyed · +${bonus.toLocaleString()} survival bonus. ${lev.ending?'You reached one of the three endings!':nextIds.length>1?'New branching routes unlocked. Choose where to fly next!':id===10?'The Fractured Horizon campaign is unlocked!':'Your next mission is ready.'}`;
+  showEnd('clear',title,message,lev.ending?'WATCH YOUR ENDING »':nextIds.length>1?'VIEW BRANCHING MAP »':'CONTINUE »',next,game.hp>70?'✦ ✦ ✦':game.hp>35?'✦ ✦ ☆':'✦ ☆ ☆');
+  showRouteChoices(i);
+}
+function playerDown(){if(screen!=='play'||!game)return;const p=game.player;if(p.invul>0||game.shield>0)return;game.hp-=18+Math.min(game.index,12)*.55;p.invul=1.1;flash=.28;shake=10;audio(90,.27,'sawtooth',.11,.4);sparks(p.x,p.y,20,'#ff707b',5);if(game.hp<=0){game.hp=0;showEnd('gameover','JET DOWN',`You reached Mission ${game.index+1}. ${game.kills} enemy fighters were defeated. Give it another try.`, '↻ RETRY MISSION',()=>startLevel(game.index),'✕ ✕ ✕');}}
+function sparks(x,y,n,color,speed=1){if(!game)return;for(let j=0;j<n;j++){let a=rand(0,TAU),s=rand(40,260)*speed;game.particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(.2,.8),max:1,r:rand(1.5,4.3),color});}}
+function boom(x,y,big=false,color='#ffb36e'){sparks(x,y,big?42:15,color,big?1.6:1);game.explosions.push({x,y,r:big?60:29,t:0,life:big?.75:.37});shake=Math.max(shake,big?9:2);audio(big?80:140,big?.48:.18,'sawtooth',big?.095:.045,.15);}
+function spawnEnemy(type,yy,xx){const hp=type==='bomber'?9:type==='ace'?5:3;let e={type,x:xx||W+45,y:yy||rand(85,H-65),anchor:yy||300,r:type==='bomber'?25:type==='ace'?19:15,hp:hp+Math.floor(Math.min(game.index,15)/4),maxHp:hp+Math.floor(Math.min(game.index,15)/4),vx:type==='ace'?rand(-270,-230):type==='bomber'?rand(-115,-95):rand(-205,-152),phase:rand(0,TAU),fire:rand(.65,2.0),time:0,points:type==='bomber'?450:type==='ace'?300:150};game.enemies.push(e);}
+function launchWave(){const g=game;g.waveNum++;const count=(g.waveNum%4===0?4:g.waveNum%3===0?3:2);const type=g.waveNum%5===0?'bomber':g.waveNum%3===0?'ace':'fighter';const y=rand(120,H-130);for(let i=0;i<count;i++)spawnEnemy(type,clamp(y+(i-(count-1)/2)*51,80,H-65),W+65+i*73);if(g.waveNum%4===1&&g.index>2)spawnEnemy('ace',rand(80,H-60),W+300);}
+function spawnPickup(x=W+30,y=rand(100,H-90)){const types=['heal','shield','rapid','missile','spread','points'];let type=types[Math.floor(rand(0,types.length))];if(game.index>=10&&Math.random()<.24)type=['overdrive','wingman','nova'][Math.floor(rand(0,3))];if(game.hp<38&&Math.random()<.52)type='heal';game.pickups.push({x,y,type,r:17,phase:rand(0,TAU)});}
+function collect(item){const g=game;switch(item.type){case 'heal':g.hp=Math.min(100,g.hp+30);toast('♥ HULL REPAIRED +30');break;case 'shield':g.shield=8;toast('◆ ENERGY SHIELD ACTIVE');break;case 'rapid':g.rapid=10;toast('⚡ RAPID FIRE UNLOCKED');break;case 'spread':g.spread=11;toast('✦ TRIPLE SHOT ACTIVE');break;case 'missile':g.missiles+=2;toast('🚀 TWO MISSILES COLLECTED');break;case 'points':g.score+=750;toast('★ BONUS 750 POINTS');break;case 'overdrive':g.overdrive=12;toast('🔥 OVERDRIVE LASERS ACTIVE');break;case 'wingman':g.wingman=12;toast('✈ ALLIED WINGMAN SUPPORT');break;case 'nova':g.foeShots=[];for(const e of g.enemies){e.hp=0;boom(e.x,e.y);}g.enemies=[];if(g.boss){g.boss.hp=Math.max(1,g.boss.hp-45);sparks(g.boss.x,g.boss.y,40,'#fff3ae',2);}g.score+=500;toast('☀ NOVA BLAST · SKY CLEARED');break;}audio(750,.2,'sine',.07,1.65);sparks(item.x,item.y,15,'#96ffe5');}
+function shoot(){const g=game;if(!g)return;const p=g.player;const sy=g.spread>0?[-95,0,95]:[0];for(let vy of sy)g.shots.push({x:p.x+22,y:p.y,vx:780,vy,damage:g.overdrive>0?3.5:2.2,r:4.5,kind:'laser'});g.fireCD=g.rapid>0?.11:.185;audio(g.spread>0?620:460,.06,'triangle',.019,.6);}
+function missile(){if(screen!=='play'||!game||game.missiles<1)return;game.missiles--;const p=game.player;game.shots.push({x:p.x+15,y:p.y,vx:520,vy:0,damage:22,r:9,kind:'missile',life:2.8});toast('🚀 MISSILE LAUNCHED');audio(140,.25,'sawtooth',.06,2);}
+function spawnBoss(){const g=game,lev=levels[g.index];g.bossSpawned=true;g.enemies=[];g.foeShots=[];const final=!!lev.ending,bossHp=final?({dawn:260,storm:330,void:400}[lev.ending]):85+g.index*20;g.boss={name:lev.boss,x:W+130,y:H*.5,r:final?80:75,hp:bossHp,maxHp:bossHp,time:0,fire:1.15,phase:0,form:lev.ending||'standard',volley:0};showScene({title:lev.boss+' APPROACHES',text:`WARNING: Guardian-class aircraft detected. Its armor is reinforced, but your missiles can tear through it. ${lev.ending?'This is NEXUS OMEGA, the Boss of Bosses! Its chosen form determines your ending.':'This is your moment, pilot!'}`,kicker:'BOSS ENCOUNTER · WATCH ONLY',duration:3.8,next:()=>{setScreen('play');toast('⚠ BOSS BATTLE: '+lev.boss);}});audio(110,.7,'sawtooth',.07,.45);}
+function killEnemy(e){let g=game;g.score+=e.points;g.kills++;g.combo++;g.comboTimer=4;boom(e.x,e.y,e.type==='bomber');if(Math.random()<.10)spawnPickup(e.x,e.y);}
+function tick(dt){worldTime+=dt;flash=Math.max(0,flash-dt);shake=Math.max(0,shake-35*dt);if(toaster>0){toaster-=dt;if(toaster<=0)$('toast').classList.remove('on');}if(screen==='scene'){if(!sceneEnd)sceneEnd=performance.now();let f=(performance.now()-sceneEnd)/(scene.duration*1000);$('sceneProgress').style.width=clamp(f*100,0,100)+'%';if(f>=1)skipScene();return;}
+if(screen!=='play'||!game)return;const g=game,p=g.player,l=levels[g.index];g.elapsed+=dt;p.invul=Math.max(0,p.invul-dt);g.shield=Math.max(0,g.shield-dt);g.rapid=Math.max(0,g.rapid-dt);g.spread=Math.max(0,g.spread-dt);g.overdrive=Math.max(0,g.overdrive-dt);g.wingman=Math.max(0,g.wingman-dt);g.wingCD=Math.max(0,g.wingCD-dt);g.comboTimer=Math.max(0,g.comboTimer-dt);g.fireCD=Math.max(0,g.fireCD-dt);
+let mx=(controls.keys.has('ArrowRight')||controls.keys.has('d')?1:0)-(controls.keys.has('ArrowLeft')||controls.keys.has('a')?1:0),my=(controls.keys.has('ArrowDown')||controls.keys.has('s')?1:0)-(controls.keys.has('ArrowUp')||controls.keys.has('w')?1:0);const len=Math.hypot(mx,my)||1;p.x+=mx/len*380*dt;p.y+=my/len*380*dt;if(controls.aim){p.x+=(controls.aim.x-p.x)*Math.min(1,dt*10);p.y+=(controls.aim.y-p.y)*Math.min(1,dt*10);}p.x=clamp(p.x,50,630);p.y=clamp(p.y,54,H-50);
+if(g.fireCD<=0)shoot();if(g.wingman>0&&g.wingCD<=0){g.shots.push({x:p.x-20,y:p.y-29,vx:780,vy:-65,damage:2.2,r:5,kind:'laser'});g.shots.push({x:p.x-20,y:p.y+29,vx:780,vy:65,damage:2.2,r:5,kind:'laser'});g.wingCD=.30;}if(controls.keys.has('x')||controls.keys.has('X')){if(!controls.missileHeld){missile();controls.missileHeld=true;}}else controls.missileHeld=false;
+if(!g.bossSpawned){g.spawnTimer-=dt;g.pickupTimer-=dt;if(g.spawnTimer<=0&&g.elapsed<l.duration-1){launchWave();g.spawnTimer=Math.max(.95,2.1-g.index*.052)+rand(-.25,.45);}if(g.pickupTimer<=0){spawnPickup();g.pickupTimer=5.1+rand(0,2.5);}if(g.elapsed>l.duration){if(l.boss)spawnBoss();else {cleared();return;}}}
+for(const e of g.enemies){e.time+=dt;e.x+=e.vx*dt;e.y+=Math.sin(e.time*3.4+e.phase)*28*dt+(e.type==='ace'?Math.sin(e.time*1.9+e.phase)*35*dt:0);e.fire-=dt;if(e.fire<=0&&e.x<W-30&&e.x>370){const vy=clamp((p.y-e.y)*.34,-160,160);g.foeShots.push({x:e.x-15,y:e.y,vx:-260-Math.min(g.index,14)*9,vy,r:5,damage:1});e.fire=rand(1.3,2.6);audio(230,.07,'square',.015,.6);}if(dist(e,p)<e.r+p.r&&p.invul<=0){playerDown();e.hp-=2;}}
+g.enemies=g.enemies.filter(e=>e.hp>0&&e.x>-55);
+const b=g.boss;if(b){b.time+=dt;b.x+=(790-b.x)*Math.min(1,dt*1.2);b.y=H/2+Math.sin(b.time*.92)*158;b.fire-=dt;if(b.fire<=0){
+  b.volley++;
+  const size=b.form==='void'?4:b.form==='storm'?3:2;
+  const aim=Math.atan2(p.y-b.y,p.x-b.x),baseSpeed=b.form==='void'?315:b.form==='storm'?290:245;
+  for(let i=-size;i<=size;i++){
+    const angle=aim+i*(b.form==='storm'?.18:.15)+(b.form==='void'?Math.sin(b.volley*.6)*.1:0);
+    g.foeShots.push({x:b.x-47,y:b.y+15,vx:Math.cos(angle)*(baseSpeed+g.index*3),vy:Math.sin(angle)*(baseSpeed+g.index*3),r:b.form==='void'?7:6,damage:1});
+  }
+  if(b.form==='void'&&b.volley%4===0){spawnEnemy('ace',rand(110,H-110),W+35);}
+  if(b.form==='storm'&&b.volley%3===0){for(let k=-1;k<=1;k++)g.foeShots.push({x:b.x-60,y:b.y+k*36,vx:-270,vy:k*110,r:7,damage:1});}
+  b.fire=b.form==='void'?.95:b.form==='storm'?1.07:b.form==='dawn'?1.22:g.index===9?.9:1.25;
+  audio(165,.2,'square',.04,.8);
+}if(dist(b,p)<b.r+p.r&&p.invul<=0)playerDown();}
+for(const s of g.shots){s.x+=s.vx*dt;s.y+=s.vy*dt;if(s.kind==='missile'){s.life-=dt;const targets=[...g.enemies];if(g.boss)targets.push(g.boss);const target=targets.filter(t=>t.x>s.x-120).sort((a,b)=>dist(s,a)-dist(s,b))[0];if(target){const turn=Math.atan2(target.y-s.y,target.x-s.x);s.vx=Math.cos(turn)*540;s.vy=Math.sin(turn)*540;}}if(s.x>W+40||s.y<-40||s.y>H+40||s.life<0)s.dead=true;for(const e of g.enemies){if(!s.dead&&dist(s,e)<e.r+s.r){e.hp-=s.damage;s.dead=true;if(s.kind==='missile')boom(s.x,s.y,true);else sparks(s.x,s.y,3,'#bfffff');if(e.hp<=0)killEnemy(e);break;}}if(g.boss&&!s.dead&&dist(s,g.boss)<g.boss.r*.72+s.r){g.boss.hp-=s.damage;s.dead=true;if(s.kind==='missile')boom(s.x,s.y,true);else sparks(s.x,s.y,4,'#dffaff');if(g.boss.hp<=0){boom(g.boss.x,g.boss.y,true,'#ffcb6d');g.score+=5000;g.boss=null;cleared();return;}}}g.shots=g.shots.filter(s=>!s.dead);
+for(const s of g.foeShots){s.x+=s.vx*dt;s.y+=s.vy*dt;if(dist(s,p)<s.r+p.r){s.dead=true;playerDown();}}g.foeShots=g.foeShots.filter(s=>!s.dead&&s.x>-30&&s.y>-20&&s.y<H+20);
+for(const item of g.pickups){item.x-=104*dt;item.phase+=dt*3;if(dist(item,p)<item.r+p.r){item.dead=true;collect(item);}}g.pickups=g.pickups.filter(x=>!x.dead&&x.x>-30);
+for(const q of g.particles){q.x+=q.vx*dt;q.y+=q.vy*dt;q.life-=dt;q.vx*=Math.max(.1,1-1.2*dt);q.vy*=Math.max(.1,1-1.2*dt);}g.particles=g.particles.filter(q=>q.life>0);for(const e of g.explosions)e.t+=dt;g.explosions=g.explosions.filter(x=>x.t<x.life);if(g.hp<=0)return;updateHud();}
+function resize(){const rect=$('viewport').getBoundingClientRect();vw=rect.width;vh=rect.height;const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(vw*dpr);canvas.height=Math.round(vh*dpr);scale=Math.min(vw/W,vh/H);offsetX=(vw-W*scale)/2;offsetY=(vh-H*scale)/2;ctx.setTransform(dpr*scale,0,0,dpr*scale,dpr*offsetX,dpr*offsetY);}
+function polygon(points,fill,stroke,line=1){ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);points.slice(1).forEach(p=>ctx.lineTo(p[0],p[1]));ctx.closePath();if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=line;ctx.stroke();}}
+function rounded(x,y,w,h,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill();}
+function paintBG(t,level){const lv=levels[level]||levels[0],color=lv.color;const gradient=ctx.createLinearGradient(0,0,W,H);gradient.addColorStop(0,'#08172e');gradient.addColorStop(.45,color);gradient.addColorStop(1,'#080e2c');ctx.fillStyle=gradient;ctx.fillRect(0,0,W,H);
+const gl=ctx.createRadialGradient(710,170,20,710,170,340);gl.addColorStop(0,lv.accent+'55');gl.addColorStop(1,'transparent');ctx.fillStyle=gl;ctx.fillRect(0,0,W,H);
+if([7,8,9,15,16,18,19].includes(level)){for(const s of stars){ctx.globalAlpha=.25+.35*(1+Math.sin(t*2+s.phase))*.5;ctx.fillStyle='#d8faff';ctx.fillRect((s.x-t*s.speed*.55%W+W)%W,s.y,s.r,s.r);}ctx.globalAlpha=1;}else{for(const c of clouds){let x=(c.x-t*c.speed%1300+1300)%1300-150;const g=ctx.createRadialGradient(x,c.y,2,x,c.y,c.r);g.addColorStop(0,'#e1f6ff'+(Math.round(c.alpha*255).toString(16).padStart(2,'0')));g.addColorStop(1,'#ddf7ff00');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,c.y,c.r,0,TAU);ctx.fill();}}
+ctx.save();ctx.globalAlpha=.22;let phase=t*18;ctx.strokeStyle=lv.accent;ctx.lineWidth=2;for(let j=0;j<3;j++){ctx.beginPath();ctx.moveTo(0,440+j*30);for(let x=0;x<=W;x+=15){let yy=445+j*35+Math.sin((x+phase*(j+1))*.009+j)*19+Math.sin((x-phase)*.021)*7;ctx.lineTo(x,yy);}ctx.stroke();}ctx.restore();
+if(level===6||level===14){for(let i=0;i<23;i++){let x=(i*51-t*22%1200+1200)%1200-70;let h=35+(i*41)%120;ctx.fillStyle=i%3===0?'#0c163b':'#13264b';ctx.fillRect(x,H-h,31,h);ctx.fillStyle='#e67ccd';for(let j=0;j<5;j++)for(let k=0;k<2;k++)if((j*7+k+i)%3!==0)ctx.fillRect(x+6+k*13,H-h+9+j*19,3,5);}}
+else if([1,4,5,10,12,13,17].includes(level)){ctx.fillStyle=[4,10].includes(level)?'#d7f9ff16':'#ffba7b1a';for(let i=0;i<11;i++){let x=((i*120-t*14)%1300+1300)%1300-180;polygon([[x,H],[x+115,H-120-(i%4)*36],[x+220,H]],ctx.fillStyle);}}
+ctx.globalAlpha=.16;ctx.strokeStyle=lv.accent;ctx.lineWidth=1;for(let y=30;y<H;y+=58){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}ctx.globalAlpha=1;}
+function drawJet(x,y,scaleJet=1,enemy=false,type='fighter',tilt=0){ctx.save();ctx.translate(x,y);ctx.rotate(tilt);ctx.scale(scaleJet,scaleJet);if(enemy)ctx.scale(-1,1);const body=enemy?'#f69eaa':'#a2f2ff',dark=enemy?'#7a2749':'#28679e',wing=enemy?'#e96b81':'#56b1e8';ctx.shadowBlur=enemy?11:20;ctx.shadowColor=enemy?'#f65a80':'#54c9ff';polygon([[-31,0],[-13,-7],[13,-8],[33,0],[13,8],[-13,7]],body,'#e6ffff',1);polygon([[-10,-4],[-24,-25],[3,-19],[12,-6]],wing,dark,1.2);polygon([[-10,4],[-24,25],[3,19],[12,6]],wing,dark,1.2);polygon([[-25,-5],[-36,-15],[-14,-9]],dark);polygon([[-25,5],[-36,15],[-14,9]],dark);polygon([[3,-5],[18,-3],[25,0],[18,3],[3,5]],enemy?'#47223d':'#224f78','#ecffff',.8);ctx.shadowBlur=0;ctx.fillStyle=enemy?'#ff9d44':'#51ffff';ctx.beginPath();ctx.ellipse(-32,0,rand(4,9),3.3,0,0,TAU);ctx.fill();if(type==='bomber'){ctx.fillStyle=dark;ctx.fillRect(-8,-21,12,42);}if(type==='ace'){ctx.strokeStyle='#ffe3a8';ctx.lineWidth=2;ctx.strokeRect(-6,-7,18,14);}ctx.restore();}
+function drawBoss(b){ctx.save();ctx.translate(b.x,b.y);if(b.form!=='standard'){const hue=b.form==='dawn'?'#ffd88b':b.form==='storm'?'#9edaff':'#e19aff';ctx.save();ctx.rotate(b.time*(b.form==='void'?-.55:.35));ctx.strokeStyle=hue;ctx.globalAlpha=.8;ctx.shadowColor=hue;ctx.shadowBlur=17;ctx.lineWidth=3;for(let k=0;k<3;k++){ctx.beginPath();ctx.ellipse(0,0,100+k*13,49+k*11,k*.55,0,TAU);ctx.stroke();}ctx.restore();} ctx.rotate(Math.sin(b.time*1.1)*.05);ctx.shadowBlur=28;ctx.shadowColor='#f15d93';polygon([[-96,0],[-40,-27],[7,-41],[65,-29],[101,0],[65,29],[7,41],[-40,27]],'#672f53','#ffb1b4',3);polygon([[-24,-17],[-55,-86],[20,-60],[47,-24]],'#8c4568','#ffa2a7',2);polygon([[-24,17],[-55,86],[20,60],[47,24]],'#8c4568','#ffa2a7',2);polygon([[-33,0],[21,-24],[76,0],[21,24]],'#d66d84','#ffe1b2',2);ctx.shadowBlur=15;ctx.fillStyle='#e8fcff';ctx.beginPath();ctx.ellipse(39,0,24,9,0,0,TAU);ctx.fill();ctx.fillStyle='#fc5776';for(let i of [-1,1]){ctx.beginPath();ctx.ellipse(-75,i*19,12,6,0,0,TAU);ctx.fill();}ctx.restore();rounded(625,112,288,16,7,'#240f2ded');rounded(629,116,280*clamp(b.hp/b.maxHp,0,1),8,5,'#ff6e8c');ctx.fillStyle='#fff1e6';ctx.font='900 17px system-ui';ctx.textAlign='center';ctx.fillText('⚠ '+b.name+' ⚠',769,102);}
+function render(dt){ctx.save();ctx.setTransform(canvas.width/vw,0,0,canvas.height/vh,0,0);const margin=ctx.createLinearGradient(0,0,vw,vh);margin.addColorStop(0,'#102a4a');margin.addColorStop(.65,'#0c1b35');margin.addColorStop(1,'#18142f');ctx.fillStyle=margin;ctx.fillRect(0,0,vw,vh);ctx.restore();ctx.save();ctx.beginPath();ctx.rect(0,0,W,H);ctx.clip();if(shake>0&&screen==='play')ctx.translate(rand(-shake,shake),rand(-shake,shake));let lev=game?game.index:selected;paintBG(worldTime,lev);
+if(screen==='home'){ctx.globalAlpha=.72;drawJet(660+Math.sin(worldTime*1.3)*22,260+Math.sin(worldTime*.8)*29,2.7,false);drawJet(790,396+Math.sin(worldTime*1.6)*45,1.25,false);drawJet(915,115+Math.sin(worldTime)*25,1,true);ctx.globalAlpha=1;}
+if(screen==='map'){ctx.globalAlpha=.35;for(let i=0;i<12;i++)drawJet((120+i*97-worldTime*18)%1150,100+i*37%420,.5,i%3===0);ctx.globalAlpha=1;}
+if(screen==='scene'){drawJet(310+Math.sin(worldTime*.8)*60,185+Math.sin(worldTime*.7)*35,3.1,false);for(let i=0;i<5;i++)drawJet(830+(i%2)*80+Math.sin(worldTime+i)*30,120+i*81,1.15,true);ctx.fillStyle='#ffffff22';ctx.font='bold 13px monospace';ctx.fillText('◈ TRANSMISSION SIGNAL ACTIVE',24,42);}
+if(game&&(screen==='play'||screen==='pause'||screen==='clear'||screen==='gameover'||screen==='finish')){const g=game;for(const item of g.pickups){ctx.save();ctx.translate(item.x,item.y);ctx.rotate(worldTime*.95);ctx.shadowBlur=16;ctx.shadowColor='#94ffd2';polygon([[0,-18],[17,0],[0,18],[-17,0]],'#133e5c','#a8ffdc',2);ctx.rotate(-worldTime*.95);ctx.fillStyle='#f4fff8';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='900 18px system-ui';ctx.fillText({heal:'♥',shield:'◆',rapid:'⚡',missile:'✚',spread:'✦',points:'★',overdrive:'🔥',wingman:'✈',nova:'☀'}[item.type],0,1);ctx.restore();}
+for(let e of g.enemies)drawJet(e.x,e.y,e.type==='bomber'?1.14:e.type==='ace'?.92:.75,true,e.type,Math.sin(e.time*3)*.06);if(g.boss)drawBoss(g.boss);
+for(let s of g.foeShots){ctx.save();ctx.shadowBlur=12;ctx.shadowColor='#ff7a83';ctx.fillStyle='#ffb28b';ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,TAU);ctx.fill();ctx.restore();}for(let s of g.shots){ctx.save();ctx.shadowBlur=16;ctx.shadowColor=s.kind==='missile'?'#ffc07d':'#72f5ff';ctx.fillStyle=s.kind==='missile'?'#ffd27b':'#a8ffff';ctx.beginPath();ctx.ellipse(s.x,s.y,s.kind==='missile'?13:12,s.kind==='missile'?5:2.8,Math.atan2(s.vy,s.vx),0,TAU);ctx.fill();ctx.restore();}
+for(let q of g.particles){ctx.globalAlpha=Math.min(1,q.life*2);ctx.fillStyle=q.color;ctx.fillRect(q.x,q.y,q.r,q.r);}ctx.globalAlpha=1;for(let b of g.explosions){ctx.strokeStyle=`rgba(255,215,160,${1-b.t/b.life})`;ctx.lineWidth=4;ctx.beginPath();ctx.arc(b.x,b.y,b.r*(.25+b.t/b.life),0,TAU);ctx.stroke();}
+{if(g.shield>0){ctx.strokeStyle='#77feff99';ctx.lineWidth=3;ctx.shadowBlur=17;ctx.shadowColor='#6defff';ctx.beginPath();ctx.arc(g.player.x,g.player.y,34+Math.sin(worldTime*5)*2,0,TAU);ctx.stroke();ctx.shadowBlur=0;}if(g.wingman>0){drawJet(g.player.x-30,g.player.y-35,.55,false);drawJet(g.player.x-30,g.player.y+35,.55,false);}drawJet(g.player.x,g.player.y,1.02,false,'fighter',(controls.keys.has('ArrowUp')||controls.keys.has('w')?-.12:controls.keys.has('ArrowDown')||controls.keys.has('s')?.12:0));}
+}
+if(flash>0){ctx.fillStyle=`rgba(255,160,160,${Math.min(.3,flash*.75)})`;ctx.fillRect(0,0,W,H);}ctx.restore();}
+function frame(ms){if(!last)last=ms;const dt=Math.min(.045,(ms-last)/1000);last=ms;tick(dt);render(dt);requestAnimationFrame(frame);}
+function screenPosition(event){let r=canvas.getBoundingClientRect();return{x:clamp((event.clientX-r.left-offsetX)/scale,0,W),y:clamp((event.clientY-r.top-offsetY)/scale,0,H)};}
+canvas.addEventListener('pointerdown',e=>{if(screen!=='play')return;e.preventDefault();controls.dragging=true;controls.dragId=e.pointerId;controls.aim=screenPosition(e);canvas.setPointerCapture?.(e.pointerId);});
+canvas.addEventListener('pointermove',e=>{if(screen!=='play'||!controls.dragging||controls.dragId!==e.pointerId)return;controls.aim=screenPosition(e);});
+const releasePointer=e=>{if(controls.dragId===e.pointerId){controls.dragging=false;controls.aim=null;}};canvas.addEventListener('pointerup',releasePointer);canvas.addEventListener('pointercancel',releasePointer);
+window.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();controls.keys.add(e.key);if(e.repeat)return;if((e.key==='p'||e.key==='P'||e.key==='Escape')&&(screen==='play'||screen==='pause'))togglePause();if(e.key==='Enter'&&screen==='scene')skipScene();if(e.key===' '&&screen==='scene')skipScene();});window.addEventListener('keyup',e=>controls.keys.delete(e.key));window.addEventListener('blur',()=>{controls.keys.clear();controls.aim=null;if(screen==='play')togglePause();});
+function togglePause(){if(screen==='play'){showEnd('pause','MISSION PAUSED','Your jet is holding position. Breathe, then get back into the sky.','▶ RESUME',()=>setScreen('play'),'Ⅱ Ⅱ Ⅱ');$('endKicker').textContent='PAUSE MENU';}else if(screen==='pause')setScreen('play');}
+$('startBtn').onclick=()=>openMap();$('homeMapBtn').onclick=()=>openMap();$('chapterOne').onclick=()=>openMap(0);$('chapterTwo').onclick=()=>openMap(1);$('mapHomeBtn').onclick=()=>setScreen('home');$('skipSceneBtn').onclick=skipScene;$('endPrimary').onclick=()=>endAction&&endAction();$('endMap').onclick=()=>openMap();$('pauseBtn').onclick=togglePause;$('touchMissile').onclick=missile;
+$('soundBtn').onclick=()=>{soundOn=!soundOn;saved.sound=soundOn;save();$('soundBtn').textContent=soundOn?'♫ SOUND ON':'♪ SOUND OFF';audio(590,.12,'sine',.055,1.4);};$('soundBtn').textContent=soundOn?'♫ SOUND ON':'♪ SOUND OFF';
+window.addEventListener('resize',resize);resize();requestAnimationFrame(frame);
+})();
