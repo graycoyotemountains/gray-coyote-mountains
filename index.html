@@ -777,7 +777,7 @@ function stopSecretAmbience(){
  }
 }
 function syncSecretAmbience(){
- if(soundEnabled&&screen==='game'&&levelIndex>=SECRET_LEVEL&&mode==='playing'&&!document.hidden)startSecretAmbience();
+ if(soundEnabled&&screen==='game'&&levelIndex>=SECRET_LEVEL&&levelIndex<13&&mode==='playing'&&!document.hidden)startSecretAmbience();
  else stopSecretAmbience();
 }
 function playVictory(){
@@ -1085,8 +1085,8 @@ function loadLevel(i){
  el('gameFrame').classList.remove('invasion-mode');
  createChestsAndPortals();
  coyotes=spawnCoyotes();
- say(challengeMode?'🔥 CHALLENGE! 60 seconds, 15 coyotes, three villager guards. Find the ONE open side of 🏁!':i===SECRET_DOOR_MOUNTAIN?'❄️ The secret door has vanished again. Find treasure while you search!':i>=MAIN_MOUNTAINS?'👻 You entered '+LEVELS[i].name+'! Find 🏁!':EXTRA_PORTALS.some(e=>e.mountain===i)?'🚪 A hidden portal and treasure await on this mountain!':'🧰 Find three treasure chests and reach the flag before time runs out!');
- el('gameFrame').classList.toggle('secret-zone',i>=MAIN_MOUNTAINS);
+ say(challengeMode?'🔥 CHALLENGE! 60 seconds, 15 coyotes, three villager guards. Find the ONE open side of 🏁!':i===SECRET_DOOR_MOUNTAIN?'❄️ The secret door has vanished again. Find treasure while you search!':i>=SECRET_LEVEL&&i<13?'👻 You entered '+LEVELS[i].name+'! Find 🏁!':i>=14?'⛰️ A regular mountain adventure! Find three chests and reach the flag.':EXTRA_PORTALS.some(e=>e.mountain===i)?'🚪 A hidden portal and treasure await on this mountain!':'🧰 Find three treasure chests and reach the flag before time runs out!');
+ el('gameFrame').classList.toggle('secret-zone',i>=SECRET_LEVEL&&i<13);
  el('gameFrame').classList.toggle('challenge-zone',challengeMode);
   el('resetCoyotesGame').hidden=challengeMode;
  el('gameBackBtn').textContent=challengeMode?'← Challenges':'← Mountain Map';
@@ -1210,7 +1210,7 @@ function move(dx,dy,allowObstacleLanding=false){
   if(!challengeMode)coyoteVictories++; // Every win, including replays.
   saveProgress();
   playVictory();celebrate();
-  say(challengeMode?'🏆 CHALLENGE CLEARED! You escaped 15 coyotes and the villagers!':levelIndex===SECRET_LEVEL?'💎 SECRET TRAIL FOUND! Into Mistveil Lagoon!':levelIndex>SECRET_LEVEL?'👻 SECRET WORLD CONQUERED!':levelIndex===SECRET_DOOR_MOUNTAIN?'🏁 MOUNTAIN 6 UNLOCKED! The hidden door on Mountain 5 is a separate challenge.':levelIndex===MAIN_MOUNTAINS-1?(cleared===MAIN_MOUNTAINS?'🏆 ALL TEN MOUNTAINS CLEARED!':'🔥 SKYFIRE SUMMIT CONQUERED!'):'🏁 Peak cleared! A coyote joins the pack across every mountain!');
+  say(challengeMode?'🏆 CHALLENGE CLEARED! You escaped 15 coyotes and the villagers!':levelIndex===SECRET_LEVEL?'💎 SECRET TRAIL FOUND! Into Mistveil Lagoon!':levelIndex>SECRET_LEVEL&&levelIndex<13?'👻 SECRET WORLD CONQUERED!':levelIndex>=14?'🏁 MOUNTAIN CLEARED!':levelIndex===SECRET_DOOR_MOUNTAIN?'🏁 MOUNTAIN 6 UNLOCKED! The hidden door on Mountain 5 is a separate challenge.':levelIndex===MAIN_MOUNTAINS-1?(cleared===MAIN_MOUNTAINS?'🏆 ALL TEN MOUNTAINS CLEARED!':'🔥 SKYFIRE SUMMIT CONQUERED!'):'🏁 Peak cleared! A coyote joins the pack across every mountain!');
  }else if(coyotes.some(c=>same(c,runner)))tagged();
  else if(steps%LEVELS[levelIndex].speed===0)moveCoyotes();
  else if(levelIndex===SECRET_DOOR_MOUNTAIN&&distance(runner,SECRET_DOOR)<=3){
