@@ -246,8 +246,8 @@ p{line-height:1.5}
   <div class="shell">
     <div class="topbar"><button class="btn secondary small" onclick="showScreen('home')">← Home</button><div class="brand">🗺️ MOUNTAIN TRAIL MAP</div><button type="button" class="btn secondary small sound-toggle" onclick="toggleSound()" aria-label="Mute game sounds" aria-pressed="true">🔊 Sound on</button></div>
     <div class="map-intro">
-      <div><div class="eyebrow">Choose your next climb</div><h2>Ten peaks. Three secrets. Ten extra mountains.</h2><p>Secret doors hide on Mountains 5, 7 and 9. Five more hidden doorways lead to extra mountains from Peaks 2, 4, 6, 8 and 10. Explore the illustrated hidden ranges below!</p></div>
-      <div><div id="progress" class="progress" aria-live="polite">🔓 1 of 10 unlocked</div><button class="btn secondary small map-jump" type="button" onclick="jumpToLatestMountain()">↓ Latest unlocked</button><button class="btn secondary small bonus-map-jump" type="button" onclick="jumpToHiddenPeaks()">✨ See 10 extra peaks</button></div>
+      <div><div class="eyebrow">Choose your next climb</div><h2>Ten regular peaks. Ten tunnel branches. Three secrets.</h2><p>Every regular Mountain 1–10 has a hidden 🚇 tunnel leading to another playable mountain. The three true secret doors on Mountains 5, 7 and 9 remain separate. Follow the tunnel trail below!</p></div>
+      <div><div id="progress" class="progress" aria-live="polite">🔓 1 of 10 unlocked</div><button class="btn secondary small map-jump" type="button" onclick="jumpToLatestMountain()">↓ Latest unlocked</button><button class="btn secondary small bonus-map-jump" type="button" onclick="jumpToHiddenPeaks()">🚇 Ten tunnel branches</button></div>
     </div>
     <div class="map-scene">
       <div class="map-landscape-viewport" role="group" aria-label="Portrait Adventure mountain trail with ten main levels, followed by ten hidden peaks farther down the map.">
@@ -257,7 +257,7 @@ p{line-height:1.5}
           <div class="map-landscape-note" aria-hidden="true">SHORELINE · BAYLANDS · NORTHERN CALIFORNIA</div>
         </div>
       </div>
-      <p class="map-swipe-hint">👆 Tap any unlocked peak to play · Ten extra mountains continue farther down this illustrated map</p>
+      <p class="map-swipe-hint">👆 Tap any unlocked peak to play · Ten regular tunnel mountains continue farther down this illustrated map</p>
     </div>
     <div class="map-foot"><div class="legend">🏁 Completed &nbsp; • &nbsp; 🔓 Available &nbsp; • &nbsp; 🔒 Locked</div><button id="resetCoyotesMap" class="btn secondary small" type="button" onclick="resetCoyotePack()" aria-label="Reset Adventure coyotes to one without losing progress">🐺 Reset Coyotes</button><button class="btn primary small" onclick="continueAdventure()">▶ Continue Adventure</button></div>
     <div class="footer">Your level progress is saved on this device, in this browser.</div>
@@ -777,7 +777,7 @@ function stopSecretAmbience(){
  }
 }
 function syncSecretAmbience(){
- if(soundEnabled&&screen==='game'&&levelIndex>=SECRET_LEVEL&&mode==='playing'&&!document.hidden)startSecretAmbience();
+ if(soundEnabled&&screen==='game'&&levelIndex>=SECRET_LEVEL&&levelIndex<SECRET_LEVEL+3&&mode==='playing'&&!document.hidden)startSecretAmbience();
  else stopSecretAmbience();
 }
 function playVictory(){
@@ -1086,7 +1086,7 @@ function loadLevel(i){
  createChestsAndPortals();
  coyotes=spawnCoyotes();
  say(challengeMode?'🔥 CHALLENGE! 60 seconds, 15 coyotes, three villager guards. Find the ONE open side of 🏁!':i===SECRET_DOOR_MOUNTAIN?'❄️ The secret door has vanished again. Find treasure while you search!':i>=MAIN_MOUNTAINS?'👻 You entered '+LEVELS[i].name+'! Find 🏁!':EXTRA_PORTALS.some(e=>e.mountain===i)?'🚪 A hidden portal and treasure await on this mountain!':'🧰 Find three treasure chests and reach the flag before time runs out!');
- el('gameFrame').classList.toggle('secret-zone',i>=MAIN_MOUNTAINS);
+ el('gameFrame').classList.toggle('secret-zone',i>=MAIN_MOUNTAINS&&i<MAIN_MOUNTAINS+3);
  el('gameFrame').classList.toggle('challenge-zone',challengeMode);
   el('resetCoyotesGame').hidden=challengeMode;
  el('gameBackBtn').textContent=challengeMode?'← Challenges':'← Mountain Map';
