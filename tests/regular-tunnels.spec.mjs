@@ -4,7 +4,7 @@ const unlocked=()=>{
  localStorage.setItem('gray-sentinel-mountain-cleared-v1','9');
  localStorage.setItem('gray-coyote-mountains-secret-found-v1','true');
  localStorage.setItem('gray-coyote-mountains-extra-secrets-v1',JSON.stringify({unlocked:[true,true],cleared:[true,true]}));
- localStorage.setItem('gray-coyote-mountains-branch-expeditions-v1',JSON.stringify({unlocked:[14,15,16,17,18,19,20,21,22,23],cleared:[]}));
+ if(!localStorage.getItem('gray-coyote-mountains-branch-expeditions-v1'))localStorage.setItem('gray-coyote-mountains-branch-expeditions-v1',JSON.stringify({unlocked:[14,15,16,17,18,19,20,21,22,23],cleared:[]}));
 };
 test('all ten extra mountains use ordinary gameplay, ordinary sound, and return tunnels',async({page})=>{
  await page.addInitScript(unlocked);
