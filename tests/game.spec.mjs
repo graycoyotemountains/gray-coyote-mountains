@@ -227,7 +227,7 @@ test('Hollow mandatory trail carries the bicycle to Mistveil for one more level'
  await expect(page.locator('#field .runner')).toContainText('🚴');
  await expect(page.locator('#shout')).toContainText('BIKE BELL');
  expect(await page.evaluate(()=>equipment?.nextLevel)).toBe(14);
- await page.evaluate(()=>{markBonusUnlocked(15);saveProgress();loadLevel(15);});
+ await page.evaluate(()=>{bonusUnlocked.add(15);extraUnlocked[4]=true;saveProgress();loadLevel(15);});
  expect(await page.evaluate(()=>equipment)).toBeNull();
 });
 
