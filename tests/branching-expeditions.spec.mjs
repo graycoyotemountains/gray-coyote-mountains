@@ -24,7 +24,7 @@ test('ten regular branch mountains start locked and appear on the illustrated ma
  await page.locator('#homeScreen button').filter({hasText:'Mountain Map'}).click();
  const cards=page.locator('#bonusExpeditionGrid button');
  await expect(cards).toHaveCount(10);
- await expect(cards.locator(':scope:disabled')).toHaveCount(10);
+ await expect(page.locator('#bonusExpeditionGrid button:disabled')).toHaveCount(10);
  await expect(page.locator('#bonusExpeditionProgress')).toContainText('0/10 tunnels discovered');
  await expect(page.locator('#bonusExpeditionPanel')).toContainText('Mountain Tunnel Trails');
  const result=await page.evaluate(()=>({
