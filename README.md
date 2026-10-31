@@ -141,53 +141,38 @@ It allows one-square movement over and onto obstacle squares. It expires when
 you enter another different level afterward. Your carried equipment is saved
 in the browser and retained through a reload.
 
-## Branching Secret Expeditions (v1.8.0)
+## Regular tunnel branches (v1.10.0)
 
-Five more Adventure levels appear in the **🌟 Secret Expeditions** section
-of the regular Mountain Map. They stay locked until you win their source
-secret levels:
+Gray Coyote Mountains has **ten main mountain levels, ten additional
+regular branch mountains, and three true secret worlds**, plus the Coyote
+Fact Village. The regular branches appear on the **illustrated mountain
+map extension** below the ten main peaks. Tap **🚇 Ten tunnel branches**
+to jump down the trail, without scrolling sideways on a phone.
 
-- **The Hollow Mountain:** 🦆 Mistveil Lagoon and 🌿 Echo Fern Forest.
-- **The Whispering Woods:** 🧊 Crystal Icefall and 🦇 Moonshadow Caverns.
-- **The Phantom Crater:** 🌠 Starfall Observatory.
+Every regular Mountain 1–10 hides a stone tunnel entrance. Get close enough
+to reveal the **🚇** marker and step onto its square. It opens a full,
+ordinary playable mountain, permanently unlocks its map marker, and allows
+you to return to the original mountain through a second tunnel. These
+are **not secret levels**. They have the regular mountain atmosphere,
+three collectible chests, a flag, coyotes, and their own saved completions.
 
-**Winning The Hollow Mountain automatically starts Mistveil Lagoon.** This is no longer an optional shortcut to Skyfire Summit. Echo Fern Forest also unlocks in the map; other secret doors still offer destination choices.
-
-Each new mountain is a complete 18 × 14 level with its own terrain, flag,
-coyotes, three treasure chests (including a collectible fact), and a
-branching secret door. Previously completed secret worlds also qualify.
-
-When you step onto a secret door, a destination picker opens. Choose an
-**unlocked bonus expedition** or **a different existing secret world**. Your
-original secret chain (Hollow → Whispering Woods → Phantom Crater → Hollow)
-is still accessible as the alternate door route. If the bonus route is
-locked, reach the secret level's flag to unlock it, then retry the door.
-The five new levels, their wins and their unlocks are saved locally in
-this browser, independently of Coyote Mode and the existing Adventure
-progress keys. The new section scrolls vertically on phones.
-
-## Ten extra peaks on the Adventure mountain map (v1.9.0)
-
-Scroll below the ten normal mountains to the illustrated **Hidden Mountain
-Trails** continuation of the map, or choose **✨ See 10 extra peaks**.
-All ten bonus mountains appear in this illustrated vertical map, with
-disabled markers explaining how to discover a locked level. The original
-five remain unlocked by winning Hollow Mountain, Whispering Woods or
-Phantom Crater.
-
-**Five new bonus mountain doors** are hidden in ordinary Adventure levels:
-
-| Regular source mountain | Newly hidden bonus mountain |
+| Original mountain with tunnel | Regular branch destination |
 | --- | --- |
+| Mountain 1 | 🦆 Mistveil Lagoon |
 | Mountain 2 | 🦀 Tidepool Terrace |
+| Mountain 3 | 🌿 Echo Fern Forest |
 | Mountain 4 | 🌲 Redwood Ravine |
+| Mountain 5 | 🧊 Crystal Icefall |
 | Mountain 6 | ⛈️ Thunderstone Pass |
+| Mountain 7 | 🦇 Moonshadow Caverns |
 | Mountain 8 | 🌻 Sunflower Bluff |
+| Mountain 9 | 🌠 Starfall Observatory |
 | Mountain 10 | 🌌 Aurora Crown |
 
-Approach a door to reveal it, then step onto its square to immediately
-enter the extra level and permanently unlock its marker on the Adventure
-map. It can be replayed afterward. Finding these doors does **not**
-replace the original hidden doors on Mountains 5, 7 or 9. Every extra
-mountain has a flag, coyotes, three collectible chests and branching
-paths. All previously saved game and bonus-level progress is retained.
+The original **three haunted secret worlds and doors** remain separate
+from these tunnels. For continuity, winning the Hollow Mountain still
+takes you automatically to Mistveil Lagoon. Returning players keep any
+previously earned branch unlocks from older secret-world victory rules.
+Future regular branches are unlocked by finding their respective tunnels.
+Saved progress, collectible equipment, Challenge Mode and Coyote Mode
+remain intact.
