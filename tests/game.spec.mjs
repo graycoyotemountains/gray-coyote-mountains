@@ -540,8 +540,8 @@ test('The haunted atmosphere pauses in the background and stops on victory',asyn
  await page.evaluate(()=>{runner={x:1,y:0};draw();});
  await page.getByRole('button',{name:'Move left'}).click();
  await expect(page.locator('#subtitle')).toHaveText('Mistveil Lagoon');
- // Mistveil is another secret world, so the spooky ambient audio continues.
- await expect.poll(()=>page.evaluate(()=>Boolean(secretAmbience))).toBe(true);
+ // Mistveil is a regular mountain: spooky secret-world audio must stop.
+ await expect.poll(()=>page.evaluate(()=>Boolean(secretAmbience))).toBe(false);
 });
 
 test('Human shout audio is locally hosted and SHOUT triggers the recorded human voice',async({page})=>{
