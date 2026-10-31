@@ -89,34 +89,42 @@ test('Previous secret victories automatically unlock their bonus branches',async
  for(let i=0;i<5;i++)await expect(cards.nth(i)).toBeEnabled();
  for(let i=5;i<10;i++)await expect(cards.nth(i)).toBeDisabled();
 });
-test('Before victory a secret door offers the existing level but locks bonus routes',async({page})=>{
+test('Original secret door still leads to an original secret level, not a regular mountain',async({page})=>{
  await page.addInitScript(secretSaves);
  await page.goto('/');await page.locator('#playBtn').click();
  await page.evaluate(()=>loadLevel(10));
  await useDoor(page);
- await expect(page.locator('#secretBonusChoices button')).toHaveCount(0);
- await expect(page.locator('#secretBonusChoices')).toContainText('Reach this secret level');
+ await expect(page.locator('#secretExistingChoices button')).toContainText('Whispering');
+ await expect(page.locator('#secretBonusChoices')).toHaveCount(0);
  await page.locator('#secretExistingChoices button').click();
  expect(await page.evaluate(()=>levelIndex)).toBe(11);
- await expect(page.locator('#secretBranchDialog')).not.toBeVisible();
 });
-test('Branching secret door offers two unlocked bonus levels and a different secret level',async({page})=>{
+
+test('Regular mountain tunnel from Hollow offers its two unlocked destinations',async({page})=>{
  await page.addInitScript(secretSaves);
  await page.goto('/');await page.locator('#playBtn').click();
  await winSecret(page,10);
  await page.evaluate(()=>loadLevel(10));
- await useDoor(page);
- await expect(page.locator('#secretBonusChoices button')).toHaveCount(2);
- await expect(page.locator('#secretExistingChoices button')).toContainText('Whispering');
- await page.locator('#secretBonusChoices button').nth(1).click();
+ await page.evaluate(()=>{
+  const from=neighbors(bonusTunnel)[0];if(!from)throw Error('No tunnel access');
+  runner={...from};coyotes=[];draw();
+  move(bonusTunnel.x-from.x,bonusTunnel.y-from.y);
+ });
+ await expect(page.locator('#regularTunnelDialog')).toBeVisible();
+ await expect(page.locator('#regularTunnelChoices button')).toHaveCount(2);
+ await page.locator('#regularTunnelChoices button').nth(1).click();
  expect(await page.evaluate(()=>levelIndex)).toBe(15);
+ expect(await page.evaluate(()=>secretChainDoor)).toBeNull();
+ expect(await page.evaluate(()=>Boolean(bonusTunnel))).toBe(true);
+ expect(await page.evaluate(()=>el('gameFrame').classList.contains('secret-zone'))).toBe(false);
  await expect(page.locator('#field .tile')).toHaveCount(252);
- expect(await page.evaluate(()=>Boolean(secretChainDoor))).toBe(true);
- expect(await page.evaluate(()=>chests.size)).toBe(3);
- await useDoor(page);
- await expect(page.locator('#secretBonusChoices button')).toHaveCount(1);
- await page.locator('#secretBonusChoices button').first().click();
- expect(await page.evaluate(()=>levelIndex)).toBe(14);
+ await page.evaluate(()=>{
+  const from=neighbors(bonusTunnel)[0];runner={...from};coyotes=[];draw();
+  move(bonusTunnel.x-from.x,bonusTunnel.y-from.y);
+ });
+ await expect(page.locator('#regularTunnelChoices button')).toHaveCount(1);
+ await page.locator('#regularTunnelChoices button').click();
+ expect(await page.evaluate(()=>levelIndex)).toBe(10);
 });
 test('Each bonus level is playable, reachable and includes three chests and a branch door',async({page})=>{
  await page.addInitScript(secretSaves);
@@ -127,7 +135,7 @@ test('Each bonus level is playable, reachable and includes three chests and a br
   for(let i=14;i<=18;i++){
    loadLevel(i);
    all.push({level:levelIndex,playing:mode==='playing',cells:document.querySelectorAll('#field .tile').length,
-    route:connected(START,GOAL),door:Boolean(secretChainDoor),chests:chests.size,
+    route:connected(START,GOAL),door:Boolean(bonusTunnel),secretDoor:Boolean(secretChainDoor),chests:chests.size,
     fact:[...chests.values()].includes('fact'),name:LEVELS[i].name});
   }
   return all;
@@ -139,6 +147,7 @@ test('Each bonus level is playable, reachable and includes three chests and a br
   expect(data[n].cells).toBe(252);
   expect(data[n].route).toBe(true);
   expect(data[n].door).toBe(true);
+  expect(data[n].secretDoor).toBe(false);
   expect(data[n].chests).toBe(3);
   expect(data[n].fact).toBe(true);
  }
@@ -153,7 +162,7 @@ test('Bonus-level victory saves completion and original Challenge remains unchan
  });
  expect(await page.evaluate(()=>mode)).toBe('won');
  expect(await page.evaluate(()=>bonusCleared.has(14))).toBe(true);
- await expect(page.locator('#resultTitle')).toContainText('SECRET EXPEDITION');
+ await expect(page.locator('#resultTitle')).toContainText('MOUNTAIN CLEARED');
  await page.reload();
  await page.locator('#homeScreen button').filter({hasText:'Mountain Map'}).click();
  await expect(page.locator('#bonusExpeditionGrid button').first()).toContainText('Cleared');
