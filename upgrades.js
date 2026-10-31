@@ -7,6 +7,7 @@ const VILLAGE_KEY='gray-coyote-mountains-village-v1';
 const VILLAGE_INDEX=13;
 const BONUS_START=14;
 const BONUS_KEY='gray-coyote-mountains-branch-expeditions-v1';
+const TUNNEL_MIGRATION_KEY='gray-coyote-mountains-tunnel-migration-v1';
 // Ten regular side branches, one tunnel from each normal mountain.
 // Existing bonus-level indices and saves are retained for returning players.
 const BONUS_BY_MOUNTAIN={0:14,1:19,2:15,3:20,4:16,5:21,6:17,7:22,8:18,9:23};
@@ -42,8 +43,17 @@ try {
 }catch(error){console.warn('Could not read expansion progress',error);}
 extraUnlocked[2]=collectedFacts.size===50;
 extraCleared[2]=villageCleared;
-// Retain saved branch unlocks and cleared levels. Existing victories remain
-// intact, but secret-world wins no longer automatically reveal regular tunnels.
+// Preserve all old secret-victory unlocks at the moment a player upgrades
+// from v1.9.0, then switch future discoveries to the new tunnel rules.
+if(localStorage.getItem(TUNNEL_MIGRATION_KEY)!=='true'){
+ if(secretCleared){bonusUnlocked.add(14);bonusUnlocked.add(15);}
+ if(extraCleared[0]){bonusUnlocked.add(16);bonusUnlocked.add(17);}
+ if(extraCleared[1])bonusUnlocked.add(18);
+ try{
+  localStorage.setItem(BONUS_KEY,JSON.stringify({unlocked:[...bonusUnlocked].sort((a,b)=>a-b),cleared:[...bonusCleared].sort((a,b)=>a-b)}));
+  localStorage.setItem(TUNNEL_MIGRATION_KEY,'true');
+ }catch(error){console.warn('Tunnel progress migration could not be saved',error);}
+}
 if(secretCleared)bonusUnlocked.add(BONUS_START); // Mandatory Hollow -> Mistveil story trail.
 for(const i of bonusCleared)bonusUnlocked.add(i);
 for(let n=0;n<BONUS_CONFIGS.length;n++){
