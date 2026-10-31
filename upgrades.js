@@ -466,7 +466,7 @@ LEVELS.push(...BONUS_CONFIGS);
    else if(i>=BONUS_START)el('gameHint').textContent='⛰️ Regular branch mountain! Reach the flag to win, collect treasures and take the 🚇 return tunnel to Mountain '+(BONUS_PARENT[i]+1)+'.';
    if(i>=BONUS_START)say('⛰️ NEW REGULAR MOUNTAIN: '+LEVELS[i].name+'. Find the flag, collect treasure or take the return tunnel!');
    else if(i>=MAIN_MOUNTAINS)el('gameHint').textContent='✨ Find the special tool and hidden secret door. These three worlds are different from the regular tunnel branches.';
-   else if(Object.hasOwn(BONUS_BY_MOUNTAIN,i))el('gameHint').textContent='🚇 Find the hidden mountain tunnel to '+LEVELS[BONUS_BY_MOUNTAIN[i]].name+'! Get within three squares to reveal the entrance.';
+   else if(Object.hasOwn(BONUS_BY_MOUNTAIN,i))el('gameHint').textContent='🚇 Find the hidden mountain tunnel to '+LEVELS[BONUS_BY_MOUNTAIN[i]].name+'! The tunnel is hidden until you get close.'+(i===SECRET_DOOR_MOUNTAIN?' The original secret door is hidden until you get close, too.':'');
   }
   draw();
  };
@@ -655,7 +655,7 @@ LEVELS.push(...BONUS_CONFIGS);
     }
    }else{
     draw();
-    say('🌟 SECRET VICTORY! '+BONUS_BY_SECRET[oldLevel].map(i=>LEVELS[i].name).join(' and ')+' unlocked!');
+    say('👻 SECRET WORLD CLEARED! '+LEVELS[oldLevel].name+' conquered. Find the separate regular mountain tunnels to explore more branches!');
    }
   }else if(oldLevel>=BONUS_START){
    bonusCleared.add(oldLevel);extraCleared[oldLevel-SECRET_LEVEL-1]=true;
