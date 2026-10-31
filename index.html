@@ -1086,7 +1086,7 @@ function loadLevel(i){
  createChestsAndPortals();
  coyotes=spawnCoyotes();
  say(challengeMode?'🔥 CHALLENGE! 60 seconds, 15 coyotes, three villager guards. Find the ONE open side of 🏁!':i===SECRET_DOOR_MOUNTAIN?'❄️ The secret door has vanished again. Find treasure while you search!':i>=MAIN_MOUNTAINS?'👻 You entered '+LEVELS[i].name+'! Find 🏁!':EXTRA_PORTALS.some(e=>e.mountain===i)?'🚪 A hidden portal and treasure await on this mountain!':'🧰 Find three treasure chests and reach the flag before time runs out!');
- el('gameFrame').classList.toggle('secret-zone',i>=MAIN_MOUNTAINS&&i<MAIN_MOUNTAINS+3);
+ el('gameFrame').classList.toggle('secret-zone',i>=MAIN_MOUNTAINS&&i<MAIN_MOUNTAINS+4);
  el('gameFrame').classList.toggle('challenge-zone',challengeMode);
   el('resetCoyotesGame').hidden=challengeMode;
  el('gameBackBtn').textContent=challengeMode?'← Challenges':'← Mountain Map';
