@@ -54,7 +54,8 @@ let saved={unlocked:1,completed:[],bestScore:0,sound:false,endings:[]};
 try{const x=JSON.parse(localStorage.getItem('skyfire_squadron_v1'));if(x&&typeof x==='object')saved={...saved,...x};}catch(e){}
 saved.unlocked=clamp(Number(saved.unlocked)||1,1,10);
 if(!saved.routeKeys||typeof saved.routeKeys!=='object')saved.routeKeys={};
-if(!saved.checkpoints||typeof saved.checkpoints!=='object')saved.checkpoints={};
+// Checkpoints belong to the current mission attempt, not to a past visit or browser session.
+saved.checkpoints={};
 if(!Array.isArray(saved.completed))saved.completed=[];
 if(!Array.isArray(saved.endings))saved.endings=[];
 saved.completed=[...new Set(saved.completed.filter(n=>Number.isInteger(n)&&n>=1&&n<=20))];
@@ -155,9 +156,9 @@ function radio(from,message,important=false){if(screen!=='play'&&!important)retu
  if(soundOn&&'speechSynthesis' in window&&typeof SpeechSynthesisUtterance!=='undefined'){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(message);u.rate=1.15;u.pitch=from.includes('ENEMY')?.64:from.includes('COMMAND')?.86:1.16;u.volume=.58;speechSynthesis.speak(u)}catch(e){}}
 }
 function radioTick(dt){if(commsTimer<=0)return;commsTimer-=dt;if(commsTimer<=0){$('commsBox').classList.remove('visible');if(commsQueue.length&&screen==='play'){const m=commsQueue.shift();radio(m.from,m.message,true)}}}
-function checkpoint(stage,force=false){if(!game||game.done||(!force&&game.checkpointStage>=stage))return;const g=game;g.checkpointStage=stage;const snapshot={index:g.index,stage,elapsed:g.elapsed,score:g.score,hp:Math.max(45,Math.round(g.hp)),missiles:Math.max(1,g.missiles),kills:g.kills,waveNum:g.waveNum,objective:g.objective?{count:g.objective.count,spawned:g.objective.spawned}:null,bossSpawned:g.bossSpawned,boss:g.boss?{...g.boss,hp:g.boss.maxHp}:null,shield:g.shield,rapid:g.rapid,spread:g.spread,overdrive:g.overdrive};saved.checkpoints[g.index+1]=snapshot;save();fx('checkpoint');toast('◈ CHECKPOINT '+stage+' SAVED');radio('FLIGHT COMMAND','Checkpoint '+stage+' secured. Your mission progress is saved.',true);updateHud()}
+function checkpoint(stage,force=false){if(!game||game.done||(!force&&game.checkpointStage>=stage))return;const g=game;g.checkpointStage=stage;g.hp=100;g.player.invul=Math.max(g.player.invul,1.5);const snapshot={index:g.index,stage,elapsed:g.elapsed,score:g.score,hp:100,missiles:Math.max(1,g.missiles),kills:g.kills,waveNum:g.waveNum,objective:g.objective?{count:g.objective.count,spawned:g.objective.spawned}:null,bossSpawned:g.bossSpawned,boss:g.boss?{...g.boss,hp:g.boss.maxHp}:null,shield:g.shield,rapid:g.rapid,spread:g.spread,overdrive:g.overdrive};saved.checkpoints[g.index+1]=snapshot;save();fx('checkpoint');toast('◈ CHECKPOINT '+stage+' · FULL HULL REPAIR 100%');radio('FLIGHT COMMAND','Checkpoint '+stage+' secured. Hull repaired to one hundred percent. If you are defeated, you will restart here at full health.',true);updateHud()}
 function resumeCheckpoint(g){const s=saved.checkpoints[g.index+1];if(!s||s.index!==g.index||!Number.isFinite(s.elapsed)||s.stage<1)return false;
- g.elapsed=clamp(s.elapsed,0,levels[g.index].duration+1);g.score=s.score||0;g.hp=clamp(s.hp||60,45,100);g.missiles=Math.max(1,s.missiles||1);g.kills=s.kills||0;g.waveNum=s.waveNum||0;g.spawnTimer=1.7;g.pickupTimer=2.5;g.checkpointStage=s.stage;g.shield=s.shield||0;g.rapid=s.rapid||0;g.spread=s.spread||0;g.overdrive=s.overdrive||0;g.player.invul=2.5;
+ g.elapsed=clamp(s.elapsed,0,levels[g.index].duration+1);g.score=s.score||0;g.hp=100;g.missiles=Math.max(1,s.missiles||1);g.kills=s.kills||0;g.waveNum=s.waveNum||0;g.spawnTimer=1.7;g.pickupTimer=2.5;g.checkpointStage=s.stage;g.shield=s.shield||0;g.rapid=s.rapid||0;g.spread=s.spread||0;g.overdrive=s.overdrive||0;g.player.invul=2.5;
  if(g.objective&&s.objective){g.objective.count=clamp(s.objective.count||0,0,g.objective.target);g.objective.spawned=s.objective.spawned||g.objective.count;g.objective.spawnCD=1.2}
  if(s.bossSpawned&&s.boss){g.bossSpawned=true;g.boss={...s.boss,time:0,fire:1.5};g.elapsed=Math.max(g.elapsed,levels[g.index].duration+.1)}
  return true}
@@ -264,6 +265,8 @@ function makeMap(){
   const world=$('mapWorld');world.classList.remove('mapArrive');void world.offsetWidth;world.classList.add('mapArrive');
 }
 function openMap(chapter, revealed=[]){
+  // Leaving a mission retires all checkpoints. Level unlocks and scores remain saved.
+  saved.checkpoints={};save();game=null;
   mapReveal=revealed.filter(isAvailable);
   makeMap();setScreen('map');
   configureMapZoom();
@@ -283,7 +286,7 @@ function configureMapZoom(){
 }
 function worldSize(){return $('mapWorld').offsetWidth||1020;}
 function openMission(i){
- if(!isAvailable(i+1))return;selected=i;const l=levels[i];
+ if(!isAvailable(i+1))return;saved.checkpoints={};save();game=null;selected=i;const l=levels[i];
  showScene({kind:'approach',mission:i, title:`MISSION ${String(i+1).padStart(2,'0')} · ${l.name.toUpperCase()}`,
   text:l.desc+' '+l.extra, kicker:`FLIGHT APPROACH · ${l.zone.toUpperCase()}`,
   beats:['The squadron approaches '+l.zone+'.','Wing pilots break formation and scout ahead.','Your fighter dives toward the mission zone.'],
@@ -298,10 +301,10 @@ function showScene(s){
 }
 function skipScene(){if(screen!=='scene'||!scene)return;let n=scene.next;scene=null;sceneEnd=0; if(n)n();}
 function newGame(i){return{objective:campaignGoals[i+1]?{...campaignGoals[i+1],count:0,spawnCD:3,spawned:0}:null,groundTargets:[],index:i,score:0,hp:100,shield:0,rapid:0,spread:0,overdrive:0,wingman:0,wingCD:0,allies:[{id:'ALPHA-2',x:80,y:245,hp:7,fire:0.4},{id:'ALPHA-3',x:90,y:355,hp:7,fire:1.0}],fleetCD:0,checkpointStage:0,missiles:2,meteors:[],meteorTimer:1.8,elapsed:0,spawnTimer:1,pickupTimer:4,fireCD:0,boss:null,bossSpawned:false,player:{x:150,y:300,r:18,invul:1.7},enemies:[],shots:[],foeShots:[],pickups:[],particles:[],explosions:[],kills:0,combo:0,comboTimer:0,done:false,waveNum:0};}
-function startLevel(i,restartFresh=false){game=newGame(i);controls.aim=null;selected=i;flash=.18;const resumed=!restartFresh&&resumeCheckpoint(game);toast(resumed?'◈ RESUMING CHECKPOINT '+game.checkpointStage:meteorLevels.has(i)?'☄ METEOR FIELD · DODGE OR DESTROY':'MISSION '+(i+1)+': '+levels[i].name.toUpperCase());setScreen('play');updateHud();radio('FLIGHT COMMAND',resumed?'Welcome back, pilot. Rejoining from your last checkpoint.':'Skyfire One, launch authorized. Friendly Alpha squadron is flying with you.',true);}
+function startLevel(i,restartFresh=false){if(restartFresh){saved.checkpoints={};save();}game=newGame(i);controls.aim=null;selected=i;flash=.18;const resumed=!restartFresh&&resumeCheckpoint(game);toast(resumed?'◈ RESUMING CHECKPOINT '+game.checkpointStage:meteorLevels.has(i)?'☄ METEOR FIELD · DODGE OR DESTROY':'MISSION '+(i+1)+': '+levels[i].name.toUpperCase());setScreen('play');updateHud();radio('FLIGHT COMMAND',resumed?'Welcome back, pilot. Rejoining from your last checkpoint.':'Skyfire One, launch authorized. Friendly Alpha squadron is flying with you.',true);}
 function updateHud(){if(!game)return;
  const ob=$('objectiveHud'),g=game.objective;
- ob.style.display=g?'block':'none';if(g)$('objectiveText').textContent=g.label+'  '+g.count+'/'+g.target+(g.count===g.target?'  ✓ COMPLETE':'');$('hpNum').textContent=Math.max(0,Math.ceil(game.hp))+'%';$('hpFill').style.width=clamp(game.hp,0,100)+'%';$('shieldStatus').textContent=[game.shield>0?'◆ SHIELD':'',game.rapid>0?'⚡ RAPID':'',game.spread>0?'✦ TRIPLE':'',game.overdrive>0?'🔥 OVERDRIVE':'',game.wingman>0?'✈ WINGMAN':''].filter(Boolean).slice(0,2).join(' · ');$('hudLevel').textContent=String(game.index+1).padStart(2,'0')+' / 20';$('scoreNum').textContent=game.score.toLocaleString();$('missileNum').textContent=game.missiles;$('threatNum').textContent=Math.round(Math.min(100,100*game.elapsed/levels[game.index].duration))+'%';$('checkpointTag').textContent=game.checkpointStage?'◈ CHECKPOINT '+game.checkpointStage+' SAVED':'◇ NEXT CHECKPOINT '+Math.round(levels[game.index].duration*.38)+'s';}
+ ob.style.display=g?'block':'none';if(g)$('objectiveText').textContent=g.label+'  '+g.count+'/'+g.target+(g.count===g.target?'  ✓ COMPLETE':'');$('hpNum').textContent=Math.max(0,Math.ceil(game.hp))+'%';$('hpFill').style.width=clamp(game.hp,0,100)+'%';$('shieldStatus').textContent=[game.shield>0?'◆ SHIELD':'',game.rapid>0?'⚡ RAPID':'',game.spread>0?'✦ TRIPLE':'',game.overdrive>0?'🔥 OVERDRIVE':'',game.wingman>0?'✈ WINGMAN':''].filter(Boolean).slice(0,2).join(' · ');$('hudLevel').textContent=String(game.index+1).padStart(2,'0')+' / 20';$('scoreNum').textContent=game.score.toLocaleString();$('missileNum').textContent=game.missiles;$('threatNum').textContent=Math.round(Math.min(100,100*game.elapsed/levels[game.index].duration))+'%';$('checkpointTag').textContent=game.checkpointStage?'◈ CHECKPOINT '+game.checkpointStage+' ACTIVE':'◇ NEXT CHECKPOINT '+Math.round(levels[game.index].duration*.38)+'s';}
 function showEnd(which,title,msg,primaryLabel,action,stars='✦ ✦ ✦'){$('endKicker').textContent=which==='gameover'?'JET LOST · MISSION FAILED':which==='finish'?'CAMPAIGN COMPLETE':'MISSION REPORT';$('endTitle').textContent=title;$('endText').textContent=msg;$('endPrimary').textContent=primaryLabel;$('resultStars').textContent=stars;endAction=action;$('routeChoices').classList.remove('show');$('routeChoices').replaceChildren();setScreen(which);}
 function showRouteChoices(i){
   const next=routes[i+1]||[],wrap=$('routeChoices');wrap.replaceChildren();
@@ -315,7 +318,7 @@ function showRouteChoices(i){
 function finishEnding(i){
   const ending=levels[i].ending,script=endingScripts[ending];
   showScene({kind:'ending',mission:i,title:script.title,text:script.body,kicker:'FINAL CINEMATIC · WATCH ONLY · SKIPPABLE',duration:10,
-  next:()=>showEnd('finish',script.label,`The Boss of Bosses has fallen. You unlocked ${saved.endings.length} of 3 finales. Final score: ${game.score.toLocaleString()}. Replay from the mission map to discover the others.`, 'EXPLORE OTHER ENDINGS',()=>openMap(1),'★ ★ ★ ★ ★')});
+  next:()=>openMap(1)});
 }
 function cleared(){
   if(!game||game.done)return;if(game.objective&&game.objective.count<game.objective.target)return;game.done=true;const i=game.index,id=i+1,lev=levels[i];
@@ -326,7 +329,7 @@ function cleared(){
   if(id===16)saved.routeKeys.beacon=true;
   if(id===17)saved.routeKeys.relay=true;
   if(lev.ending&&!saved.endings.includes(lev.ending))saved.endings.push(lev.ending);
-  delete saved.checkpoints[id];saved.bestScore=Math.max(saved.bestScore,game.score);save();audio(650,.22,'sine',.07,1.7);
+  saved.checkpoints={};saved.bestScore=Math.max(saved.bestScore,game.score);save();audio(650,.22,'sine',.07,1.7);
   const nextIds=routes[id]||[];
   const next=()=>{
     if(lev.ending){finishEnding(i);return;}
@@ -355,10 +358,11 @@ function cleared(){
   };
   const title=lev.ending?'THE BOSS OF BOSSES FALLS':id===10?'THE STORY CONTINUES':'SKY SECURED';
   const message=`Mission ${id} cleared · ${game.objective?'Objective '+game.objective.count+'/'+game.objective.target+' completed · ':''}${game.kills} enemy fighters destroyed · +${bonus.toLocaleString()} survival bonus. ${lev.ending?'You reached one of the three endings!':nextIds.length>1?'New branching routes unlocked. Choose where to fly next!':id===10?'The Fractured Horizon campaign is unlocked!':'Your next mission is ready.'}`;
-  showEnd('clear',title,message,lev.ending?'WATCH YOUR ENDING »':nextIds.length>1?'WATCH BRANCH REVEAL »':'WATCH NEXT-ROUTE SCENE »',next,game.hp>70?'✦ ✦ ✦':game.hp>35?'✦ ✦ ☆':'✦ ☆ ☆');
+  // Play the (skippable) victory/route reveal automatically, then always return to the mission map.
+  next();
   // Destination selection happens on the full solar chart after its skippable cinematic.
 }
-function playerDown(){if(screen!=='play'||!game)return;const p=game.player;if(p.invul>0||game.shield>0)return;game.hp-=18+Math.min(game.index,12)*.55;p.invul=1.1;flash=.28;shake=10;audio(90,.27,'sawtooth',.11,.4);sparks(p.x,p.y,20,'#ff707b',5);if(game.hp<=0){game.hp=0;showEnd('gameover','JET DOWN',`You reached Mission ${game.index+1}. ${game.kills} enemy fighters were defeated. Give it another try.`, saved.checkpoints[game.index+1]?'↻ RETURN TO CHECKPOINT':'↻ RETRY MISSION',()=>startLevel(game.index),'✕ ✕ ✕');if(saved.checkpoints[game.index+1]){const wrap=$('routeChoices');const b=document.createElement('button');b.className='routePick';b.textContent='↻ RESTART WHOLE MISSION';b.onclick=()=>{delete saved.checkpoints[game.index+1];save();startLevel(game.index,true)};wrap.append(b);wrap.classList.add('show')}}}
+function playerDown(){if(screen!=='play'||!game)return;const p=game.player;if(p.invul>0||game.shield>0)return;game.hp-=18+Math.min(game.index,12)*.55;p.invul=1.1;flash=.28;shake=10;audio(90,.27,'sawtooth',.11,.4);sparks(p.x,p.y,20,'#ff707b',5);if(game.hp<=0){game.hp=0;showEnd('gameover','JET DOWN',`You reached Mission ${game.index+1}. ${game.kills} enemy fighters were defeated. Give it another try.`, saved.checkpoints[game.index+1]?'↻ RETURN TO CHECKPOINT':'↻ RETRY MISSION',()=>startLevel(game.index),'✕ ✕ ✕');if(saved.checkpoints[game.index+1]){const wrap=$('routeChoices');const b=document.createElement('button');b.className='routePick';b.textContent='↻ RESTART WHOLE MISSION';b.onclick=()=>startLevel(game.index,true);wrap.append(b);wrap.classList.add('show')}}}
 function sparks(x,y,n,color,speed=1){if(!game)return;for(let j=0;j<n;j++){let a=rand(0,TAU),s=rand(40,260)*speed;game.particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(.2,.8),max:1,r:rand(1.5,4.3),color});}}
 function boom(x,y,big=false,color='#ffb36e'){sparks(x,y,big?42:15,color,big?1.6:1);game.explosions.push({x,y,r:big?60:29,t:0,life:big?.75:.37});shake=Math.max(shake,big?9:2);audio(big?80:140,big?.48:.18,'sawtooth',big?.095:.045,.15);}
 function spawnEnemy(type,yy,xx){const hp=type==='bomber'?9:type==='ace'?5:3;let e={type,x:xx||W+45,y:yy||rand(85,H-65),anchor:yy||300,r:type==='bomber'?25:type==='ace'?19:15,hp:hp+Math.floor(Math.min(game.index,15)/4),maxHp:hp+Math.floor(Math.min(game.index,15)/4),vx:type==='ace'?rand(-270,-230):type==='bomber'?rand(-115,-95):rand(-205,-152),phase:rand(0,TAU),fire:rand(.65,2.0),time:0,points:type==='bomber'?450:type==='ace'?300:150};game.enemies.push(e);}
