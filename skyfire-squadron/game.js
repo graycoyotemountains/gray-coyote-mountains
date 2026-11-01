@@ -40,7 +40,7 @@ for(let band=0;band<4;band++)for(let k=0;k<5;k++){
  mapPositions[band*5+k+1]=[50+ringRadii[band]*Math.cos(rad),50+ringRadii[band]*Math.sin(rad)];
 }
 let mapReveal=[];  // Newly earned destinations are highlighted when the cinematic ends.
-let mapZoomMode='auto';
+let mapZoomMode='fit';
 const meteorLevels=new Set([7,8,9,15,19]); // Missions 8, 9, 10, 16 and 20
 const worldTypes=['ocean','desert','storm','jungle','ice','lava','city','orbit','orbit','space','ocean','ice','storm','desert','station','orbit','storm','ocean','storm','void'];
 const bodyColors=[['#0a2e62','#187da0','#79e3de'],['#7d3020','#c67d48','#ffe0ac'],['#323968','#687bbb','#d8ecff'],['#0c4634','#238a74','#c1df96'],['#5687a3','#e2f5fd','#c4dcf5'],['#4a181c','#d86535','#ffc561'],['#172d54','#476ca6','#eaa1ff'],['#082e66','#2273ab','#cbeaff'],['#674f34','#b8a178','#ead9b5'],['#42365b','#ac678b','#ffdabb'],['#14477b','#49a2ce','#b1f0ee'],['#4e819b','#e2f6ff','#ffffff'],['#392c6e','#6765a5','#e2cbff'],['#87512f','#d59a62','#ffe3a2'],['#3f505c','#91a5a7','#e0eff1'],['#233e7e','#5969a2','#b9d7fa'],['#3a285a','#866cb9','#ffd8fa'],['#9d693c','#d9b97b','#fff1b0'],['#27366e','#5a85af','#d0f1ff'],['#21112d','#6e3a79','#fba2dd']];
@@ -115,8 +115,19 @@ function makeMap(){
   $('chapterTabs').style.display='none';
   $('mapHint').textContent=newPaths.length
    ?'✦ NEW FLIGHT PATH'+(newPaths.length>1?'S':'')+' REVEALED: '+newPaths.map(n=>String(n).padStart(2,'0')+' '+levels[n-1].name).join('  ·  ')+'. Choose a glowing destination.'
-   :'☀ FOLLOW THE ORBITS · ☄ CROSS THE METEOR BELT · Tap an unlocked planet. Earn mission objectives to open the three final routes. Drag to explore the star system.';
+   :'☀ TWENTY WORLDS · ☄ METEOR BELT · Select an unlocked planet or a READY TO FLY mission below. Zoom in to explore the star system.';
   $('endingCount').textContent=`FINALES DISCOVERED: ${saved.endings.length} / 3`;
+  // The whole system is always visible first, but unlocked missions remain
+  // big and easy to tap through the accessible flight-selection row.
+  const ready=Array.from({length:20},(_,i)=>i+1).filter(n=>isAvailable(n)&&!saved.completed.includes(n));
+  const flightChoices=ready.length?ready:Array.from({length:20},(_,i)=>i+1).filter(n=>isAvailable(n)).slice(-3);
+  const flights=$('flightTargets');flights.replaceChildren();
+  const caption=document.createElement('span');caption.className='flightLabel';caption.textContent='✈ READY TO FLY';flights.append(caption);
+  for(const n of flightChoices){const b=document.createElement('button');b.className='flightButton'+(newPaths.includes(n)?' newPathButton':'');
+   b.textContent=String(n).padStart(2,'0')+' · '+levels[n-1].name;
+   b.type='button';b.onclick=()=>openMission(n-1);flights.append(b);}
+  if(flightChoices.length===0){caption.textContent='✦ ALL MISSIONS COMPLETE';}
+
   const ids=Array.from({length:20},(_,i)=>i+1),center=500;
   const positions=mapPositions;
   let svg=`<defs>
@@ -197,7 +208,7 @@ function configureMapZoom(){
   const chart=$('levelMap'),world=$('mapWorld');
   const fit=mapZoomMode==='fit'||(mapZoomMode==='auto'&&chart.clientWidth>=850);
   const zoom=fit?clamp(Math.min(chart.clientWidth,chart.clientHeight)/1020*.965,.23,1):1;
-  world.style.zoom=String(zoom);world.style.margin=fit?'0 auto':'0';
+  world.style.zoom=String(zoom);world.style.margin=fit?'0 auto':'0';world.classList.toggle('fitView',fit);chart.classList.toggle('fitMode',fit);
   $('fitMapBtn').textContent=fit?'＋ EXPLORE CLOSE UP':'◎ FIT ENTIRE SYSTEM';
   if(fit){chart.scrollLeft=0;chart.scrollTop=0;return;}
   const focus=mapReveal.length?mapReveal:(()=>{const active=Array.from({length:20},(_,i)=>i+1).filter(n=>isAvailable(n)&&!saved.completed.includes(n));return active.length?[active[0]]:[1]})();
