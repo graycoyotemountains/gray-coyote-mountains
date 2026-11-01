@@ -1053,16 +1053,16 @@ function renderVoiceStudio(){const v=window.SkyfireVoices;if(!v)return;
   if(assignment.custom){const m=deviceVoices.find(x=>x.label===assignment.voice+' ('+assignment.lang+')');if(m)select.value=m.id}
   select.onchange=()=>{v.choose(key,select.value);renderVoiceStudio()};
   const test=document.createElement('button');test.type='button';test.textContent='▶ HEAR';
-  test.onclick=()=>{enableVoices();const ok=v.speak(key,p.demo,true);voiceInfo.textContent=ok?`Starting ${p.name}: ${v.getAssignment(key).voice}`:'Speech unavailable. Try turning on device speech or using a different browser.';};
+  test.onclick=()=>{enableVoices();voiceInfo.textContent=`REQUESTING VOICE: ${p.name} · ${v.getAssignment(key).voice}`;const ok=v.speak(key,p.demo,true);if(!ok)voiceInfo.textContent='Speech unavailable. Try turning on device speech or using a different browser.';};
   row.append(name,select,test);voiceList.append(row);
  }
 }
 window.SkyfireVoices?.setListener((event,detail)=>{
  if(!voiceStudio.hidden){
   if(event==='voices-updated'){renderVoiceStudio();return}
-  if(event==='speaking')voiceInfo.textContent=`NOW SPEAKING: ${detail.speaker} · ${detail.voice}`;
-  if(event==='speech-error')voiceInfo.textContent=`Speech failed: ${detail.error}. Check device volume, use HEAR, or choose another available voice.`;
-  if(event==='unsupported')voiceInfo.textContent='This browser does not support spoken dialogue. Captions will still work.';
+  if(event==='speaking'){voiceInfo.textContent=`NOW SPEAKING: ${detail.speaker} · ${detail.voice}`;$('voicePreviewInfo').textContent=`NOW SPEAKING · ${detail.speaker}`;}
+  if(event==='speech-error'){voiceInfo.textContent=`Speech failed: ${detail.error}. Check device volume, use HEAR, or choose another available voice.`;$('voicePreviewInfo').textContent='VOICE PLAYBACK FAILED · Try another device voice';}
+  if(event==='unsupported'){voiceInfo.textContent='This browser does not support spoken dialogue. Captions will still work.';$('voicePreviewInfo').textContent='VOICE UNAVAILABLE · Captions still work';}
  }
 });
 $('voicePreviewBtn').textContent='🎙 VOICE STUDIO';
@@ -1071,8 +1071,9 @@ $('voicePreviewBtn').onclick=()=>{
  if(!voiceStudio.hidden){voiceStudio.hidden=true;v.stop();$('voicePreviewBtn').textContent='🎙 VOICE STUDIO';return}
  voiceStudio.hidden=false;$('voicePreviewBtn').textContent='✕ CLOSE VOICE STUDIO';renderVoiceStudio();
  // Unlock speech from the real tap on iOS, not from an automatic cutscene.
- enableVoices();const key=v.roster[voicePreviewIndex++%v.roster.length],p=v.profile(key);v.speak(key,p.demo,true);
- $('voicePreviewInfo').textContent='NOW SPEAKING · '+p.name+' · '+p.role+' · Voice Studio open';
+ enableVoices();const key=v.roster[voicePreviewIndex++%v.roster.length],p=v.profile(key);
+ $('voicePreviewInfo').textContent='VOICE REQUESTED · '+p.name+' · Voice Studio open';
+ if(!v.speak(key,p.demo,true))$('voicePreviewInfo').textContent='VOICE UNAVAILABLE · Open studio to troubleshoot';
 };
 window.addEventListener('resize',resize);resize();requestAnimationFrame(frame);
 })();
