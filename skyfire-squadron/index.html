@@ -82,6 +82,24 @@
 #mapWorld .solarPlanet .planetBoss{font-size:10px}
 #mapWorld .solarPlanet .planetNumber{font-size:22px}
 @media(max-width:600px){#mapHead .mapTools .pill{font-size:9px;padding:7px 8px}#mapHead .mapTools{gap:4px}#mapHead h2{font-size:15px}}
+
+/* Always reveal the complete 20-world round chart before close-up exploration. */
+#mapFrame{display:flex;flex-direction:column}
+#levelMap{flex:1;min-height:170px;overflow:auto}
+#flightTargets{display:flex;align-items:center;gap:7px;overflow-x:auto;overflow-y:hidden;flex:0 0 auto;min-height:43px;padding:5px 0 7px;scrollbar-width:thin}
+#flightTargets .flightLabel{flex:none;color:#92c2d7;font-size:10px;font-weight:900;letter-spacing:.08em;white-space:nowrap}
+#flightTargets .flightButton{flex:none;border:1px solid #75ddec;background:#103d58;color:#e8fcff;border-radius:8px;padding:7px 11px;min-height:32px;white-space:nowrap;font-size:11px;font-weight:900;cursor:pointer}
+#flightTargets .flightButton:hover,#flightTargets .flightButton:focus-visible{background:#247e9b;outline:2px solid #aef7ff}
+#flightTargets .flightButton.newPathButton{border-color:#bdffe5;box-shadow:0 0 12px #91ffe84d;color:#fff4d6}
+#mapWorld.fitView .node.solarPlanet.locked .planetLabel,
+#mapWorld.fitView .node.solarPlanet.locked .planetBoss{display:none}
+#mapWorld.fitView .node.solarPlanet{min-width:0;min-height:0}
+#mapHead .mapTools{gap:6px}
+@media(max-width:650px){#mapFrame{height:calc(100% - 7px)}#mapHead{align-items:start}#mapHead .mapTools{flex-shrink:0}#mapHead .mapTools .pill{font-size:9px;padding:7px 8px}#flightTargets .flightLabel{font-size:9px}}
+
+/* Keep the complete orbit chart centered within the navigation viewport. */
+#levelMap.fitMode{display:flex;align-items:center;justify-content:center}
+#levelMap.fitMode #mapWorld{flex-shrink:0}
 </style></head><body>
 <div id="shell">
 <header id="topbar"><div id="brand">✦ SKYFIRE <em>SQUADRON</em></div><div id="rightbar"><span class="tiny">TWENTY MISSIONS • THREE ENDINGS</span><button class="pill" id="soundBtn" aria-label="Toggle soundtrack and effects">♪ AUDIO OFF</button><button class="pill" id="pauseBtn" style="display:none">Ⅱ PAUSE</button></div></header>
@@ -93,6 +111,7 @@
 <div id="mapOverlay" class="overlay"><div id="mapFrame"><div id="mapHead"><div><div class="eyebrow">◈ GALACTIC NAVIGATION SYSTEM</div><h2 id="mapTitle">THE HELIOS SYSTEM · 20 ORBITS</h2></div><div class="mapTools"><button class="pill" id="fitMapBtn">◎ FIT ENTIRE SYSTEM</button><button class="pill" id="mapHomeBtn">⌂ HOME</button></div></div>
 <div id="chapterTabs"><button class="chapterTab active" id="chapterOne" type="button">I · TEN SKIES <small>1–10</small></button><button class="chapterTab" id="chapterTwo" type="button">II · FRACTURED HORIZON <small>11–20</small></button></div>
 <div id="mapHint">Follow the orbit paths through the meteor belt. New mission worlds glow after their story scenes.</div>
+<div id="flightTargets" aria-label="Unlocked missions ready to fly"></div>
 <div id="levelMap"><div id="mapWorld" role="group" aria-label="Solar system mission map with all twenty levels"><svg id="routeLines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg></div></div>
 <div class="mapLegend"><span>☀ SUN &nbsp; ☄ METEORS &nbsp; ● <span style="color:#79fcc6">cleared</span> &nbsp; ● <span style="color:#ffcd85">boss</span> &nbsp; ◆ alternate endings</span><span class="mapTag" id="endingCount">FINALES DISCOVERED: 0 / 3</span></div></div></div>
 <div id="sceneOverlay" class="overlay"><div id="scenePanel"><div class="eyebrow" id="sceneKicker">STORY CINEMATIC • WATCH ONLY</div><h2 id="sceneTitle">INCOMING TRANSMISSION</h2><p id="sceneText"></p><div id="sceneBar"><div id="sceneProgress"></div></div><div class="sceneRight"><span style="color:#99c7d7;font-size:12px">Animated story · watch or skip</span><button id="skipSceneBtn" class="cta small">SKIP SCENE »</button></div></div></div>
