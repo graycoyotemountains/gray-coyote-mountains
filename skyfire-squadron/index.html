@@ -49,6 +49,39 @@
 @media(max-width:750px){#mapFrame{padding:9px}#mapWorld{width:1550px;min-height:500px}#levelMap{min-height:240px}.node.solarPlanet{width:60px;height:60px}.node.solarPlanet .planetLabel{font-size:9px}#mapHint{font-size:10px}}
 @media(max-height:550px){#mapWorld{min-height:340px}#mapHead h2{font-size:18px}}
 #commsBox{display:none;position:absolute;z-index:7;bottom:96px;left:18px;width:min(390px,calc(100% - 36px));background:linear-gradient(110deg,#07182ff0,#12385ae3);border:1px solid #65d1ecac;border-left:5px solid #83f7eb;border-radius:9px;padding:9px 13px;pointer-events:none;box-shadow:0 8px 32px #0009}#commsBox.visible{display:block}#commsSource{font-size:10px;font-weight:1000;letter-spacing:.12em;color:#9affeb}#commsText{font-size:13px;color:#f1faff;line-height:1.35;margin-top:3px}#checkpointTag{color:#a5ffe4;font-weight:900;font-size:10px;letter-spacing:.05em}#audioNote{font-size:10px;color:#c9e5f5;opacity:.86}@media(max-width:600px){#commsBox{bottom:80px;left:8px;width:min(315px,calc(100% - 16px));padding:7px 10px}#commsText{font-size:11px}#checkpointTag{font-size:9px}}
+
+/* The Helios orbital map: four concentric five-mission rings, orbiting an actual sun. */
+#mapFrame{width:min(98vw,1180px);height:min(91vh,920px);padding:clamp(9px,1.4vw,17px);background:linear-gradient(145deg,#051021f5,#0d1530f3);border-color:#4e7390;}
+#mapHead h2{font-size:clamp(17px,2.6vw,27px)}
+#levelMap{background:radial-gradient(ellipse at 48% 48%,#27304c 0%,#060c22 50%,#020617 100%);min-height:250px;min-width:0;overscroll-behavior:contain;border:1px solid #365475aa;box-shadow:inset 0 0 80px #000c;scrollbar-width:thin;}
+#mapWorld{height:1020px!important;min-height:1020px!important;width:1020px!important;min-width:1020px!important;aspect-ratio:1;background:radial-gradient(ellipse at 14% 24%,#255f9172,transparent 30%),radial-gradient(ellipse at 81% 71%,#62336383,transparent 28%),radial-gradient(ellipse at 28% 84%,#23566d65,transparent 27%),#030818;transform-origin:center center;}
+#routeLines{width:100%;height:100%;position:absolute;inset:0;overflow:visible;}
+#mapHint{min-height:28px;color:#bfe9fb;font-size:12px;line-height:1.4}
+#mapWorld.mapArrive{animation:heliosReveal .75s ease-out both}
+@keyframes heliosReveal{from{opacity:.28;filter:brightness(.4) saturate(.5)}to{opacity:1;filter:brightness(1) saturate(1)}}
+#mapMeteorBelt{transform-origin:50% 50%;animation:asteroidTurn 190s linear infinite;}
+@keyframes asteroidTurn{to{transform:rotate(360deg)}}
+.sunCorona{transform-origin:50% 50%;animation:sunBreathe 5s ease-in-out infinite}
+@keyframes sunBreathe{50%{transform:scale(1.08);opacity:.72}}
+.newOrbitRoute{filter:drop-shadow(0 0 7px #8fefff);stroke-dasharray:14 10;animation:unlockRoute 1.9s linear infinite}
+@keyframes unlockRoute{to{stroke-dashoffset:-48}}
+.node.solarPlanet{width:70px;height:70px;isolation:isolate;box-shadow:inset -13px -15px 17px #000a,inset 7px 8px 14px #fff4,0 0 13px var(--sphere-mid),0 0 0 4px #031324a9;}
+.node.solarPlanet:before{inset:6px;opacity:.38}
+.node.solarPlanet .planetLabel{bottom:-24px;font-size:10px;background:#020b1bde;color:#e3f6ff;max-width:114px;overflow:hidden;text-overflow:ellipsis}
+.node.solarPlanet.earnedPath{border-color:#e3ffce;z-index:5;animation:earnedOrbit 1.25s ease-in-out infinite;}
+@keyframes earnedOrbit{50%{box-shadow:0 0 0 8px #79ffe333,0 0 35px #86eaff, inset -12px -14px 17px #001021aa;}}
+#mapWorld .solarPlanet .planetNumber{font-size:18px}
+@media(max-height:650px){#mapFrame{height:calc(100vh - 75px)}#levelMap{min-height:210px}}
+@media(max-width:650px){#mapFrame{width:100%;height:calc(100% - 8px);padding:8px;}#mapHead h2{font-size:17px}#mapHint{font-size:10px}#mapWorld{width:1020px!important;min-width:1020px!important;min-height:1020px!important;height:1020px!important}}
+@media(prefers-reduced-motion:reduce){#mapMeteorBelt,.sunCorona,.newOrbitRoute,.node.solarPlanet.earnedPath,#mapWorld.mapArrive{animation:none!important}}
+
+#mapHead .mapTools{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+#mapHead .mapTools .pill{font-size:11px;white-space:nowrap}
+#mapWorld .solarPlanet{width:83px;height:83px}
+#mapWorld .solarPlanet .planetLabel{font-size:13px;bottom:-27px;max-width:140px}
+#mapWorld .solarPlanet .planetBoss{font-size:10px}
+#mapWorld .solarPlanet .planetNumber{font-size:22px}
+@media(max-width:600px){#mapHead .mapTools .pill{font-size:9px;padding:7px 8px}#mapHead .mapTools{gap:4px}#mapHead h2{font-size:15px}}
 </style></head><body>
 <div id="shell">
 <header id="topbar"><div id="brand">✦ SKYFIRE <em>SQUADRON</em></div><div id="rightbar"><span class="tiny">TWENTY MISSIONS • THREE ENDINGS</span><button class="pill" id="soundBtn" aria-label="Toggle soundtrack and effects">♪ AUDIO OFF</button><button class="pill" id="pauseBtn" style="display:none">Ⅱ PAUSE</button></div></header>
@@ -57,11 +90,11 @@
 <div id="commsBox" aria-live="polite" role="status"><div id="commsSource">✦ ALLIED COMMS</div><div id="commsText"></div></div><div id="touchControls"><div class="padHint">DRAG TO PILOT · REAR VIEW<br>FIRE IS AUTOMATIC</div><div style="display:flex;gap:9px"><button id="touchShoot" class="touchbtn" style="display:none">✦ FIRE</button><button id="touchMissile" class="touchbtn">🚀 MISSILE</button></div></div>
 <div id="objectiveHud" style="display:none"><span id="objectiveText"></span></div><div id="toast" aria-live="polite"></div><div id="orientationHint"><strong>✦ SKYFIRE SQUADRON ✦</strong>Turn your phone sideways for a bigger battlefield.</div>
 <div id="homeOverlay" class="overlay show"><div class="panel"><div class="eyebrow">◈ ORIGINAL SOUNDTRACK · COMMS · CHECKPOINTS · ALLIED FLEET</div><h1 class="hero">SKYFIRE<br><span>SQUADRON</span></h1><p class="sub">Twenty planets and space stations. Choose branching missions, complete special objectives, fight towering planetary robots and giant carrier fighters, and unlock three endings.</p><div class="buttonrow"><button class="cta" id="startBtn">▶ START ADVENTURE</button><button class="cta secondary" id="homeMapBtn">◇ VIEW MISSION MAP</button></div><div class="meta"><b>COMPUTER</b> <span class="key">WASD</span> or <span class="key">ARROWS</span> fly · auto-fire · <span class="key">X</span> missile · <span class="key">P</span> pause<br><b>PHONE / TABLET</b> Drag to steer the ship · tap MISSILE · animated scenes are skippable<br>Mission checkpoints save automatically · Turn on AUDIO for original music, laser and missile effects, and squadron radio calls.</div></div></div>
-<div id="mapOverlay" class="overlay"><div id="mapFrame"><div id="mapHead"><div><div class="eyebrow">◈ GALACTIC NAVIGATION SYSTEM</div><h2 id="mapTitle">THE SOLAR SYSTEM · ALL 20 MISSIONS</h2></div><button class="pill" id="mapHomeBtn">⌂ HOME</button></div>
+<div id="mapOverlay" class="overlay"><div id="mapFrame"><div id="mapHead"><div><div class="eyebrow">◈ GALACTIC NAVIGATION SYSTEM</div><h2 id="mapTitle">THE HELIOS SYSTEM · 20 ORBITS</h2></div><div class="mapTools"><button class="pill" id="fitMapBtn">◎ FIT ENTIRE SYSTEM</button><button class="pill" id="mapHomeBtn">⌂ HOME</button></div></div>
 <div id="chapterTabs"><button class="chapterTab active" id="chapterOne" type="button">I · TEN SKIES <small>1–10</small></button><button class="chapterTab" id="chapterTwo" type="button">II · FRACTURED HORIZON <small>11–20</small></button></div>
-<div id="mapHint">Tap a planet to launch a mission. Follow the connecting flight routes to unlock new worlds.</div>
+<div id="mapHint">Follow the orbit paths through the meteor belt. New mission worlds glow after their story scenes.</div>
 <div id="levelMap"><div id="mapWorld" role="group" aria-label="Solar system mission map with all twenty levels"><svg id="routeLines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg></div></div>
-<div class="mapLegend"><span>● <span style="color:#79fcc6">cleared</span> &nbsp; ● <span style="color:#ffcd85">boss</span> &nbsp; ◆ alternate endings</span><span class="mapTag" id="endingCount">FINALES DISCOVERED: 0 / 3</span></div></div></div>
+<div class="mapLegend"><span>☀ SUN &nbsp; ☄ METEORS &nbsp; ● <span style="color:#79fcc6">cleared</span> &nbsp; ● <span style="color:#ffcd85">boss</span> &nbsp; ◆ alternate endings</span><span class="mapTag" id="endingCount">FINALES DISCOVERED: 0 / 3</span></div></div></div>
 <div id="sceneOverlay" class="overlay"><div id="scenePanel"><div class="eyebrow" id="sceneKicker">STORY CINEMATIC • WATCH ONLY</div><h2 id="sceneTitle">INCOMING TRANSMISSION</h2><p id="sceneText"></p><div id="sceneBar"><div id="sceneProgress"></div></div><div class="sceneRight"><span style="color:#99c7d7;font-size:12px">Animated story · watch or skip</span><button id="skipSceneBtn" class="cta small">SKIP SCENE »</button></div></div></div>
 <div id="endOverlay" class="overlay"><div id="endPanel" class="panel"><div class="eyebrow" id="endKicker">MISSION REPORT</div><div class="resultStars" id="resultStars">✦ ✦ ✦</div><h2 class="hero" id="endTitle" style="font-size:clamp(32px,6vw,52px)">MISSION COMPLETE</h2><p class="sub" id="endText" style="margin:auto"></p><div id="routeChoices" aria-label="Choose your next mission"></div><div class="buttonrow" style="justify-content:center"><button class="cta" id="endPrimary">NEXT MISSION »</button><button class="cta secondary" id="endMap">◇ MISSION MAP</button></div></div></div>
 <div id="footer">SKYFIRE SQUADRON • a self-contained browser game</div></div></div>
