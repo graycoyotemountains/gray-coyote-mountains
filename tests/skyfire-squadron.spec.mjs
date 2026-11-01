@@ -8,7 +8,8 @@ test('Skyfire starts, previews voices, opens its 21-level map, and launches a mi
   await expect.poll(() => page.evaluate(() => window.__skyfireReady === true)).toBe(true);
 
   await page.locator('#voicePreviewBtn').click();
-  await expect(page.locator('#voicePreviewInfo')).toContainText('NOW SPEAKING');
+  await expect(page.locator('#voiceStudio')).toBeVisible();
+  await expect(page.locator('.voiceLine')).toHaveCount(16);
 
   await page.locator('#startBtn').click();
   await expect(page.locator('#sceneOverlay')).toHaveClass(/show/);
