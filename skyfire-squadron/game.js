@@ -172,7 +172,7 @@ function spawnObjective(){
  const g=game,o=g?.objective;if(!o||o.count>=o.target)return;
  if(['beacon','rescue'].includes(o.kind)){
    if(g.pickups.some(p=>p.type===o.kind))return;
-   const y=clamp(g.player.y+rand(-58,58),80,H-75);
+   const y=clamp(g.player.y+rand(-140,140),80,H-75);
    g.pickups.push({x:790,y,type:o.kind,r:29,phase:0,goal:true});
  }else{
    if(g.groundTargets.length)return;
@@ -212,7 +212,7 @@ const b=g.boss;if(b){b.time+=dt;b.x+=(790-b.x)*Math.min(1,dt*1.2);b.y=H/2+Math.s
 for(const s of g.shots){s.x+=s.vx*dt;s.y+=s.vy*dt;if(s.kind==='missile'){s.life-=dt;const targets=[...g.enemies,...g.groundTargets];if(g.boss)targets.push(g.boss);const target=targets.filter(t=>t.x>s.x-120).sort((a,b)=>dist(s,a)-dist(s,b))[0];if(target){const turn=Math.atan2(target.y-s.y,target.x-s.x);s.vx=Math.cos(turn)*540;s.vy=Math.sin(turn)*540;}}if(s.x>W+40||s.y<-40||s.y>H+40||s.life<0)s.dead=true;for(const e of g.enemies){if(!s.dead&&dist(s,e)<e.r+s.r){e.hp-=s.damage;s.dead=true;if(s.kind==='missile')boom(s.x,s.y,true);else sparks(s.x,s.y,3,'#bfffff');if(e.hp<=0)killEnemy(e);break;}}for(const o of g.groundTargets){if(!s.dead&&!o.dead&&dist(s,o)<o.r+s.r){o.hp-=s.damage;s.dead=true;if(s.kind==='missile')boom(s.x,s.y,true);else sparks(s.x,s.y,4,'#9fffe8');if(o.hp<=0)completeObjectiveTarget(o);break;}}
 if(g.boss&&!s.dead&&dist(s,g.boss)<g.boss.r*.72+s.r){g.boss.hp-=s.damage;s.dead=true;if(s.kind==='missile')boom(s.x,s.y,true);else sparks(s.x,s.y,4,'#dffaff');if(g.boss.hp<=0){boom(g.boss.x,g.boss.y,true,'#ffcb6d');g.score+=5000;g.boss=null;cleared();return;}}}g.groundTargets=g.groundTargets.filter(t=>!t.dead);g.shots=g.shots.filter(s=>!s.dead);
 for(const s of g.foeShots){s.x+=s.vx*dt;s.y+=s.vy*dt;if(dist(s,p)<s.r+p.r){s.dead=true;playerDown();}}g.foeShots=g.foeShots.filter(s=>!s.dead&&s.x>-30&&s.y>-20&&s.y<H+20);
-for(const item of g.pickups){item.x-=(item.goal?145:104)*dt;item.phase+=dt*3;if(dist(item,p)<item.r+p.r+(item.goal?19:0)){item.dead=true;collect(item);}}g.pickups=g.pickups.filter(x=>!x.dead&&x.x>-30);
+for(const item of g.pickups){item.x-=(item.goal?145:104)*dt;item.phase+=dt*3;if(dist(item,p)<item.r+p.r+(item.goal?7:0)){item.dead=true;collect(item);}}g.pickups=g.pickups.filter(x=>!x.dead&&x.x>-30);
 for(const q of g.particles){q.x+=q.vx*dt;q.y+=q.vy*dt;q.life-=dt;q.vx*=Math.max(.1,1-1.2*dt);q.vy*=Math.max(.1,1-1.2*dt);}g.particles=g.particles.filter(q=>q.life>0);for(const e of g.explosions)e.t+=dt;g.explosions=g.explosions.filter(x=>x.t<x.life);if(g.hp<=0)return;updateHud();}
 function resize(){const rect=$('viewport').getBoundingClientRect();vw=rect.width;vh=rect.height;const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(vw*dpr);canvas.height=Math.round(vh*dpr);scale=Math.min(vw/W,vh/H);offsetX=(vw-W*scale)/2;offsetY=(vh-H*scale)/2;ctx.setTransform(dpr*scale,0,0,dpr*scale,dpr*offsetX,dpr*offsetY);}
 function polygon(points,fill,stroke,line=1){ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);points.slice(1).forEach(p=>ctx.lineTo(p[0],p[1]));ctx.closePath();if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=line;ctx.stroke();}}
