@@ -53,7 +53,45 @@ const endingScripts={
  void:{title:'ENDING C · THE BLACK STAR SECRET',body:'Deep inside the black star, you discover Omega’s true heart: a stolen beacon designed to connect every sky. You free the beacon, and the fortress becomes a shining new star of peace.',label:'THE SECRET ENDING',symbol:'✦'},
  helios:{title:'SECRET MISSION 21 · HELIOS LIBERATED',body:'All twenty worlds stand united. The Solar Titan and the giant Sun Dragon fall, and Helios becomes a peaceful beacon for all twenty worlds. Your squadron has saved the entire system.',label:'MASTER OF THE HELIOS SYSTEM',symbol:'☀'}
 };
-const OVERLAYS={home:'homeOverlay',map:'mapOverlay',scene:'sceneOverlay',clear:'endOverlay',gameover:'endOverlay',finish:'endOverlay',pause:'endOverlay'};
+const OVERLAYS={home:'homeOverlay',map:'mapOverlay',scene:'sceneOverlay',clear:'endOverlay',gameover:'endOverlay',finish:'endOverlay',pause:'pauseOverlay'};
+// A separate, touch-friendly pause screen keeps the mission frozen underneath it.
+(function installPauseScreen(){
+ const css=document.createElement('style');css.id='skyfirePauseStyles';
+ css.textContent=`
+ #pauseBtn {position:fixed!important;top:calc(10px + env(safe-area-inset-top, 0px))!important;right:calc(10px + env(safe-area-inset-right, 0px))!important;bottom:auto!important;left:auto!important;z-index:2147483001!important;min-width:118px;min-height:48px;padding:10px 15px!important;border:2px solid #9befff!important;border-radius:14px!important;background:linear-gradient(130deg,#103956,#0a1b39)!important;color:#f5fdff!important;font:800 14px system-ui,sans-serif!important;letter-spacing:.03em;box-shadow:0 6px 22px #0009;touch-action:manipulation;cursor:pointer}
+ #pauseBtn:focus-visible,.skyfirePauseButton:focus-visible {outline:3px solid #a9f5ff;outline-offset:3px}
+ #pauseOverlay {display:none;position:fixed;inset:0;z-index:2147483000;background:rgba(3,11,29,.84);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);align-items:center;justify-content:center;padding:calc(72px + env(safe-area-inset-top,0px)) 18px calc(18px + env(safe-area-inset-bottom,0px));box-sizing:border-box;overflow-y:auto}
+ #pauseOverlay.show {display:flex}
+ #pauseOverlay .skyfirePausePanel {width:min(100%,480px);max-height:100%;overflow-y:auto;box-sizing:border-box;background:linear-gradient(145deg,#142e52,#10182e 66%,#261a43);border:2px solid #8fe2f2;border-radius:24px;box-shadow:0 20px 90px #000d,0 0 45px #53cce943;padding:clamp(18px,4vw,34px);text-align:center;color:#f4f9ff;font-family:system-ui,sans-serif}
+ #pauseOverlay .skyfirePauseIcon {font-size:48px;line-height:1}
+ #pauseOverlay .skyfirePauseKicker {font-size:12px;letter-spacing:.2em;color:#94e7ff;font-weight:900;margin:14px 0 6px}
+ #pauseOverlay .skyfirePauseTitle {font-size:clamp(27px,6vw,40px);line-height:1.1;font-weight:950;margin:0 0 12px;color:#fff}
+ #pauseOverlay .skyfirePauseMission {color:#ffd78a;font-weight:850;font-size:15px;margin:0 0 12px}
+ #pauseOverlay .skyfirePauseInfo {line-height:1.5;color:#d3e9fb;font-size:14px;margin:0 0 23px}
+ #pauseOverlay .skyfirePauseActions {display:grid;gap:12px}
+ #pauseOverlay .skyfirePauseButton {min-height:52px;padding:13px 17px;border:1px solid #7dacc1;border-radius:13px;background:#263c60;color:#f4fbff;font:800 15px system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
+ #pauseOverlay .skyfirePauseButton.primary {background:linear-gradient(120deg,#52d9e5,#87f0d9);color:#06253b;border:0;font-size:18px}
+ #pauseOverlay .skyfirePauseHint {font-size:12px;color:#9dbfd2;margin:17px 0 0}
+ @media(max-width:560px){#pauseBtn{min-width:105px;font-size:12px!important;padding:8px 10px!important}#pauseOverlay .skyfirePausePanel{border-radius:18px}}
+ `;
+ document.head.append(css);
+ const overlay=document.createElement('section');overlay.id='pauseOverlay';
+ overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-labelledby','pauseScreenTitle');overlay.setAttribute('aria-hidden','true');
+ overlay.innerHTML=`<div class="skyfirePausePanel">
+   <div class="skyfirePauseIcon" aria-hidden="true">⏸</div>
+   <p class="skyfirePauseKicker">SKYFIRE SQUADRON · FLIGHT HALTED</p>
+   <h2 class="skyfirePauseTitle" id="pauseScreenTitle">MISSION PAUSED</h2>
+   <p class="skyfirePauseMission" id="pauseMission"></p>
+   <p class="skyfirePauseInfo" id="pauseReason">Your fighter, enemies and mission timer are frozen.</p>
+   <div class="skyfirePauseActions">
+    <button class="skyfirePauseButton primary" id="pauseResumeBtn" type="button">▶ RESUME FLIGHT</button>
+    <button class="skyfirePauseButton" id="pauseRestartBtn" type="button">↻ RESTART MISSION</button>
+    <button class="skyfirePauseButton" id="pauseMapBtn" type="button">☼ RETURN TO MISSION MAP</button>
+   </div>
+   <p class="skyfirePauseHint">Tap PAUSE anytime, or press P / Escape on a keyboard.</p>
+  </div>`;
+ document.body.append(overlay);
+})();
 let saved={unlocked:1,completed:[],bestScore:0,sound:false,endings:[]};
 try{const x=JSON.parse(localStorage.getItem('skyfire_squadron_v1'));if(x&&typeof x==='object')saved={...saved,...x};}catch(e){}
 saved.unlocked=clamp(Number(saved.unlocked)||1,1,10);
@@ -68,6 +106,17 @@ saved.completed=[...new Set(saved.completed.filter(n=>Number.isInteger(n)&&n>=1&
 let mapChapter=saved.completed.some(n=>n>10)?1:0;
 const save=()=>{try{localStorage.setItem('skyfire_squadron_v1',JSON.stringify(saved));}catch(e){}};
 let screen='home',selected=0,scene=null,sceneEnd=0,endAction=null,game=null,soundOn=Boolean(saved.sound),soundCtx=null;
+const AUTO_PAUSE_SECONDS=5*60; // One automatic break, after five minutes of actual flying.
+let activeFlightSeconds=0,automaticBreakTaken=false,lastPauseCountdown=-1;
+function pauseCountdown(){const remaining=Math.max(0,Math.ceil(AUTO_PAUSE_SECONDS-activeFlightSeconds));return String(Math.floor(remaining/60)).padStart(2,'0')+':'+String(remaining%60).padStart(2,'0');}
+function refreshPauseButton(){
+ const b=$('pauseBtn');if(!b)return;
+ if(screen==='pause'){b.textContent='▶ RESUME';b.setAttribute('aria-label','Resume Skyfire Squadron');return;}
+ if(screen==='play'){
+  b.textContent='Ⅱ PAUSE'+(automaticBreakTaken?'':' · '+pauseCountdown());
+  b.setAttribute('aria-label','Pause Skyfire Squadron'+(automaticBreakTaken?'':'. Automatic break in '+pauseCountdown()));
+ }else b.setAttribute('aria-label','Pause Skyfire Squadron');
+}
 let vw=1,vh=1,scale=1,offsetX=0,offsetY=0,now=0,last=0,worldTime=0,flash=0,shake=0,toaster=0;
 const controls={keys:new Set(),aim:null,dragging:false,touchFire:false};
 const stars=Array.from({length:90},()=>({x:rand(0,W),y:rand(0,H),r:rand(.6,2.2),speed:rand(12,95),phase:rand(0,TAU)}));
@@ -193,7 +242,7 @@ function resumeCheckpoint(g){const s=saved.checkpoints[g.index+1];if(!s||s.index
  return true}
 
 function toast(msg){$('toast').textContent=msg;$('toast').classList.add('on');toaster=2.2;}
-function setScreen(s){if(screen==='scene'&&s!=='scene')window.SkyfireVoices?.stop();screen=s;for(let k of Object.keys(OVERLAYS))$(OVERLAYS[k]).classList.remove('show');if(OVERLAYS[s])$(OVERLAYS[s]).classList.add('show');$('hud').classList.toggle('visible',s==='play');$('touchControls').classList.toggle('playing',s==='play');$('orientationHint').classList.toggle('playing',s==='play');$('pauseBtn').style.display=(s==='play'||s==='pause')?'':'none';$('pauseBtn').textContent=s==='pause'?'▶ RESUME':'Ⅱ PAUSE';$('objectiveHud').style.display=(s==='play'&&game?.objective)?'block':'none';if(s!=='play')$('commsBox').classList.remove('visible');else if(commsTimer>0)$('commsBox').classList.add('visible');if(s==='scene')$('toast').classList.remove('on');}
+function setScreen(s){if(screen==='scene'&&s!=='scene')window.SkyfireVoices?.stop();screen=s;for(let k of Object.keys(OVERLAYS))$(OVERLAYS[k]).classList.remove('show');if(OVERLAYS[s])$(OVERLAYS[s]).classList.add('show');$('hud').classList.toggle('visible',s==='play');$('touchControls').classList.toggle('playing',s==='play');$('orientationHint').classList.toggle('playing',s==='play');$('pauseBtn').style.display=(s==='play'||s==='pause')?'':'none';$('pauseOverlay').setAttribute('aria-hidden',s==='pause'?'false':'true');refreshPauseButton();$('objectiveHud').style.display=(s==='play'&&game?.objective)?'block':'none';if(s!=='play')$('commsBox').classList.remove('visible');else if(commsTimer>0)$('commsBox').classList.add('visible');if(s==='scene')$('toast').classList.remove('on');}
 function isAvailable(mission){
   if(mission===21)return Array.from({length:20},(_,i)=>i+1).every(n=>saved.completed.includes(n));
   if(mission===1||saved.completed.includes(mission))return true;
@@ -474,7 +523,7 @@ function completeObjectiveTarget(t){
  t.dead=true;game.objective.count=Math.min(game.objective.target,game.objective.count+1);game.score+=900;
  boom(t.x,t.y,true,t.type==='tower'?'#97ebff':'#ffb17e');toast('⚙ '+game.objective.label+'  '+game.objective.count+'/3');radio('FLIGHT COMMAND','Target neutralized. Objective '+game.objective.count+' of three complete.',true);updateHud();
 }
-function tick(dt){musicTick();radioTick(dt);worldTime+=dt;flash=Math.max(0,flash-dt);shake=Math.max(0,shake-35*dt);if(toaster>0){toaster-=dt;if(toaster<=0)$('toast').classList.remove('on');}if(screen==='scene'){
+function tick(dt){if(screen==='pause')return;musicTick();radioTick(dt);worldTime+=dt;flash=Math.max(0,flash-dt);shake=Math.max(0,shake-35*dt);if(toaster>0){toaster-=dt;if(toaster<=0)$('toast').classList.remove('on');}if(screen==='scene'){
  if(!scene)return;scene.elapsed+=dt;let f=clamp(scene.elapsed/scene.duration,0,1);
  $('sceneProgress').style.width=(f*100).toFixed(1)+'%';
  if(scene.dialogue?.length){const stage=scene.voiceBreaks?Math.min(scene.dialogue.length-1,scene.voiceBreaks.findIndex(end=>scene.elapsed<end)<0?scene.dialogue.length-1:scene.voiceBreaks.findIndex(end=>scene.elapsed<end)):Math.min(scene.dialogue.length-1,Math.floor(f*scene.dialogue.length));
@@ -922,7 +971,18 @@ function render(dt){
  }
  if(flash>0){ctx.fillStyle=`rgba(255,160,160,${Math.min(.3,flash*.75)})`;ctx.fillRect(0,0,W,H)}ctx.restore();
 }
-function frame(ms){if(!last)last=ms;const dt=Math.min(.045,(ms-last)/1000);last=ms;tick(dt);render(dt);requestAnimationFrame(frame);}
+function frame(ms){
+ if(!last)last=ms;
+ const realDt=Math.max(0,Math.min(1,(ms-last)/1000)); // Ignore long background-tab gaps.
+ const dt=Math.min(.045,realDt);last=ms;
+ if(screen==='play'&&game&&!automaticBreakTaken){
+  activeFlightSeconds+=realDt;
+  const countdown=Math.ceil(AUTO_PAUSE_SECONDS-activeFlightSeconds);
+  if(countdown!==lastPauseCountdown){lastPauseCountdown=countdown;refreshPauseButton();}
+  if(activeFlightSeconds>=AUTO_PAUSE_SECONDS){automaticBreakTaken=true;pauseGame('auto');}
+ }
+ tick(dt);render(dt);requestAnimationFrame(frame);
+}
 function screenPosition(event){const r=canvas.getBoundingClientRect(),sx=(event.clientX-r.left-offsetX)/scale,sy=(event.clientY-r.top-offsetY)/scale;
   const q=Math.sqrt(clamp((sy-158)/427,.02,1));const x=clamp(W+30-q*(W+60),50,630),fac=.18+q*.94;
   return{x,y:clamp(H/2+(sx-W/2)/(fac*1.34),54,H-50)};
@@ -930,11 +990,33 @@ function screenPosition(event){const r=canvas.getBoundingClientRect(),sx=(event.
 canvas.addEventListener('pointerdown',e=>{if(screen!=='play')return;e.preventDefault();controls.dragging=true;controls.dragId=e.pointerId;controls.aim=screenPosition(e);canvas.setPointerCapture?.(e.pointerId);});
 canvas.addEventListener('pointermove',e=>{if(screen!=='play'||!controls.dragging||controls.dragId!==e.pointerId)return;controls.aim=screenPosition(e);});
 const releasePointer=e=>{if(controls.dragId===e.pointerId){controls.dragging=false;controls.aim=null;}};canvas.addEventListener('pointerup',releasePointer);canvas.addEventListener('pointercancel',releasePointer);
-window.addEventListener('keydown',e=>{if(screen==='map'){if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();if(!e.repeat)navigateMap(e.key);return;}if(e.key==='Enter'||e.key===' '){e.preventDefault();openMission(mapCursor-1);return;}}if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();controls.keys.add(e.key);if(e.repeat)return;if((e.key==='p'||e.key==='P'||e.key==='Escape')&&(screen==='play'||screen==='pause'))togglePause();if(e.key==='Enter'&&screen==='scene')skipScene();if(e.key===' '&&screen==='scene')skipScene();});window.addEventListener('keyup',e=>controls.keys.delete(e.key));window.addEventListener('blur',()=>{controls.keys.clear();controls.aim=null;if(screen==='play')togglePause();});
-function togglePause(){if(screen==='play'){showEnd('pause','MISSION PAUSED','Your jet is holding position. Breathe, then get back into the sky.','▶ RESUME',()=>setScreen('play'),'Ⅱ Ⅱ Ⅱ');$('endKicker').textContent='PAUSE MENU';}else if(screen==='pause')setScreen('play');}
+window.addEventListener('keydown',e=>{if(screen==='map'){if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();if(!e.repeat)navigateMap(e.key);return;}if(e.key==='Enter'||e.key===' '){e.preventDefault();openMission(mapCursor-1);return;}}if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();controls.keys.add(e.key);if(e.repeat)return;if((e.key==='p'||e.key==='P'||e.key==='Escape')&&(screen==='play'||screen==='pause'))togglePause();if(e.key==='Enter'&&screen==='scene')skipScene();if(e.key===' '&&screen==='scene')skipScene();});window.addEventListener('keyup',e=>controls.keys.delete(e.key));window.addEventListener('blur',()=>{controls.keys.clear();controls.aim=null;if(screen==='play')pauseGame('background');});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&screen==='play')pauseGame('background');});
+function pauseGame(reason='manual'){
+ if(screen!=='play'||!game)return;
+ controls.keys.clear();controls.aim=null;controls.dragging=false;controls.missileHeld=false;
+ window.SkyfireVoices?.stop();setScreen('pause');
+ $('pauseMission').textContent='MISSION '+String(game.index+1).padStart(2,'0')+' · '+levels[game.index].name.toUpperCase();
+ $('pauseReason').textContent=reason==='auto'
+  ?'Five minutes of flying completed! Take a break if you like. Your fighter, enemies and mission timer are frozen.'
+  :reason==='background'
+  ?'Your mission was automatically paused when you left the game. Everything is frozen until you resume.'
+  :'Your fighter, enemies and mission timer are frozen. Continue whenever you are ready.';
+ $('pauseResumeBtn').focus({preventScroll:true});
+}
+function resumeFlight(){
+ if(screen!=='pause')return;
+ controls.keys.clear();controls.aim=null;controls.dragging=false;controls.missileHeld=false;
+ setScreen('play');
+}
+function togglePause(){if(screen==='play')pauseGame('manual');else if(screen==='pause')resumeFlight();}
 // Drag the orbital chart to pan on both mouse and touch; buttons still select levels.
 (()=>{const el=$('levelMap');let origin=null;el.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;origin={x:e.clientX,y:e.clientY,left:el.scrollLeft,top:el.scrollTop,id:e.pointerId};el.setPointerCapture?.(e.pointerId)});el.addEventListener('pointermove',e=>{if(!origin||origin.id!==e.pointerId)return;el.scrollLeft=origin.left-(e.clientX-origin.x);el.scrollTop=origin.top-(e.clientY-origin.y)});const finish=()=>{origin=null};el.addEventListener('pointerup',finish);el.addEventListener('pointercancel',finish)})();
-$('startBtn').onclick=()=>showScene({kind:'starChart',title:'THE HELIOS SYSTEM COMES INTO VIEW',kicker:'FLIGHT COMMAND · STAR CHART UNFOLDING',text:'Twenty worlds orbit the sun. Complete them all to unlock the secret twenty-first mission: Helios.',beats:['The fleet enters the solar system.','A golden sun appears through clouds of drifting meteors.','Twenty orbiting missions appear. Helios is locked until every world is cleared.'],duration:7,next:()=>openMap(0,[1])});$('homeMapBtn').onclick=()=>openMap();$('chapterOne').onclick=()=>openMap(0);$('chapterTwo').onclick=()=>openMap(1);$('fitMapBtn').onclick=()=>{mapZoomMode=$('fitMapBtn').textContent.includes('EXPLORE')?'detail':'fit';configureMapZoom();};$('mapHomeBtn').onclick=()=>setScreen('home');$('skipSceneBtn').onclick=skipScene;$('endPrimary').onclick=()=>endAction&&endAction();$('endMap').onclick=()=>openMap();$('pauseBtn').onclick=togglePause;$('touchMissile').onclick=missile;
+$('startBtn').onclick=()=>showScene({kind:'starChart',title:'THE HELIOS SYSTEM COMES INTO VIEW',kicker:'FLIGHT COMMAND · STAR CHART UNFOLDING',text:'Twenty worlds orbit the sun. Complete them all to unlock the secret twenty-first mission: Helios.',beats:['The fleet enters the solar system.','A golden sun appears through clouds of drifting meteors.','Twenty orbiting missions appear. Helios is locked until every world is cleared.'],duration:7,next:()=>openMap(0,[1])});$('homeMapBtn').onclick=()=>openMap();$('chapterOne').onclick=()=>openMap(0);$('chapterTwo').onclick=()=>openMap(1);$('fitMapBtn').onclick=()=>{mapZoomMode=$('fitMapBtn').textContent.includes('EXPLORE')?'detail':'fit';configureMapZoom();};$('mapHomeBtn').onclick=()=>setScreen('home');$('skipSceneBtn').onclick=skipScene;$('endPrimary').onclick=()=>endAction&&endAction();$('endMap').onclick=()=>openMap();$('pauseBtn').onclick=togglePause;
+$('pauseResumeBtn').onclick=resumeFlight;
+$('pauseRestartBtn').onclick=()=>{if(game&&screen==='pause')startLevel(game.index,true);};
+$('pauseMapBtn').onclick=()=>{if(screen==='pause')openMap();};
+$('touchMissile').onclick=missile;
 $('soundBtn').onclick=()=>{soundOn=!soundOn;saved.sound=soundOn;save();musicTime=0;if(!soundOn){window.SkyfireVoices?.stop()}else{makeSound();if(screen==='scene'&&scene?.dialogue?.length){const n=scene.lastBeat||0;const [who,line]=scene.dialogue[n];window.SkyfireVoices?.speak(who,line,true,scene.mission);}}$('soundBtn').textContent=soundOn?'♫ AUDIO ON':'♪ AUDIO OFF';audio(590,.12,'sine',.055,1.4);};$('soundBtn').textContent=soundOn?'♫ AUDIO ON':'♪ AUDIO OFF';
 let voicePreviewIndex=0;
 $('voicePreviewBtn').onclick=()=>{const v=window.SkyfireVoices;if(!v)return;soundOn=true;saved.sound=true;save();$('soundBtn').textContent='♫ AUDIO ON';makeSound();const character=v.roster[voicePreviewIndex++%v.roster.length],profile=v.profile(character);$('voicePreviewInfo').textContent='NOW SPEAKING · '+profile.name+' · '+profile.role;v.speak(character,profile.demo,true);};
