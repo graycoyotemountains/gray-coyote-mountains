@@ -25,7 +25,7 @@ const levels=[
  {name:'Dawn Accord',zone:'Golden Dawn Route',color:'#91653f',accent:'#ffe5a0',desc:'ENDING A: Face NEXUS OMEGA in the dawn light and free the captive squadrons. Win a peaceful united-skies ending.',duration:23,boss:'NEXUS OMEGA · DAWN',ending:'dawn',extra:'OBJECTIVE: Rescue three escape pods before taking down Omega’s giant carrier fighter. Fly directly through the pods to save the pilots.'},
  {name:'Stormbreak',zone:'Thunderstorm Route',color:'#3a5985',accent:'#b4ddff',desc:'ENDING B: Chase NEXUS OMEGA into a superstorm and defeat its storm crown to end the war with a thunderous victory.',duration:24,boss:'NEXUS OMEGA · STORM',ending:'storm',extra:'OBJECTIVE: Destroy three lightning towers on the planet before battling Omega’s towering storm robot.'},
  {name:'Black Star',zone:'Void Route',color:'#493050',accent:'#ff98d8',desc:'ENDING C: Dive into Omega’s black star fortress and challenge the strongest version of the BOSS OF BOSSES.',duration:26,boss:'NEXUS OMEGA · VOID',ending:'void',extra:'METEOR FIELD: shatter three reactor locks while navigating the black-star debris cloud. Then defeat Omega’s ultimate robot.'},
- {name:'Helios: Heart of the Sun',zone:'Solar Corona',color:'#d75c20',accent:'#fff2a1',desc:'SECRET MISSION 21. Only pilots who have completed all twenty other missions can enter the sun. Destroy three solar conduits and defeat the SOLAR TITAN.',duration:40,boss:'HELIOS · SOLAR TITAN',ending:'helios',extra:'ULTIMATE CHALLENGE: cross the fiery meteor corona, disable three solar conduits and defeat the sun-powered guardian. All 20 previous missions must be completed.'}
+ {name:'Helios: Heart of the Sun',zone:'Solar Corona',color:'#d75c20',accent:'#fff2a1',desc:'SECRET MISSION 21. Only pilots who have completed all twenty other missions can enter the sun. Destroy three solar conduits, defeat the SOLAR TITAN, then face a GIANT SUN DRAGON.',duration:40,boss:'HELIOS · SOLAR TITAN',ending:'helios',extra:'ULTIMATE CHALLENGE: cross the fiery meteor corona, disable three solar conduits and defeat the sun-powered guardian. All 20 previous missions must be completed.'}
 ];
 // Mission routes are directed. Completing a parent opens its child, never all later nodes.
 const routes={1:[2],2:[3],3:[4],4:[5],5:[6],6:[7],7:[8],8:[9],9:[10],10:[11],11:[12,13],12:[14],13:[14,15],14:[15],15:[16,17],16:[17,18,19,20],17:[16,18,19,20],18:[21],19:[21],20:[21],21:[]};
@@ -51,7 +51,7 @@ const endingScripts={
  dawn:{title:'ENDING A · THE DAWN ACCORD',body:'Omega’s armored wings open and release their captive pilots. In the sunrise, both sides lay down their weapons. The skies belong to everyone, and a new alliance begins.',label:'THE PEACEFUL ENDING',symbol:'☀'},
  storm:{title:'ENDING B · THE STORMBREAKER',body:'The storm crown shatters in a blinding flash. All of Omega’s lightning engines go dark. Across the world, people watch the storm clouds part. The squadrons return as heroes.',label:'THE HEROIC ENDING',symbol:'⚡'},
  void:{title:'ENDING C · THE BLACK STAR SECRET',body:'Deep inside the black star, you discover Omega’s true heart: a stolen beacon designed to connect every sky. You free the beacon, and the fortress becomes a shining new star of peace.',label:'THE SECRET ENDING',symbol:'✦'},
- helios:{title:'SECRET MISSION 21 · HELIOS LIBERATED',body:'All twenty worlds stand united. The mighty Solar Titan fractures into harmless sparks, and Helios turns from a war machine into a beacon of peace. Your squadron has saved the entire system.',label:'MASTER OF THE HELIOS SYSTEM',symbol:'☀'}
+ helios:{title:'SECRET MISSION 21 · HELIOS LIBERATED',body:'All twenty worlds stand united. The Solar Titan and the giant Sun Dragon fall, and Helios becomes a peaceful beacon for all twenty worlds. Your squadron has saved the entire system.',label:'MASTER OF THE HELIOS SYSTEM',symbol:'☀'}
 };
 const OVERLAYS={home:'homeOverlay',map:'mapOverlay',scene:'sceneOverlay',clear:'endOverlay',gameover:'endOverlay',finish:'endOverlay',pause:'endOverlay'};
 let saved={unlocked:1,completed:[],bestScore:0,sound:false,endings:[]};
@@ -117,6 +117,21 @@ const CHARACTER_PNG={
 };
 function showPortrait(target,who){const node=$(target);if(!node)return;const profile=castFor(who);const key=Object.keys(CAST).find(k=>CAST[k]===profile)||(profile.kind==='robot'?'ENEMY BOSS':'FLIGHT COMMAND');const img=document.createElement('img');img.className='characterPortraitImage';img.alt=castFor(who).name+' portrait';img.src=CHARACTER_PNG[key];img.decoding='sync';node.replaceChildren(img);}
 function sceneDialogue(s){const l=levels[s.mission]||levels[0],nextIds=routes[s.mission+1]||[];
+ if(s.kind==='bossWake'&&s.boss?.type==='dragon')return [
+ ['FLIGHT COMMAND','The Solar Titan is down, but a GIANT SUN DRAGON is rising from the corona!'],
+ ['HELIOS · SOLAR TITAN','Pyraxis commands the fire of the sun!'],
+ ['ALPHA-3','Rex here! Dodge its fire breath!']
+ ];
+ if(s.kind==='bossBreak'&&s.mission===20&&s.boss?.type!=='dragon')return [
+ ['ALPHA-2','The Solar Titan is down! But something huge is moving!'],
+ ['NAVIGATION','A living heat signature! The battle is not over!'],
+ ['SKYFIRE ONE','Prepare to face the Sun Dragon!']
+ ];
+ if(s.kind==='bossBreak'&&s.boss?.type==='dragon')return [
+ ['ALPHA-2','Pyraxis is falling! The dragon has released Helios!'],
+ ['FLIGHT COMMAND','Both guardians defeated. The sun is finally free.'],
+ ['SKYFIRE ONE','Everyone home!']
+ ];
  if(s.mission===20&&s.kind==='approach')return [['NAVIGATION','All twenty worlds are secure. We have unlocked the secret twenty-first mission: Helios, the heart of the sun.'],['ALPHA-2','The solar titan is gigantic! Our whole fleet is here to help.'],['SKYFIRE ONE','All squadrons, engage solar shields. We are going into the sun!']];
  switch(s.kind){
  case 'approach':return [
@@ -428,6 +443,18 @@ function spawnBoss(){const g=game,lev=levels[g.index];g.bossSpawned=true;g.enemi
  beats:['A giant silhouette rises from the darkness.','Armor plates unfold. Its core begins to glow.','The boss locks onto your fighter. Prepare to fight!'],
  kicker:'BOSS AWAKENING · WATCH ONLY',duration:6.2,
  next:()=>{setScreen('play');toast('⚠ BOSS BATTLE: '+lev.boss);radio(lev.boss||'ENEMY COMMANDER',window.SkyfireVoices?.bossLine(lev.boss,'wake')||'You will not pass through our sector, Skyfire!',true);}});audio(110,.7,'sawtooth',.07,.45);}
+function spawnDragonBoss(){
+ const g=game;if(!g||g.index!==20||g.done)return;
+ g.enemies=[];g.foeShots=[];g.shots=[];g.meteors=[];
+ g.boss={name:'PYRAXIS · SUN DRAGON',x:W+135,y:H*.5,r:93,hp:420,maxHp:420,time:0,fire:1.5,phase:2,form:'dragon',type:'dragon',volley:0};
+ g.bossSpawned=true;checkpoint(4,true);fx('boss');audio(55,.8,'sawtooth',.12,.3);
+ showScene({kind:'bossWake',mission:20,boss:{...g.boss},title:'PYRAXIS · THE GIANT SUN DRAGON',
+ text:'Huge flaming wings eclipse the sun. A horned dragon emerges and breathes molten fire toward Skyfire Squadron.',
+ beats:['The Solar Titan crumbles.','A giant dragon spreads its wings.','A blazing maw opens toward the fleet!'],
+ kicker:'HELIOS PHASE TWO · DRAGON BOSS',duration:7,
+ next:()=>{setScreen('play');toast('🐉 PYRAXIS · GIANT SUN DRAGON');radio('FLIGHT COMMAND','Final boss! Dodge the dragon fireballs!',true);}
+ });
+}
 function killEnemy(e){let g=game;g.score+=e.points;g.kills++;g.combo++;g.comboTimer=4;boom(e.x,e.y,e.type==='bomber');if(Math.random()<.10)spawnPickup(e.x,e.y);if(g.kills===3)radio('ALPHA-3','Three hostiles down. We have your six!');}
 function spawnObjective(){
  const g=game,o=g?.objective;if(!o||o.count>=o.target)return;
@@ -472,7 +499,17 @@ for(const e of g.enemies){e.time+=dt;e.x+=e.vx*dt;e.y+=Math.sin(e.time*3.4+e.pha
 g.enemies=g.enemies.filter(e=>e.hp>0&&e.x>-55);
 for(const t of g.groundTargets){t.x-=52*dt;t.phase+=dt;t.fire-=dt;if(t.fire<=0&&t.x<W-50){g.foeShots.push({x:t.x-30,y:t.y,vx:-220,vy:clamp((p.y-t.y)*.26,-110,110),r:6,damage:1});t.fire=2.2;}if(t.x<100)t.dead=true;}
 g.groundTargets=g.groundTargets.filter(t=>!t.dead);
-const b=g.boss;if(b){b.time+=dt;b.x+=(790-b.x)*Math.min(1,dt*1.2);b.y=H/2+Math.sin(b.time*.92)*158;b.fire-=dt;if(b.fire<=0){
+const b=g.boss;if(b){b.time+=dt;b.x+=(790-b.x)*Math.min(1,dt*1.2);b.y=H/2+Math.sin(b.time*.92)*(b.type==='dragon'?118:158);b.fire-=dt;if(b.fire<=0){
+ if(b.type==='dragon'){
+  b.volley++;
+  const breath=b.volley%3===0,aim=Math.atan2(p.y-b.y,p.x-b.x),n=breath?4:2;
+  for(let i=-n;i<=n;i++){
+   const angle=aim+i*(breath?.12:.145),speed=breath?255:300;
+   g.foeShots.push({x:b.x-73,y:b.y+9,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,r:breath?13:9,damage:1,kind:'dragonfire'});
+  }
+  if(breath){sparks(b.x-72,b.y+8,25,'#ffbd4c',1.6);audio(78,.52,'sawtooth',.12,.42);}
+  b.fire=breath?1.55:1.07;
+ }else{
   b.volley++;
   const size=b.form==='void'?4:b.form==='storm'?3:2;
   const aim=Math.atan2(p.y-b.y,p.x-b.x),baseSpeed=b.form==='void'?315:b.form==='storm'?290:245;
@@ -484,15 +521,17 @@ const b=g.boss;if(b){b.time+=dt;b.x+=(790-b.x)*Math.min(1,dt*1.2);b.y=H/2+Math.s
   if(b.form==='storm'&&b.volley%3===0){for(let k=-1;k<=1;k++)g.foeShots.push({x:b.x-60,y:b.y+k*36,vx:-270,vy:k*110,r:7,damage:1});}
   b.fire=b.form==='void'?.95:b.form==='storm'?1.07:b.form==='dawn'?1.22:g.index===9?.9:1.25;
   fx('boss');if(b.volley===2)radio(levels[g.index].boss||'ENEMY BOSS','You cannot outrun our weapons.');
+ }
 }if(dist(b,p)<b.r+p.r&&p.invul<=0)playerDown();}
 for(const s of g.shots){s.x+=s.vx*dt;s.y+=s.vy*dt;if(s.kind==='missile'){s.life-=dt;const targets=[...g.enemies,...g.groundTargets];if(g.boss)targets.push(g.boss);const target=targets.filter(t=>t.x>s.x-120).sort((a,b)=>dist(s,a)-dist(s,b))[0];if(target){const turn=Math.atan2(target.y-s.y,target.x-s.x);s.vx=Math.cos(turn)*540;s.vy=Math.sin(turn)*540;}}if(s.x>W+40||s.y<-40||s.y>H+40||s.life<0)s.dead=true;for(const e of g.enemies){if(!s.dead&&dist(s,e)<e.r+s.r){e.hp-=s.damage;s.dead=true;if(s.kind==='missile')boom(s.x,s.y,true);else sparks(s.x,s.y,3,'#bfffff');if(e.hp<=0)killEnemy(e);break;}}for(const rock of g.meteors){if(!s.dead&&!rock.dead&&dist(s,rock)<rock.r+s.r){rock.hp-=s.damage;s.dead=true;if(rock.hp<=0){rock.dead=true;g.score+=110;boom(rock.x,rock.y,false,'#f6cfb0')}else sparks(rock.x,rock.y,5,'#ffd1aa');break;}}
 for(const o of g.groundTargets){if(!s.dead&&!o.dead&&dist(s,o)<o.r+s.r){o.hp-=s.damage;s.dead=true;if(s.kind==='missile')boom(s.x,s.y,true);else sparks(s.x,s.y,4,'#9fffe8');if(o.hp<=0)completeObjectiveTarget(o);break;}}
 if(g.boss&&!s.dead&&dist(s,g.boss)<g.boss.r*.72+s.r){g.boss.hp-=s.damage;s.dead=true;if(s.kind==='missile')boom(s.x,s.y,true);else sparks(s.x,s.y,4,'#dffaff');if(g.boss.hp<=0){
  const fallen={...g.boss};boom(g.boss.x,g.boss.y,true,'#ffcb6d');g.score+=5000;g.boss=null;
- showScene({kind:'bossBreak',mission:g.index,boss:fallen,title:fallen.name+' BREAKS APART',
-  text:'The giant enemy has been defeated. Its armor collapses and its engines break apart.',
-  beats:['Your final strike cracks the armored shell.','Its reactor erupts; wings and armor plates fly apart.','The wreck falls away, and the squadron flies through.'],
-  kicker:'BOSS DEFEATED · WATCH ONLY',duration:6.3,next:()=>cleared()});return;}}}g.groundTargets=g.groundTargets.filter(t=>!t.dead);g.meteors=g.meteors.filter(t=>!t.dead);g.shots=g.shots.filter(s=>!s.dead);
+ const secondBoss=g.index===20&&fallen.type!=='dragon';
+ showScene({kind:'bossBreak',mission:g.index,boss:fallen,title:secondBoss?'SOLAR TITAN FALLS · THE DRAGON AWAKENS':fallen.type==='dragon'?'PYRAXIS THE SUN DRAGON DEFEATED':fallen.name+' BREAKS APART',
+  text:secondBoss?'The Solar Titan falls, but a colossal dragon emerges from the heart of the sun!':fallen.type==='dragon'?'Pyraxis has been defeated! The dragon releases Helios.':'The giant enemy has been defeated. Its armor collapses and its engines break apart.',
+  beats:secondBoss?['The Titan fractures into molten shards.','A winged shadow eclipses the sun.','The Sun Dragon roars. The true final battle begins!']:fallen.type==='dragon'?['Your final strike hits the dragon.','Its wings fold and solar fire fades.','Your squadron flies home in peace.']:['Your final strike cracks the armored shell.','Its reactor erupts; wings and armor plates fly apart.','The wreck falls away, and the squadron flies through.'],
+  kicker:secondBoss?'HELIOS PHASE ONE CLEARED · DRAGON INCOMING':'BOSS DEFEATED · WATCH ONLY',duration:6.3,next:()=>secondBoss?spawnDragonBoss():cleared()});return;}}}g.groundTargets=g.groundTargets.filter(t=>!t.dead);g.meteors=g.meteors.filter(t=>!t.dead);g.shots=g.shots.filter(s=>!s.dead);
 for(const s of g.foeShots){s.x+=s.vx*dt;s.y+=s.vy*dt;for(const a of g.allies){if(a.hp>0&&!s.dead&&dist(s,a)<s.r+15){s.dead=true;a.hp-=1;sparks(a.x,a.y,5,'#8af6ff');if(a.hp<=0){boom(a.x,a.y,false,'#76d9ff');radio('FLIGHT COMMAND',a.id+' disabled. Continue mission, Skyfire One!',true)}}}if(!s.dead&&dist(s,p)<s.r+p.r){s.dead=true;playerDown();}}g.foeShots=g.foeShots.filter(s=>!s.dead&&s.x>-30&&s.y>-20&&s.y<H+20);
 for(const item of g.pickups){item.x-=(item.goal?145:104)*dt;item.phase+=dt*3;if(dist(item,p)<item.r+p.r+(item.goal?7:0)){item.dead=true;collect(item);}}g.pickups=g.pickups.filter(x=>!x.dead&&x.x>-30);
 for(const q of g.particles){q.x+=q.vx*dt;q.y+=q.vy*dt;q.life-=dt;q.vx*=Math.max(.1,1-1.2*dt);q.vy*=Math.max(.1,1-1.2*dt);}g.particles=g.particles.filter(q=>q.life>0);for(const e of g.explosions)e.t+=dt;g.explosions=g.explosions.filter(x=>x.t<x.life);if(g.hp<=0)return;updateHud();}
@@ -661,10 +700,49 @@ function drawPlanetRobotBoss(b,p,s,cinematic=false,awake=1){
  rounded(625,107,288,16,7,'#230d2ede');rounded(629,111,280*clamp(b.hp/b.maxHp,0,1),8,5,w);
  ctx.fillStyle='#fff8ed';ctx.font='900 17px system-ui';ctx.textAlign='center';ctx.fillText('⚠ '+b.name+' · WAR ROBOT ⚠',769,96);ctx.textAlign='left';
 }
+// Colossal living dragon faces Skyfire One directly.
+function drawSunDragonBoss(b,p,s,cinematic=false,awake=1){
+ ctx.save();ctx.translate(p.x,p.y);ctx.scale(s*1.13,s*1.13);
+ const t=b.time||worldTime||0,flap=Math.sin(t*3)*.085;
+ ctx.globalAlpha=.2+.8*clamp(awake,0,1);ctx.shadowColor='#ff9b40';ctx.shadowBlur=23;
+ for(const sign of [-1,1]){
+  ctx.save();ctx.translate(sign*42,-18);ctx.rotate(sign*flap);
+  polygon([[0,0],[sign*72,-110],[sign*128,-154],[sign*152,-83],[sign*212,-126],[sign*182,-20],[sign*220,29],[sign*106,47]],'#932c2b','#ffd07a',4);
+  polygon([[sign*17,-8],[sign*105,-120],[sign*125,-35],[sign*193,-90],[sign*171,4],[sign*103,20]],'#d65b32','#ffad58',2);
+  ctx.restore();
+ }
+ ctx.strokeStyle='#7b2531';ctx.lineWidth=19;ctx.beginPath();ctx.moveTo(0,89);ctx.bezierCurveTo(70,158,153,110,127,59);ctx.stroke();
+ for(const sign of [-1,1]){
+  polygon([[sign*45,48],[sign*85,70],[sign*98,119],[sign*61,101]],'#8f242a','#ffc17c',3);
+  for(let j=0;j<3;j++)polygon([[sign*(63+j*12),95],[sign*(70+j*12),123],[sign*(74+j*12),97]],'#fff0c3','#ffc477',1);
+ }
+ polygon([[-75,-70],[-85,35],[-50,99],[0,128],[50,99],[85,35],[75,-70],[0,-118]],'#ad332d','#ffbe66',4);
+ polygon([[-38,-27],[0,-79],[38,-27],[44,49],[0,93],[-44,49]],'#f18a40','#ffe4a7',3);
+ for(let j=0;j<5;j++){let y=-19+j*18;ctx.strokeStyle='#ffdda0';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-30,y);ctx.quadraticCurveTo(0,y+12,30,y);ctx.stroke();}
+ polygon([[-50,-101],[-41,-179],[0,-207],[41,-179],[50,-101],[30,-49],[-30,-49]],'#c2472c','#ffd18a',4);
+ for(const sign of [-1,1]){
+  polygon([[sign*26,-176],[sign*45,-221],[sign*64,-233],[sign*54,-170]],'#ffe0a0','#fff6d4',2);
+  polygon([[sign*37,-147],[sign*75,-150],[sign*65,-119],[sign*35,-111]],'#a8312b','#ffd08c',3);
+  polygon([[sign*9,-159],[sign*37,-162],[sign*25,-143],[sign*8,-140]],'#351327','#ffd985',3);
+  polygon([[sign*15,-154],[sign*31,-154],[sign*21,-147]],'#fff3a5');
+ }
+ polygon([[-35,-114],[0,-131],[35,-114],[42,-77],[0,-55],[-42,-77]],'#ef7434','#ffda88',3);
+ const opened=b.volley%3===2?1:0;
+ ctx.fillStyle='#310c1b';ctx.shadowColor='#ffae34';ctx.shadowBlur=18+opened*17;
+ ctx.beginPath();ctx.ellipse(0,-73,29,15+opened*10,0,0,TAU);ctx.fill();
+ ctx.fillStyle='#ffd05a';ctx.beginPath();ctx.ellipse(0,-73,16,8+opened*9,0,0,TAU);ctx.fill();
+ for(const sign of [-1,1])for(let j=0;j<2;j++)polygon([[sign*(12+j*14),-89],[sign*(17+j*12),-71],[sign*(22+j*12),-89]],'#ffefc9');
+ ctx.restore();
+ if(cinematic)return;
+ rounded(609,107,304,16,7,'#36121be8');rounded(613,111,296*clamp(b.hp/b.maxHp,0,1),8,5,'#ff9b35');
+ ctx.fillStyle='#fff0d1';ctx.font='900 16px system-ui';ctx.textAlign='center';
+ ctx.fillText('PYRAXIS · GIANT SUN DRAGON',761,95);ctx.textAlign='left';
+}
 function drawRearBoss(b,cinematic=false,awake=1){
  // Cinematics use literal screen coordinates; active battles use world projection.
  const p=cinematic?{x:b.x,y:b.y,s:1}:project(b.x,b.y),s=cinematic?1:Math.max(.8,p.s*1.8);
  if(b.type==='planetRobot')return drawPlanetRobotBoss(b,p,s,cinematic,awake);
+ if(b.type==='dragon')return drawSunDragonBoss(b,p,s,cinematic,awake);
  ctx.save();ctx.translate(p.x,p.y);ctx.scale(s,s);
  const hue=b.form==='dawn'?'#ffda83':b.form==='storm'?'#88dbff':b.form==='void'?'#dcb2ff':b.form==='helios'?'#ffe58b':'#ff9aa8';
  const pulse=.78+.22*Math.sin((b.time||worldTime||0)*6),lit=clamp(awake,0,1);
@@ -756,7 +834,7 @@ function drawCinematic(){
    }ctx.restore();
    if(p>.42){glow(480,284,64+Math.sin(t*9)*22,'#faacc0',awake*.55);if(p>.79){for(let j=0;j<15;j++){let a=j*TAU/15+t*.6;beam(480+Math.cos(a)*55,284+Math.sin(a)*55,480+Math.cos(a)*83,284+Math.sin(a)*83,'#ffc4d05e',2)}}}
    if(p>.62){fly(480+Math.sin(t*2)*20,512,.51,false,.07);}
-   tag(p<.32?'BOSS SIGNAL DETECTED':p<.7?'REACTOR ACTIVATING':'WEAPON SYSTEMS ONLINE',480,66,p>.7?'#ffc4a5':'#c7f6ff');
+   tag(b.type==='dragon'?(p<.32?'SUN DRAGON DETECTED':p<.7?'WINGS OF FIRE AWAKEN':'SOLAR BREATH INCOMING'):(p<.32?'BOSS SIGNAL DETECTED':p<.7?'REACTOR ACTIVATING':'WEAPON SYSTEMS ONLINE'),480,66,p>.7?'#ffc4a5':'#c7f6ff');
  }else if(k==='bossBreak'){
    const b=s.boss||{name:'UNKNOWN',type:'carrier',form:'standard',hp:1,maxHp:1},hurt=smooth(p/.45),fall=smooth((p-.42)/.55);
    ctx.save();ctx.translate(0,fall*440);ctx.translate(480,320);ctx.rotate((fall*.18+Math.sin(t*6)*.018)*hurt);ctx.translate(-480,-320);
@@ -824,7 +902,14 @@ function render(dt){
   if(g.boss)objects.push({x:g.boss.x,draw:()=>drawRearBoss(g.boss)});
   for(let target of g.groundTargets)objects.push({x:target.x,draw:()=>drawGroundRobot(target)});
   for(let item of g.pickups)objects.push({x:item.x,draw:()=>{const p=project(item.x,item.y),r=Math.max(7,p.s*18);ctx.save();ctx.translate(p.x,p.y);ctx.rotate(worldTime*.9);ctx.shadowColor='#9fffe0';ctx.shadowBlur=19;polygon([[0,-r],[r,0],[0,r],[-r,0]],'#0c536e','#ccffe8',2);ctx.restore();ctx.fillStyle='#f1fff9';ctx.textAlign='center';ctx.font='900 '+Math.round(r*1.0)+'px system-ui';ctx.fillText({beacon:'📡',rescue:'✚',heal:'♥',shield:'◆',rapid:'⚡',missile:'✚',spread:'✦',points:'★',overdrive:'🔥',wingman:'✈',nova:'☀'}[item.type],p.x,p.y+r*.35);ctx.textAlign='left'}});
-  for(let s of g.foeShots)objects.push({x:s.x,draw:()=>{const p=project(s.x,s.y),r=Math.max(3,p.s*6);ctx.save();ctx.shadowColor='#ff987e';ctx.shadowBlur=14;ctx.fillStyle='#ffb793';ctx.beginPath();ctx.arc(p.x,p.y,r,0,TAU);ctx.fill();ctx.restore()}});
+  for(let s of g.foeShots)objects.push({x:s.x,draw:()=>{
+ const p=project(s.x,s.y),fire=s.kind==='dragonfire',r=Math.max(3,p.s*(fire?s.r*2:6));
+ ctx.save();ctx.shadowColor=fire?'#ff650a':'#ff987e';ctx.shadowBlur=fire?26:14;
+ if(fire){let grad=ctx.createRadialGradient(p.x-r*.2,p.y-r*.2,1,p.x,p.y,r*1.4);
+ grad.addColorStop(0,'#fff7b6');grad.addColorStop(.45,'#ffc247');grad.addColorStop(1,'#e84925');ctx.fillStyle=grad;}
+ else ctx.fillStyle='#ffb793';
+ ctx.beginPath();ctx.arc(p.x,p.y,r,0,TAU);ctx.fill();ctx.restore();
+ }});
   for(let s of g.shots)objects.push({x:s.x,draw:()=>{const p=project(s.x,s.y),r=Math.max(2,p.s*5);ctx.save();ctx.shadowBlur=15;ctx.shadowColor=s.kind==='missile'?'#ffc178':'#72f7ff';ctx.strokeStyle=s.kind==='missile'?'#ffd7a4':'#b5ffff';ctx.lineWidth=r*1.25;ctx.beginPath();ctx.moveTo(p.x,p.y+r*3);ctx.lineTo(p.x,p.y-r*4);ctx.stroke();ctx.restore()}});
   objects.sort((a,b)=>b.x-a.x);for(let ob of objects)ob.draw();
   for(let q of g.particles){let p=project(q.x,q.y);ctx.globalAlpha=Math.min(1,q.life*2);ctx.fillStyle=q.color;ctx.fillRect(p.x,p.y,Math.max(2,q.r*p.s),Math.max(2,q.r*p.s))}ctx.globalAlpha=1;
