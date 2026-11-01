@@ -58,7 +58,7 @@ function defaultVoice(person,voices){
  // Keep existing assignments for everyone except Rex.
  let v=voices[person.slot%voices.length];
  if(local.length>1)v=local[person.slot%local.length];
- else if(local.length===1&&voices.length<4)v=local[0];
+ else if(local.length===1&&(voices.length<4||person.key==='LEVIATHAN'))v=local[0];
  return v;
 }
 function chooseVoice(person,voices){
