@@ -3,7 +3,7 @@
 const raw=[
 ['FLIGHT COMMAND','COMMANDER VALE','FLIGHT COMMAND',0,.91,.82,'en-GB','Squadron, maintain formation. The fleet is counting on you.'],
 ['ALPHA-2','PILOT JUNO','WING LEADER',3,1.20,1.37,'en-US','Juno here! I have your left wing. Let us fly!'],
-['ALPHA-3','PILOT REX','SUPPORT PILOT',1,1.04,.94,'en-AU','Rex checking in. Missiles armed, shields up.'],
+['ALPHA-3','PILOT REX','SUPPORT PILOT',7,1.22,1.48,'en-US','Rex on your wing! Missiles ready, and I am moving fast!'],
 ['SKYFIRE ONE','SKYFIRE ONE','SQUADRON LEADER',4,1.07,1.14,'en-US','Skyfire One to all squadrons. Ready for launch.'],
 ['NAVIGATION','NAVIGATOR IRIS','NAVIGATION',2,1.16,1.50,'en-GB','Iris here. I have marked your next destination on the solar map.'],
 ['ENEMY COMMANDER','OVERLORD VEX','ENEMY COMMANDER',5,.85,.77,'en-US','This sector belongs to the empire. Turn back!'],
@@ -47,19 +47,42 @@ function updateVoices(){try{
 try{window.speechSynthesis?.addEventListener?.('voiceschanged',updateVoices)}catch(_){}
 function stop(){try{window.speechSynthesis?.cancel()}catch(_){}current=null}
 function availableNow(){return !!(window.speechSynthesis&&window.SpeechSynthesisUtterance)}
+// Respect each pilot's preferred accent, while keeping Rex off Captain Draven's voice.
+// Web Speech has a device-dependent set of voices, so this must also work on iPads
+// with just one or two installed voices.
+const voiceId=v=>v?.voiceURI||[v?.name,v?.lang].join('|');
+const normalizedLocale=v=>String(v?.lang||'').replace('_','-').toLowerCase();
+function defaultVoice(person,voices){
+ if(!voices.length)return null;
+ const local=voices.filter(v=>normalizedLocale(v)===person.locale.toLowerCase());
+ // Keep existing assignments for everyone except Rex.
+ let v=voices[person.slot%voices.length];
+ if(local.length>1)v=local[person.slot%local.length];
+ else if(local.length===1&&voices.length<4)v=local[0];
+ return v;
+}
+function chooseVoice(person,voices){
+ const current=defaultVoice(person,voices);
+ if(!current||person.key!=='ALPHA-3')return current;
+ // Captain Draven (Leviathan) owns his deep Australian voice.
+ const captain=defaultVoice(cast.LEVIATHAN,voices);
+ const leader=defaultVoice(cast['SKYFIRE ONE'],voices);
+ const separate=voices.filter(v=>voiceId(v)!==voiceId(captain));
+ if(!separate.length)return current; // One installed voice: Rex's pitch/rate remain distinct.
+ // Also try to give Rex a voice different from the squadron leader when possible.
+ const noLeader=separate.filter(v=>voiceId(v)!==voiceId(leader));
+ const pool=noLeader.length?noLeader:separate;
+ const american=pool.filter(v=>/^en-(us|ca)$/.test(normalizedLocale(v)));
+ const preferred=american.length?american:pool;
+ return preferred[person.slot%preferred.length];
+}
 function speak(from,message,enabled=true,mission){
  if(!enabled||!availableNow()||!String(message||'').trim())return false;
  const person=profile(from,mission),voices=updateVoices();
  try{
   stop();const u=new SpeechSynthesisUtterance(String(message));
-  let v=null;
-  if(voices.length){
-   const local=voices.filter(x=>x.lang.toLowerCase().replace('_','-')===person.locale.toLowerCase());
-   v=voices[person.slot%voices.length];
-   if(local.length>1)v=local[person.slot%local.length];
-   else if(local.length===1&&voices.length<4)v=local[0];
-   u.voice=v;
-  }
+  const v=chooseVoice(person,voices);
+  if(v)u.voice=v;
   u.lang=v?.lang||person.locale;u.rate=person.rate;u.pitch=person.pitch;u.volume=.92;
   u.onend=()=>{if(current===u)current=null};
   u.onerror=()=>{if(current===u)current=null};
@@ -69,5 +92,5 @@ function speak(from,message,enabled=true,mission){
 function bossLine(source,kind){const p=character(source);if(!p)return '';
  return kind==='wake'?p.demo:kind==='break'?(p.name.startsWith('EMPEROR')?'My empire... cannot... fall!':'No! My flagship... breaking apart!'):'';
 }
-window.SkyfireVoices={roster:raw.map(c=>c[0]),profile,character,bossLine,speak,stop,updateVoices,availableNow};
+window.SkyfireVoices={roster:raw.map(c=>c[0]),profile,character,bossLine,speak,stop,updateVoices,availableNow,voiceFor:(from,mission)=>chooseVoice(profile(from,mission),updateVoices())};
 })();
