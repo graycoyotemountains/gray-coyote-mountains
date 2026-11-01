@@ -1072,7 +1072,7 @@ $('voicePreviewBtn').onclick=()=>{
  voiceStudio.hidden=false;$('voicePreviewBtn').textContent='✕ CLOSE VOICE STUDIO';renderVoiceStudio();
  // Unlock speech from the real tap on iOS, not from an automatic cutscene.
  enableVoices();const key=v.roster[voicePreviewIndex++%v.roster.length],p=v.profile(key);v.speak(key,p.demo,true);
- $('voicePreviewInfo').textContent='Voice Studio is open. Select any pilot or emperor to hear them.';
+ $('voicePreviewInfo').textContent='NOW SPEAKING · '+p.name+' · '+p.role+' · Voice Studio open';
 };
 window.addEventListener('resize',resize);resize();requestAnimationFrame(frame);
 })();
