@@ -608,21 +608,112 @@ polygon([[-57,-15],[-25,-23],[0,-41],[25,-23],[57,-15],[39,37],[-39,37]],body,'#
 ctx.fillStyle='#ff9db2';ctx.fillRect(-22,-15,44,12);ctx.fillStyle='#b6fcff';ctx.beginPath();ctx.arc(0,14,13,0,TAU);ctx.fill();
 if(t.type!=='relay'){ctx.strokeStyle='#8bd9ff';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(0,-42);ctx.lineTo(0,-105);ctx.stroke();}
 ctx.restore();}
-function drawPlanetRobotBoss(b,p,s,cinematic=false,awake=1){ctx.save();ctx.translate(p.x,p.y+83);ctx.scale(s*.89,s*.89);const w=b.form==='storm'?'#85d9ff':b.form==='void'?'#e9a2ff':'#ffb78b';ctx.shadowColor=w;ctx.shadowBlur=24;
-// Two enormous piston legs, articulated arms and a luminous reactor core.
-for(const side of [-1,1]){polygon([[side*26,12],[side*62,42],[side*73,134],[side*43,149],[side*24,72]],'#46506c',w,4);polygon([[side*48,-70],[side*90,-66],[side*130,-8],[side*106,45],[side*78,24],[side*86,-17]],'#59627c',w,4);}
-polygon([[-80,-112],[0,-142],[80,-112],[70,35],[0,66],[-70,35]],'#343b58',w,5);
-polygon([[-44,-156],[0,-189],[44,-156],[37,-121],[-37,-121]],'#5b6d86',w,4);ctx.fillStyle=w;ctx.globalAlpha=.08+awake*.92;ctx.fillRect(-27,-150,54,12);ctx.globalAlpha=1;
-const core=ctx.createRadialGradient(0,-41,4,0,-41,47);core.addColorStop(0,'#fff');core.addColorStop(.35,w);core.addColorStop(1,'#17223f');ctx.fillStyle=core;ctx.globalAlpha=.12+awake*.88;ctx.beginPath();ctx.arc(0,-41,40,0,TAU);ctx.fill();ctx.globalAlpha=1;ctx.restore();
-if(cinematic)return;
-rounded(625,107,288,16,7,'#230d2ede');rounded(629,111,280*clamp(b.hp/b.maxHp,0,1),8,5,w);ctx.fillStyle='#fff8ed';ctx.font='900 17px system-ui';ctx.textAlign='center';ctx.fillText('⚠ '+b.name+' · WAR ROBOT ⚠',769,96);ctx.textAlign='left';}
-function drawRearBoss(b,cinematic=false,awake=1){const p=project(b.x,b.y),s=Math.max(.8,p.s*1.8);if(b.type==='planetRobot')return drawPlanetRobotBoss(b,p,s,cinematic,awake);ctx.save();ctx.translate(p.x,p.y);ctx.scale(s,s);
- const hue=b.form==='dawn'?'#ffd799':b.form==='storm'?'#9ee7ff':b.form==='void'?'#ed9aff':'#ff98ae';
- ctx.shadowBlur=26;ctx.shadowColor=hue;polygon([[-20,-100],[0,-124],[20,-100],[45,-15],[137,28],[130,62],[40,43],[25,98],[-25,98],[-40,43],[-130,62],[-137,28],[-45,-15]],'#262a43',hue,3);
- polygon([[-42,5],[-124,45],[-27,37]],'#8a566c','#ffbd9f',2);polygon([[42,5],[124,45],[27,37]],'#8a566c','#ffbd9f',2);
- const core=ctx.createRadialGradient(0,-20,4,0,-20,52);core.addColorStop(0,'#fff');core.addColorStop(.3,hue);core.addColorStop(1,'#6b274b');ctx.fillStyle=core;ctx.globalAlpha=.15+.85*awake;ctx.beginPath();ctx.ellipse(0,-20,31,48,0,0,TAU);ctx.fill();ctx.globalAlpha=1;ctx.restore();
+// FRONT-FACING BOSSES: Every enemy addresses the pilot, not a top-down camera.
+// These same sprites are used in combat, awakening cinematics and destruction scenes.
+function drawPlanetRobotBoss(b,p,s,cinematic=false,awake=1){
+ ctx.save();ctx.translate(p.x,p.y+77);ctx.scale(s*.9,s*.9);
+ const t=b.time||worldTime||0,lit=clamp(awake,0,1);
+ const w=b.form==='storm'?'#8cdfff':b.form==='void'?'#dda1ff':b.form==='helios'?'#ffe093':b.form==='dawn'?'#ffe1a2':'#ff9fa2';
+ const armor=ctx.createLinearGradient(-115,-180,115,118);
+ armor.addColorStop(0,'#8392ac');armor.addColorStop(.25,'#4a5b79');armor.addColorStop(.62,'#222e49');armor.addColorStop(1,'#69738a');
+ ctx.shadowColor=w;ctx.shadowBlur=13;
+ // Two heavy legs and broad planted boots form a forward-facing silhouette.
+ for(const side of [-1,1]){
+  polygon([[side*18,18],[side*58,31],[side*62,128],[side*27,134]],'#37445c','#8294ac',3);
+  polygon([[side*28,103],[side*68,113],[side*93,144],[side*22,150]],'#293852',w,3);
+  polygon([[side*31,38],[side*55,47],[side*57,90],[side*29,86]],'#6d7893','#ccd5e2',1.5);
+ }
+ // Shoulder armor spreads left and right, seen symmetrically from the front.
+ polygon([[-63,-123],[-113,-118],[-145,-65],[-115,-26],[-69,-45]],armor,w,4);
+ polygon([[63,-123],[113,-118],[145,-65],[115,-26],[69,-45]],armor,w,4);
+ polygon([[-71,-126],[0,-148],[71,-126],[79,20],[0,64],[-79,20]],armor,w,4);
+ polygon([[-55,-98],[0,-108],[55,-98],[52,-10],[0,31],[-52,-10]],'#26344f','#94a8c5',2);
+ // Head is visibly aimed toward the player: brow, two optical eyes and jaw.
+ polygon([[-44,-153],[-26,-181],[0,-191],[28,-181],[44,-153],[34,-118],[0,-107],[-34,-118]],'#6d7d98',w,4);
+ polygon([[-30,-146],[-10,-152],[-2,-140],[-26,-135]],'#141b2f','#a5b9d5',1.8);
+ polygon([[30,-146],[10,-152],[2,-140],[26,-135]],'#141b2f','#a5b9d5',1.8);
+ ctx.save();ctx.globalAlpha=.22+.78*lit;ctx.shadowColor=w;ctx.shadowBlur=19;ctx.fillStyle=w;
+ polygon([[-29,-146],[-12,-149],[-5,-142],[-25,-138]],w);
+ polygon([[29,-146],[12,-149],[5,-142],[25,-138]],w);
+ ctx.restore();
+ polygon([[-15,-132],[0,-136],[15,-132],[9,-114],[-9,-114]],'#202a40','#afbac9',1.4);
+ // Lighted reactor, split breastplate and rivets make its forward-facing chest readable.
+ const core=ctx.createRadialGradient(0,-47,3,0,-47,40);
+ core.addColorStop(0,'#fff');core.addColorStop(.31,w);core.addColorStop(1,'#15213c');
+ ctx.save();ctx.globalAlpha=.14+lit*.86;ctx.fillStyle=core;ctx.beginPath();ctx.arc(0,-47,34,0,TAU);ctx.fill();ctx.strokeStyle=w;ctx.lineWidth=4;ctx.stroke();ctx.restore();
+ for(const side of [-1,1]){
+  polygon([[side*43,-11],[side*60,2],[side*49,36],[side*13,41]],'#52617c','#9caec3',1.5);
+  // Both forearms thrust toward the camera instead of trailing behind the torso.
+  polygon([[side*105,-74],[side*139,-54],[side*125,-5],[side*88,-19]],'#586882',w,3);
+  polygon([[side*92,-38],[side*134,-31],[side*119,43],[side*88,43]],'#354461','#9eafc5',3);
+  polygon([[side*87,21],[side*128,12],[side*137,48],[side*107,66],[side*85,48]],'#263149',w,3);
+  // Circular muzzle is seen from the front, with a deep black bore and glowing rim.
+  ctx.fillStyle='#111728';ctx.strokeStyle=w;ctx.lineWidth=6;
+  ctx.beginPath();ctx.ellipse(side*110,39,23,18,0,0,TAU);ctx.fill();ctx.stroke();
+  ctx.fillStyle=w;ctx.globalAlpha=.22+.6*lit;ctx.beginPath();ctx.ellipse(side*110,39,8,7,0,0,TAU);ctx.fill();ctx.globalAlpha=1;
+  ctx.strokeStyle='#d0e7ff75';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(side*109,-23);ctx.lineTo(side*109,14);ctx.stroke();
+ }
+ // Small illuminated target-lock light under the bridge.
+ ctx.fillStyle=w;ctx.shadowBlur=16;ctx.globalAlpha=.4+.6*lit;
+ ctx.beginPath();ctx.arc(0,-109,5+Math.sin(t*5)*1.4,0,TAU);ctx.fill();ctx.globalAlpha=1;
+ ctx.restore();
  if(cinematic)return;
- rounded(625,107,288,16,7,'#230d2ede');rounded(629,111,280*clamp(b.hp/b.maxHp,0,1),8,5,hue);ctx.fillStyle='#fff8ed';ctx.font='900 17px system-ui';ctx.textAlign='center';ctx.fillText('⚠ '+b.name+' ⚠',769,96);ctx.textAlign='left';}
+ rounded(625,107,288,16,7,'#230d2ede');rounded(629,111,280*clamp(b.hp/b.maxHp,0,1),8,5,w);
+ ctx.fillStyle='#fff8ed';ctx.font='900 17px system-ui';ctx.textAlign='center';ctx.fillText('⚠ '+b.name+' · WAR ROBOT ⚠',769,96);ctx.textAlign='left';
+}
+function drawRearBoss(b,cinematic=false,awake=1){
+ // Cinematics use literal screen coordinates; active battles use world projection.
+ const p=cinematic?{x:b.x,y:b.y,s:1}:project(b.x,b.y),s=cinematic?1:Math.max(.8,p.s*1.8);
+ if(b.type==='planetRobot')return drawPlanetRobotBoss(b,p,s,cinematic,awake);
+ ctx.save();ctx.translate(p.x,p.y);ctx.scale(s,s);
+ const hue=b.form==='dawn'?'#ffda83':b.form==='storm'?'#88dbff':b.form==='void'?'#dcb2ff':b.form==='helios'?'#ffe58b':'#ff9aa8';
+ const pulse=.78+.22*Math.sin((b.time||worldTime||0)*6),lit=clamp(awake,0,1);
+ const metal=ctx.createLinearGradient(-135,-100,145,95);
+ metal.addColorStop(0,'#8296ad');metal.addColorStop(.23,'#4e5976');metal.addColorStop(.56,'#252f4d');metal.addColorStop(.82,'#6b4c74');metal.addColorStop(1,'#a1819b');
+ ctx.shadowBlur=24;ctx.shadowColor=hue;
+ // Broad dorsal hull behind a projecting, aggressive prow. Its pointed bow
+ // and windows face downward toward the player's viewpoint.
+ polygon([[-55,-82],[-26,-119],[0,-130],[26,-119],[55,-82],[73,-28],[139,1],[154,47],[120,70],[58,46],[45,92],[0,134],[-45,92],[-58,46],[-120,70],[-154,47],[-139,1],[-73,-28]],'#18243b',hue,4);
+ // Two swept-back wings with armored leading edges.
+ for(const side of [-1,1]){
+  polygon([[side*53,-71],[side*109,-48],[side*156,24],[side*141,56],[side*66,21]],metal,hue,2.8);
+  polygon([[side*71,-31],[side*129,-1],[side*143,33],[side*86,12]],'#263452','#a0b7cf',1.5);
+  polygon([[side*68,35],[side*125,61],[side*105,75],[side*52,57]],'#6b4569','#c99bb9',2);
+  for(let n=0;n<3;n++){
+   ctx.fillStyle='#0e1e32';ctx.strokeStyle='#d6dce9aa';ctx.lineWidth=1.2;
+   ctx.fillRect(side*(92+n*13)-4,12,7,6);ctx.strokeRect(side*(92+n*13)-4,12,7,6);
+  }
+ }
+ polygon([[-47,-80],[0,-105],[47,-80],[68,45],[37,98],[0,131],[-37,98],[-68,45]],metal,'#e7cfda',2.7);
+ // The raised armored bridge, viewed from the front, has two fierce cockpit windows.
+ polygon([[-43,-40],[0,-76],[43,-40],[39,23],[0,46],[-39,23]],'#3d4d6d','#d1ddeb',2.5);
+ polygon([[-38,-8],[-6,-16],[-2,6],[-31,15]],'#061a30',hue,2.3);
+ polygon([[38,-8],[6,-16],[2,6],[31,15]],'#061a30',hue,2.3);
+ ctx.save();ctx.globalAlpha=.32+.68*lit;ctx.shadowBlur=13;ctx.shadowColor=hue;
+ polygon([[-31,-7],[-9,-11],[-6,3],[-29,10]],hue);
+ polygon([[31,-7],[9,-11],[6,3],[29,10]],hue);ctx.restore();
+ // Reinforced frontal nose and its target-lock sensor point toward Skyfire One.
+ polygon([[-25,48],[0,68],[25,48],[31,89],[0,130],[-31,89]],'#35405b','#f2cbd7',2.5);
+ polygon([[-14,70],[0,83],[14,70],[10,93],[0,106],[-10,93]],'#1c2640',hue,2);
+ ctx.fillStyle=hue;ctx.globalAlpha=.3+.7*lit*pulse;
+ ctx.beginPath();ctx.arc(0,87,7,0,TAU);ctx.fill();ctx.globalAlpha=1;
+ // Forward-facing heavy cannons: gun mouths are circles, not rear exhausts.
+ for(const side of [-1,1]){
+  polygon([[side*72,17],[side*119,25],[side*119,74],[side*75,72]],'#27334b','#e1c2d2',2.5);
+  polygon([[side*76,46],[side*112,44],[side*109,81],[side*80,83]],'#43516c',hue,2);
+  ctx.beginPath();ctx.fillStyle='#0a1528';ctx.strokeStyle=hue;ctx.lineWidth=6;
+  ctx.ellipse(side*97,70,22,18,0,0,TAU);ctx.fill();ctx.stroke();
+  ctx.fillStyle=hue;ctx.globalAlpha=.14+.53*lit;ctx.beginPath();ctx.arc(side*97,70,8,0,TAU);ctx.fill();ctx.globalAlpha=1;
+  ctx.strokeStyle='#dce8ff80';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(side*97,34);ctx.lineTo(side*97,51);ctx.stroke();
+ }
+ // Empress/emperor boss forms retain their own glowing command-core color.
+ ctx.save();ctx.globalAlpha=lit*.8;ctx.strokeStyle=hue;ctx.shadowColor=hue;ctx.shadowBlur=24;
+ ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(0,33,16,11,0,0,TAU);ctx.stroke();ctx.restore();
+ ctx.restore();
+ if(cinematic)return;
+ rounded(625,107,288,16,7,'#230d2ede');rounded(629,111,280*clamp(b.hp/b.maxHp,0,1),8,5,hue);
+ ctx.fillStyle='#fff8ed';ctx.font='900 17px system-ui';ctx.textAlign='center';ctx.fillText('⚠ '+b.name+' · FRONT BATTERY ⚠',769,96);ctx.textAlign='left';
+}
 function drawJet(x,y,scaleJet=1,enemy=false,type='fighter',tilt=0){ctx.save();ctx.translate(x,y);ctx.rotate(tilt);ctx.scale(scaleJet,scaleJet);if(enemy)ctx.scale(-1,1);const body=enemy?'#f69eaa':'#a2f2ff',dark=enemy?'#7a2749':'#28679e',wing=enemy?'#e96b81':'#56b1e8';ctx.shadowBlur=enemy?11:20;ctx.shadowColor=enemy?'#f65a80':'#54c9ff';polygon([[-31,0],[-13,-7],[13,-8],[33,0],[13,8],[-13,7]],body,'#e6ffff',1);polygon([[-10,-4],[-24,-25],[3,-19],[12,-6]],wing,dark,1.2);polygon([[-10,4],[-24,25],[3,19],[12,6]],wing,dark,1.2);polygon([[-25,-5],[-36,-15],[-14,-9]],dark);polygon([[-25,5],[-36,15],[-14,9]],dark);polygon([[3,-5],[18,-3],[25,0],[18,3],[3,5]],enemy?'#47223d':'#224f78','#ecffff',.8);ctx.shadowBlur=0;ctx.fillStyle=enemy?'#ff9d44':'#51ffff';ctx.beginPath();ctx.ellipse(-32,0,rand(4,9),3.3,0,0,TAU);ctx.fill();if(type==='bomber'){ctx.fillStyle=dark;ctx.fillRect(-8,-21,12,42);}if(type==='ace'){ctx.strokeStyle='#ffe3a8';ctx.lineWidth=2;ctx.strokeRect(-6,-7,18,14);}ctx.restore();}
 function drawBoss(b){ctx.save();ctx.translate(b.x,b.y);if(b.form!=='standard'){const hue=b.form==='dawn'?'#ffd88b':b.form==='storm'?'#9edaff':'#e19aff';ctx.save();ctx.rotate(b.time*(b.form==='void'?-.55:.35));ctx.strokeStyle=hue;ctx.globalAlpha=.8;ctx.shadowColor=hue;ctx.shadowBlur=17;ctx.lineWidth=3;for(let k=0;k<3;k++){ctx.beginPath();ctx.ellipse(0,0,100+k*13,49+k*11,k*.55,0,TAU);ctx.stroke();}ctx.restore();} ctx.rotate(Math.sin(b.time*1.1)*.05);ctx.shadowBlur=28;ctx.shadowColor='#f15d93';polygon([[-96,0],[-40,-27],[7,-41],[65,-29],[101,0],[65,29],[7,41],[-40,27]],'#672f53','#ffb1b4',3);polygon([[-24,-17],[-55,-86],[20,-60],[47,-24]],'#8c4568','#ffa2a7',2);polygon([[-24,17],[-55,86],[20,60],[47,24]],'#8c4568','#ffa2a7',2);polygon([[-33,0],[21,-24],[76,0],[21,24]],'#d66d84','#ffe1b2',2);ctx.shadowBlur=15;ctx.fillStyle='#e8fcff';ctx.beginPath();ctx.ellipse(39,0,24,9,0,0,TAU);ctx.fill();ctx.fillStyle='#fc5776';for(let i of [-1,1]){ctx.beginPath();ctx.ellipse(-75,i*19,12,6,0,0,TAU);ctx.fill();}ctx.restore();rounded(625,112,288,16,7,'#240f2ded');rounded(629,116,280*clamp(b.hp/b.maxHp,0,1),8,5,'#ff6e8c');ctx.fillStyle='#fff1e6';ctx.font='900 17px system-ui';ctx.textAlign='center';ctx.fillText('⚠ '+b.name+' ⚠',769,102);}
 // Storyboard engine: every cinematic shows moving on-screen actors, never static gameplay.
