@@ -130,6 +130,16 @@
 @media(max-width:600px){#commsBox.visible{left:7px;bottom:73px;width:min(335px,calc(100% - 14px));padding:7px;gap:8px}#commsPortrait{width:54px;height:54px}#commsName{font-size:11px}#commsText{font-size:11px}#scenePanel{padding:12px 13px}#sceneOverlay h2{font-size:clamp(18px,4vw,24px);margin:7px 0}#scenePortrait{width:73px;height:73px}.sceneConversation{gap:9px;min-height:84px}#sceneSpeaker{font-size:13px}#sceneText{font-size:12px!important;line-height:1.32!important}.sceneCallsign{font-size:9px}#sceneBar{margin-top:10px}}
 @media(max-height:520px){#scenePanel{padding:9px 13px}#sceneOverlay h2{margin:3px 0;font-size:20px}.scenePortrait{width:58px;height:58px}.sceneConversation{min-height:62px;margin:2px 0}.sceneRight{margin-top:7px}#sceneBar{margin-top:6px}}
 
+
+#voiceStudio{margin-top:12px;background:#081831eb;border:1px solid #4e9ab7;border-radius:12px;padding:12px;max-height:min(46vh,390px);overflow:auto;color:#c5efff}
+#voiceStudio[hidden]{display:none}
+#voiceStudioInfo{font-size:12px;line-height:1.5;margin:0 0 8px;color:#a6f4ff}
+#voiceStudioList{display:grid;grid-template-columns:1fr;gap:8px}
+.voiceLine{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px;background:#0d2942;border-radius:8px;border:1px solid #ffffff20}
+.voiceLine strong{font-size:12px;color:#f5ffff;min-width:125px;flex:1 1 125px}
+.voiceLine select{font:inherit;color:#e8fdff;background:#102942;border:1px solid #69a7c2;min-width:120px;max-width:215px;flex:1 1 145px;padding:6px;border-radius:6px;font-size:12px}
+.voiceLine button{font:inherit;background:#2078a0;color:white;border:1px solid #79cced;border-radius:6px;padding:7px 9px;font-weight:800;font-size:11px;cursor:pointer}
+.voiceDisclaimer{font-size:11px;color:#9bbbcf;line-height:1.4}
 </style></head><body>
 <div id="shell">
 <header id="topbar"><div id="brand">✦ SKYFIRE <em>SQUADRON</em></div><div id="rightbar"><span class="tiny">21 MISSIONS • THREE ENDINGS</span><button class="pill" id="soundBtn" aria-label="Toggle soundtrack and effects">♪ AUDIO OFF</button><button class="pill" id="pauseBtn" style="display:none">Ⅱ PAUSE</button></div></header>
@@ -137,7 +147,7 @@
 <div id="hud"><div class="hudblock hudwide">HULL <b id="hpNum">100%</b><div class="meter"><div id="hpFill" class="fill"></div></div><span id="shieldStatus" style="color:#6ee5ff;font-size:10px"></span></div><div class="hudblock"><span class="tiny">MISSION</span><div class="stat" id="hudLevel">01 / 20</div><div id="checkpointTag">◇ NO CHECKPOINT</div></div><div class="hudblock"><span class="tiny">SCORE</span><div class="stat" id="scoreNum">0</div></div><div class="hudblock"><span class="tiny">MISSILES</span><div class="stat" id="missileNum">2</div></div><div class="hudblock"><span class="tiny">THREAT</span><div class="stat" id="threatNum">00%</div></div></div>
 <div id="commsBox" aria-live="polite" role="status"><div class="radioPortrait" id="commsPortrait" aria-hidden="true"></div><div class="radioDialogue"><div id="commsSource">✦ ALLIED COMMS</div><div id="commsName">FLIGHT COMMAND</div><div id="commsText"></div></div></div><div id="touchControls"><div class="padHint">DRAG TO PILOT · REAR VIEW<br>FIRE IS AUTOMATIC</div><div style="display:flex;gap:9px"><button id="touchShoot" class="touchbtn" style="display:none">✦ FIRE</button><button id="touchMissile" class="touchbtn">🚀 MISSILE</button></div></div>
 <div id="objectiveHud" style="display:none"><span id="objectiveText"></span></div><div id="toast" aria-live="polite"></div><div id="orientationHint"><strong>✦ SKYFIRE SQUADRON ✦</strong>Turn your phone sideways for a bigger battlefield.</div>
-<div id="homeOverlay" class="overlay show"><div class="panel"><div class="eyebrow">◈ ORIGINAL SOUNDTRACK · COMMS · CHECKPOINTS · ALLIED FLEET</div><h1 class="hero">SKYFIRE<br><span>SQUADRON</span></h1><p class="sub">Twenty planets and space stations, plus secret Level 21 Helios. Choose branching missions, complete special objectives, fight towering planetary robots and giant carrier fighters, and unlock three endings.</p><div class="buttonrow"><button class="cta" id="startBtn">▶ START ADVENTURE</button><button class="cta secondary" id="homeMapBtn">◇ VIEW MISSION MAP</button><button class="cta secondary" id="voicePreviewBtn">🎙 HEAR THE CAST</button></div><div id="voicePreviewInfo" aria-live="polite" style="color:#98effe;font-size:12px;margin-top:9px;min-height:16px">Each pilot and emperor has their own voice. Tap to preview.</div><div class="meta"><b>COMPUTER</b> <span class="key">WASD</span> or <span class="key">ARROWS</span> fly · auto-fire · <span class="key">X</span> missile · <span class="key">P</span> pause<br><b>PHONE / TABLET</b> Drag to steer the ship · tap MISSILE · animated scenes are skippable<br>ARROWS + ENTER select a map level · Mission checkpoints heal · Turn on AUDIO for original music, laser and missile effects, and squadron radio calls.</div></div></div>
+<div id="homeOverlay" class="overlay show"><div class="panel"><div class="eyebrow">◈ ORIGINAL SOUNDTRACK · COMMS · CHECKPOINTS · ALLIED FLEET</div><h1 class="hero">SKYFIRE<br><span>SQUADRON</span></h1><p class="sub">Twenty planets and space stations, plus secret Level 21 Helios. Choose branching missions, complete special objectives, fight towering planetary robots and giant carrier fighters, and unlock three endings.</p><div class="buttonrow"><button class="cta" id="startBtn">▶ START ADVENTURE</button><button class="cta secondary" id="homeMapBtn">◇ VIEW MISSION MAP</button><button class="cta secondary" id="voicePreviewBtn">🎙 HEAR THE CAST</button></div><div id="voicePreviewInfo" aria-live="polite" style="color:#98effe;font-size:12px;margin-top:9px;min-height:16px">Each pilot and emperor has their own voice. Tap to preview.</div><div id="voiceStudio" hidden aria-label="Character voice studio"><p id="voiceStudioInfo" aria-live="polite"></p><div id="voiceStudioList"></div><p class="voiceDisclaimer">The voices come from this device. Each character uses a different available voice when possible, plus individual pitch and pace. Install additional system voices for more variety.</p></div><div class="meta"><b>COMPUTER</b> <span class="key">WASD</span> or <span class="key">ARROWS</span> fly · auto-fire · <span class="key">X</span> missile · <span class="key">P</span> pause<br><b>PHONE / TABLET</b> Drag to steer the ship · tap MISSILE · animated scenes are skippable<br>ARROWS + ENTER select a map level · Mission checkpoints heal · Turn on AUDIO for original music, laser and missile effects, and squadron radio calls.</div></div></div>
 <div id="mapOverlay" class="overlay"><div id="mapFrame"><div id="mapHead"><div><div class="eyebrow">◈ GALACTIC NAVIGATION SYSTEM</div><h2 id="mapTitle">THE HELIOS SYSTEM · 21 MISSIONS</h2></div><div class="mapTools"><button class="pill" id="fitMapBtn">◎ FIT ENTIRE SYSTEM</button><button class="pill" id="mapHomeBtn">⌂ HOME</button></div></div>
 <div id="chapterTabs"><button class="chapterTab active" id="chapterOne" type="button">I · TEN SKIES <small>1–10</small></button><button class="chapterTab" id="chapterTwo" type="button">II · FRACTURED HORIZON <small>11–20</small></button></div>
 <div id="mapHint">Follow the orbit paths through the meteor belt. New mission worlds glow after their story scenes.</div>
@@ -147,6 +157,12 @@
 <div id="sceneOverlay" class="overlay"><div id="scenePanel"><div class="eyebrow" id="sceneKicker">STORY CINEMATIC • WATCH ONLY</div><h2 id="sceneTitle">INCOMING TRANSMISSION</h2><div class="sceneConversation" aria-live="polite"><div class="scenePortrait" id="scenePortrait" aria-hidden="true"></div><div class="sceneWords"><div class="sceneCallsign" id="sceneCallsign">SQUADRON COMMS</div><div id="sceneSpeaker">FLIGHT COMMAND</div><p id="sceneText"></p></div></div><div id="sceneBar"><div id="sceneProgress"></div></div><div class="sceneRight"><span style="color:#99c7d7;font-size:12px">Animated story · watch or skip</span><button id="skipSceneBtn" class="cta small">SKIP SCENE »</button></div></div></div>
 <div id="endOverlay" class="overlay"><div id="endPanel" class="panel"><div class="eyebrow" id="endKicker">MISSION REPORT</div><div class="resultStars" id="resultStars">✦ ✦ ✦</div><h2 class="hero" id="endTitle" style="font-size:clamp(32px,6vw,52px)">MISSION COMPLETE</h2><p class="sub" id="endText" style="margin:auto"></p><div id="routeChoices" aria-label="Choose your next mission"></div><div class="buttonrow" style="justify-content:center"><button class="cta" id="endPrimary">NEXT MISSION »</button><button class="cta secondary" id="endMap">◇ MISSION MAP</button></div></div></div>
 <div id="footer">SKYFIRE SQUADRON • a self-contained browser game</div></div></div>
+<div id="skyfireRepairNotice" hidden style="position:absolute;top:12%;left:8%;right:8%;z-index:9999;background:#172c47;border:2px solid #8ccfe9;border-radius:12px;color:white;padding:18px;text-align:center">
+<strong>Game could not start</strong>
+<p>Try refreshing this page. Your saved missions will stay safe.</p>
+<small></small>
+<button onclick="location.reload()" style="display:block;margin:12px auto;background:#73cfff;padding:8px;border-radius:8px;color:#09182e">Reload Game</button>
+</div>
 <script>
 window.__skyfireReady = false;
 window.addEventListener('error', function(e) {
@@ -201,43 +217,63 @@ function profile(from,mission){
  if(u.includes('ENEMY')||u.includes('VEX'))return roster['ENEMY COMMANDER'];
  return roster['FLIGHT COMMAND'];
 }
-let current=null,available=[];
+let current=null,available=[],voiceOverrides={},speechState='idle',announcement=null;
+const castKeys=cast.map(row=>row[0]);
+try{voiceOverrides=JSON.parse(localStorage.getItem('skyfire-voice-picks-v2')||'{}')||{}}catch(_){voiceOverrides={}}
+function notify(event,detail){speechState=event;
+ if(typeof announcement==='function')try{announcement(event,detail)}catch(_){}}
 function updateVoices(){try{
  const all=window.speechSynthesis?.getVoices?.()||[];
- available=all.filter(v=>/^en([-_]|$)/i.test(v.lang)).sort((a,b)=>
-   Number(!!b.localService)-Number(!!a.localService)||a.name.localeCompare(b.name));
- if(!available.length)available=all.filter(v=>v.lang).sort((a,b)=>a.name.localeCompare(b.name));
-}catch(_){available=[]}return available;}
-try{window.speechSynthesis?.addEventListener?.('voiceschanged',updateVoices)}catch(_){ }
-function stop(){try{window.speechSynthesis?.cancel()}catch(_){}current=null;}
-function availableNow(){return !!(window.speechSynthesis&&window.SpeechSynthesisUtterance);}
-function speak(from,message,enabled=true,mission){
- if(!enabled||!availableNow()||!String(message||'').trim())return false;
- const person=profile(from,mission);const voices=updateVoices();
- try{
-  stop();const utterance=new SpeechSynthesisUtterance(String(message));
-  let voice=null;
-  if(voices.length){
-   const local=voices.filter(v=>v.lang.toLowerCase().replace('_','-')===person.locale.toLowerCase());
-   // With several installed voices, assign distinct speaker voices, not just pitch.
-   voice=voices[person.slot%voices.length];
-   if(local.length>1)voice=local[person.slot%local.length];
-   else if(local.length===1&&voices.length<4)voice=local[0];
-   utterance.voice=voice;
-  }
-  utterance.lang=voice?.lang||person.locale;
-  utterance.rate=person.rate;utterance.pitch=person.pitch;utterance.volume=.92;
-  utterance.onend=()=>{if(current===utterance)current=null};
-  utterance.onerror=()=>{if(current===utterance)current=null};
-  current=utterance;window.speechSynthesis.speak(utterance);return true;
- }catch(_){return false;}
+ // Prefer installed, English-language voices without ever choosing a missing accent.
+ const english=all.filter(v=>/^en([-_]|$)/i.test(v.lang||''));
+ available=(english.length?english:all).slice().sort((a,b)=>Number(!!b.localService)-Number(!!a.localService)||a.name.localeCompare(b.name));
+}catch(_){available=[]}
+ return available;
 }
+try{window.speechSynthesis?.addEventListener?.('voiceschanged',()=>{updateVoices();notify('voices-updated',{count:available.length})})}catch(_){}
+function availableNow(){return !!(window.speechSynthesis&&window.SpeechSynthesisUtterance)}
+function choices(){return updateVoices().map((v,i)=>({id:v.voiceURI||v.name+'|'+v.lang,label:v.name+' ('+v.lang+')',index:i}))}
+function findVoice(person){const voices=updateVoices();if(!voices.length)return null;
+ const savedName=voiceOverrides[person.key];
+ if(savedName){const v=voices.find(v=>(v.voiceURI||v.name+'|'+v.lang)===savedName);if(v)return v}
+ // Allocate a different installed voice to each character whenever possible.
+ // If a device provides fewer than 16 voices, vary voice + pitch + speaking rate.
+ return voices[person.slot % voices.length];
+}
+function getAssignment(key){const p=profile(key);const v=findVoice(p);return {name:p.name,role:p.role,key:p.key,voice:v?.name||'System default',lang:v?.lang||p.locale,rate:p.rate,pitch:p.pitch,available:available.length,custom:!!voiceOverrides[p.key]}}
+function choose(key,id){const p=profile(key);if(!id)delete voiceOverrides[p.key];else voiceOverrides[p.key]=id;
+ try{localStorage.setItem('skyfire-voice-picks-v2',JSON.stringify(voiceOverrides))}catch(_){}
+ notify('assignment-changed',getAssignment(key));}
+function stop(){try{window.speechSynthesis?.cancel?.()}catch(_){}current=null;notify('stopped',{})}
+function speak(from,message,enabled=true,mission){
+ const person=profile(from,mission);
+ if(!enabled)return false;
+ if(!availableNow()){notify('unsupported',{speaker:person.name});return false}
+ if(!String(message||'').trim())return false;
+ try{
+  const synth=window.speechSynthesis;
+  // Stop only the superseded sentence. Do not queue old radio lines behind new captions.
+  if(current||synth.speaking||synth.pending)synth.cancel();
+  const u=new SpeechSynthesisUtterance(String(message));
+  const voice=findVoice(person);
+  if(voice){u.voice=voice;u.lang=voice.lang}else u.lang=person.locale;
+  u.rate=person.rate;u.pitch=person.pitch;u.volume=1;
+  const detail={speaker:person.name,voice:voice?.name||'System default',text:String(message)};
+  u.onstart=()=>{if(current===u)notify('speaking',detail)};
+  u.onend=()=>{if(current===u){current=null;notify('ended',detail)}};
+  u.onerror=e=>{if(current===u){current=null;notify('speech-error',{...detail,error:e.error||'speech playback failed'})}};
+  current=u;synth.speak(u);if(synth.paused)synth.resume();notify('requested',detail);
+  return true;
+ }catch(e){current=null;notify('speech-error',{speaker:person.name,error:String(e?.message||e)});return false}
+}
+function setListener(fn){announcement=fn}
+updateVoices();
 function bossLine(from,kind){const p=character(from);if(!p)return '';
  if(kind==='wake')return p.demo;
  if(kind==='break')return p.name.startsWith('EMPEROR')?'My empire... cannot... fall!':'No! My flagship... breaking apart!';
  return '';
 }
-window.SkyfireVoices={roster:cast.map(c=>c[0]),profile,character,bossLine,speak,stop,updateVoices,availableNow};
+window.SkyfireVoices={roster:castKeys,profile,character,bossLine,speak,stop,updateVoices,availableNow,choices,choose,getAssignment,setListener};
 })();
 </script>
 <script>(()=>{'use strict';
@@ -961,8 +997,7 @@ function drawCinematic(){
  }
 }
 function render(dt){
- ctx.save();ctx.setTransform(canvas.width/vw,0,0,canvas.height/vh,0,0);ctx.fillStyle='#071021';ctx.fillRect(0,0,vw,vh);ctx.restore();
- ctx.save();ctx.beginPath();ctx.rect(0,0,W,H);ctx.clip();if(shake>0&&screen==='play')ctx.translate(rand(-shake,shake),rand(-shake,shake));
+ ctx.save();ctx.setTransform(canvas.width/vw,0,0,canvas.height/vh,0,0);ctx.fillStyle='#071021';ctx.fillRect(0,0,vw,vh);ctx.restore(); ctx.save();ctx.beginPath();ctx.rect(0,0,W,H);ctx.clip();if(shake>0&&screen==='play')ctx.translate(rand(-shake,shake),rand(-shake,shake));
  let lev=game?game.index:selected;paintBG(worldTime,lev);
  if(screen==='home'||screen==='map'){drawRearJet(486,505,1.5,false,Math.sin(worldTime)*.05);}
  if(screen==='scene'){drawCinematic();}
@@ -997,20 +1032,50 @@ function screenPosition(event){const r=canvas.getBoundingClientRect(),sx=(event.
 canvas.addEventListener('pointerdown',e=>{if(screen!=='play')return;e.preventDefault();controls.dragging=true;controls.dragId=e.pointerId;controls.aim=screenPosition(e);canvas.setPointerCapture?.(e.pointerId);});
 canvas.addEventListener('pointermove',e=>{if(screen!=='play'||!controls.dragging||controls.dragId!==e.pointerId)return;controls.aim=screenPosition(e);});
 const releasePointer=e=>{if(controls.dragId===e.pointerId){controls.dragging=false;controls.aim=null;}};canvas.addEventListener('pointerup',releasePointer);canvas.addEventListener('pointercancel',releasePointer);
-window.addEventListener('keydown',e=>{if(screen==='map'){if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();if(!e.repeat)navigateMap(e.key);return;}if(e.key==='Enter'||e.key===' '){e.preventDefault();openMission(mapCursor-1);return;}}if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();controls.keys.add(e.key);if(e.repeat)return;if((e.key==='p'||e.key==='P'||e.key==='Escape')&&(screen==='play'||screen==='pause'))togglePause();if(e.key==='Enter'&&screen==='scene')skipScene();if(e.key===' '&&screen==='scene')skipScene();});window.addEventListener('keyup',e=>controls.keys.delete(e.key));window.addEventListener('blur',()=>{controls.keys.clear();controls.aim=null;if(screen==='play')togglePause();});function togglePause(){if(screen==='play'){showEnd('pause','MISSION PAUSED','Your jet is holding position. Breathe, then get back into the sky.','▶ RESUME',()=>setScreen('play'),'Ⅱ Ⅱ Ⅱ');$('endKicker').textContent='PAUSE MENU';}else if(screen==='pause')setScreen('play');}
+window.addEventListener('keydown',e=>{if(screen==='map'){if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();if(!e.repeat)navigateMap(e.key);return;}if(e.key==='Enter'||e.key===' '){e.preventDefault();openMission(mapCursor-1);return;}}if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();controls.keys.add(e.key);if(e.repeat)return;if((e.key==='p'||e.key==='P'||e.key==='Escape')&&(screen==='play'||screen==='pause'))togglePause();if(e.key==='Enter'&&screen==='scene')skipScene();if(e.key===' '&&screen==='scene')skipScene();});window.addEventListener('keyup',e=>controls.keys.delete(e.key));window.addEventListener('blur',()=>{controls.keys.clear();controls.aim=null;if(screen==='play')togglePause();});
+function togglePause(){if(screen==='play'){showEnd('pause','MISSION PAUSED','Your jet is holding position. Breathe, then get back into the sky.','▶ RESUME',()=>setScreen('play'),'Ⅱ Ⅱ Ⅱ');$('endKicker').textContent='PAUSE MENU';}else if(screen==='pause')setScreen('play');}
 // Drag the orbital chart to pan on both mouse and touch; buttons still select levels.
 (()=>{const el=$('levelMap');let origin=null;el.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;origin={x:e.clientX,y:e.clientY,left:el.scrollLeft,top:el.scrollTop,id:e.pointerId};el.setPointerCapture?.(e.pointerId)});el.addEventListener('pointermove',e=>{if(!origin||origin.id!==e.pointerId)return;el.scrollLeft=origin.left-(e.clientX-origin.x);el.scrollTop=origin.top-(e.clientY-origin.y)});const finish=()=>{origin=null};el.addEventListener('pointerup',finish);el.addEventListener('pointercancel',finish)})();
 $('startBtn').onclick=()=>showScene({kind:'starChart',title:'THE HELIOS SYSTEM COMES INTO VIEW',kicker:'FLIGHT COMMAND · STAR CHART UNFOLDING',text:'Twenty worlds orbit the sun. Complete them all to unlock the secret twenty-first mission: Helios.',beats:['The fleet enters the solar system.','A golden sun appears through clouds of drifting meteors.','Twenty orbiting missions appear. Helios is locked until every world is cleared.'],duration:7,next:()=>openMap(0,[1])});$('homeMapBtn').onclick=()=>openMap();$('chapterOne').onclick=()=>openMap(0);$('chapterTwo').onclick=()=>openMap(1);$('fitMapBtn').onclick=()=>{mapZoomMode=$('fitMapBtn').textContent.includes('EXPLORE')?'detail':'fit';configureMapZoom();};$('mapHomeBtn').onclick=()=>setScreen('home');$('skipSceneBtn').onclick=skipScene;$('endPrimary').onclick=()=>endAction&&endAction();$('endMap').onclick=()=>openMap();$('pauseBtn').onclick=togglePause;$('touchMissile').onclick=missile;
 $('soundBtn').onclick=()=>{soundOn=!soundOn;saved.sound=soundOn;save();musicTime=0;if(!soundOn){window.SkyfireVoices?.stop()}else{makeSound();if(screen==='scene'&&scene?.dialogue?.length){const n=scene.lastBeat||0;const [who,line]=scene.dialogue[n];window.SkyfireVoices?.speak(who,line,true,scene.mission);}}$('soundBtn').textContent=soundOn?'♫ AUDIO ON':'♪ AUDIO OFF';audio(590,.12,'sine',.055,1.4);};$('soundBtn').textContent=soundOn?'♫ AUDIO ON':'♪ AUDIO OFF';
 let voicePreviewIndex=0;
-$('voicePreviewBtn').onclick=()=>{const v=window.SkyfireVoices;if(!v)return;soundOn=true;saved.sound=true;save();$('soundBtn').textContent='♫ AUDIO ON';makeSound();const character=v.roster[voicePreviewIndex++%v.roster.length],profile=v.profile(character);$('voicePreviewInfo').textContent='NOW SPEAKING · '+profile.name+' · '+profile.role;v.speak(character,profile.demo,true);};
+const voiceStudio=$('voiceStudio'),voiceInfo=$('voiceStudioInfo'),voiceList=$('voiceStudioList');
+function enableVoices(){soundOn=true;saved.sound=true;save();$('soundBtn').textContent='♫ AUDIO ON';makeSound();}
+function renderVoiceStudio(){const v=window.SkyfireVoices;if(!v)return;
+ const deviceVoices=v.choices();
+ voiceInfo.textContent=deviceVoices.length?`${deviceVoices.length} device voice${deviceVoices.length===1?'':'s'} detected. Tap ▶ HEAR to test, or choose a different voice for any character.`:'No installed browser voices detected yet. Tap a character to try the system default; device speech may be unavailable.';
+ voiceList.replaceChildren();
+ for(const key of v.roster){const p=v.profile(key),assignment=v.getAssignment(key),row=document.createElement('div');row.className='voiceLine';
+  const name=document.createElement('strong');name.textContent=p.name;
+  const select=document.createElement('select');select.setAttribute('aria-label',`Device voice for ${p.name}`);
+  const automatic=document.createElement('option');automatic.value='';automatic.textContent='AUTO · '+assignment.voice;select.append(automatic);
+  deviceVoices.forEach(choice=>{const opt=document.createElement('option');opt.value=choice.id;opt.textContent=choice.label;select.append(opt)});
+  if(assignment.custom){const m=deviceVoices.find(x=>x.label===assignment.voice+' ('+assignment.lang+')');if(m)select.value=m.id}
+  select.onchange=()=>{v.choose(key,select.value);renderVoiceStudio()};
+  const test=document.createElement('button');test.type='button';test.textContent='▶ HEAR';
+  test.onclick=()=>{enableVoices();const ok=v.speak(key,p.demo,true);voiceInfo.textContent=ok?`Starting ${p.name}: ${v.getAssignment(key).voice}`:'Speech unavailable. Try turning on device speech or using a different browser.';};
+  row.append(name,select,test);voiceList.append(row);
+ }
+}
+window.SkyfireVoices?.setListener((event,detail)=>{
+ if(!voiceStudio.hidden){
+  if(event==='voices-updated'){renderVoiceStudio();return}
+  if(event==='speaking')voiceInfo.textContent=`NOW SPEAKING: ${detail.speaker} · ${detail.voice}`;
+  if(event==='speech-error')voiceInfo.textContent=`Speech failed: ${detail.error}. Check device volume, use HEAR, or choose another available voice.`;
+  if(event==='unsupported')voiceInfo.textContent='This browser does not support spoken dialogue. Captions will still work.';
+ }
+});
+$('voicePreviewBtn').textContent='🎙 VOICE STUDIO';
+$('voicePreviewBtn').onclick=()=>{
+ const v=window.SkyfireVoices;if(!v)return;
+ if(!voiceStudio.hidden){voiceStudio.hidden=true;v.stop();$('voicePreviewBtn').textContent='🎙 VOICE STUDIO';return}
+ voiceStudio.hidden=false;$('voicePreviewBtn').textContent='✕ CLOSE VOICE STUDIO';renderVoiceStudio();
+ // Unlock speech from the real tap on iOS, not from an automatic cutscene.
+ enableVoices();const key=v.roster[voicePreviewIndex++%v.roster.length],p=v.profile(key);v.speak(key,p.demo,true);
+ $('voicePreviewInfo').textContent='Voice Studio is open. Select any pilot or emperor to hear them.';
+};
 window.addEventListener('resize',resize);resize();requestAnimationFrame(frame);
 })();
 
 window.__skyfireReady = true;
-</script><div id="skyfireRepairNotice" hidden style="position:absolute;top:12%;left:8%;right:8%;z-index:9999;background:#172c47;border:2px solid #8ccfe9;border-radius:12px;color:white;padding:18px;text-align:center">
-<strong>Game could not start</strong>
-<p>Try refreshing this page. Your saved missions will stay safe.</p>
-<small></small>
-<button onclick="location.reload()" style="display:block;margin:12px auto;background:#73cfff;padding:8px;border-radius:8px;color:#09182e">Reload Game</button>
-</div></body></html>
+</script></body></html>
