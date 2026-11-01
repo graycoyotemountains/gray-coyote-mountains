@@ -24,12 +24,13 @@ const levels=[
  {name:'Three Destinies',zone:'Crossroads of Stars',color:'#484886',accent:'#d4c6ff',desc:'Fight to the Celestial Junction and choose one of three different final air routes. Each leads to a different battle and ending.',duration:22,boss:'TRIAD SENTINEL',extra:'OBJECTIVE: Shoot down three planetary shield relays. This unlocks Stormbreak. Recover signal beacons on Mission 16 as well to access Black Star.'},
  {name:'Dawn Accord',zone:'Golden Dawn Route',color:'#91653f',accent:'#ffe5a0',desc:'ENDING A: Face NEXUS OMEGA in the dawn light and free the captive squadrons. Win a peaceful united-skies ending.',duration:23,boss:'NEXUS OMEGA · DAWN',ending:'dawn',extra:'OBJECTIVE: Rescue three escape pods before taking down Omega’s giant carrier fighter. Fly directly through the pods to save the pilots.'},
  {name:'Stormbreak',zone:'Thunderstorm Route',color:'#3a5985',accent:'#b4ddff',desc:'ENDING B: Chase NEXUS OMEGA into a superstorm and defeat its storm crown to end the war with a thunderous victory.',duration:24,boss:'NEXUS OMEGA · STORM',ending:'storm',extra:'OBJECTIVE: Destroy three lightning towers on the planet before battling Omega’s towering storm robot.'},
- {name:'Black Star',zone:'Void Route',color:'#493050',accent:'#ff98d8',desc:'ENDING C: Dive into Omega’s black star fortress and challenge the strongest version of the BOSS OF BOSSES.',duration:26,boss:'NEXUS OMEGA · VOID',ending:'void',extra:'METEOR FIELD: shatter three reactor locks while navigating the black-star debris cloud. Then defeat Omega’s ultimate robot.'}
+ {name:'Black Star',zone:'Void Route',color:'#493050',accent:'#ff98d8',desc:'ENDING C: Dive into Omega’s black star fortress and challenge the strongest version of the BOSS OF BOSSES.',duration:26,boss:'NEXUS OMEGA · VOID',ending:'void',extra:'METEOR FIELD: shatter three reactor locks while navigating the black-star debris cloud. Then defeat Omega’s ultimate robot.'},
+ {name:'Helios: Heart of the Sun',zone:'Solar Corona',color:'#d75c20',accent:'#fff2a1',desc:'SECRET MISSION 21: Complete all twenty other missions to unlock the sun. Disable three solar conduits and defeat the SOLAR TITAN.',duration:40,boss:'HELIOS · SOLAR TITAN',ending:'helios',extra:'ULTIMATE CHALLENGE: Meteor storms, solar conduits and a sun-powered giant robot await.'}
 ];
 // Mission routes are directed. Completing a parent opens its child, never all later nodes.
-const routes={1:[2],2:[3],3:[4],4:[5],5:[6],6:[7],7:[8],8:[9],9:[10],10:[11],11:[12,13],12:[14],13:[14,15],14:[15],15:[16,17],16:[17,18,19,20],17:[16,18,19,20],18:[],19:[],20:[]};
+const routes={1:[2],2:[3],3:[4],4:[5],5:[6],6:[7],7:[8],8:[9],9:[10],10:[11],11:[12,13],12:[14],13:[14,15],14:[15],15:[16,17],16:[17,18,19,20],17:[16,18,19,20],18:[21],19:[21],20:[21],21:[]};
 // Five branching campaign missions. Objectives grant route keys, not merely elapsed time.
-const campaignGoals={16:{kind:'beacon',label:'COLLECT SIGNAL BEACONS',target:3,unlock:'DAWN ACCORD'},17:{kind:'relay',label:'DESTROY PLANET RELAYS',target:3,unlock:'STORMBREAK'},18:{kind:'rescue',label:'RESCUE ESCAPE PODS',target:3},19:{kind:'tower',label:'DESTROY STORM TOWERS',target:3},20:{kind:'reactor',label:'BREAK REACTOR LOCKS',target:3}};
+const campaignGoals={16:{kind:'beacon',label:'COLLECT SIGNAL BEACONS',target:3,unlock:'DAWN ACCORD'},17:{kind:'relay',label:'DESTROY PLANET RELAYS',target:3,unlock:'STORMBREAK'},18:{kind:'rescue',label:'RESCUE ESCAPE PODS',target:3},19:{kind:'tower',label:'DESTROY STORM TOWERS',target:3},20:{kind:'reactor',label:'BREAK REACTOR LOCKS',target:3},21:{kind:'reactor',label:'DESTROY SOLAR CONDUITS',target:3}};
 const specialTargets=new Set(['relay','tower','reactor']);
 // Four five-mission orbital rings, spiraling outward from the sun.
 const mapPositions={};
@@ -39,15 +40,18 @@ for(let band=0;band<4;band++)for(let k=0;k<5;k++){
  const rad=ringAngles[band][k]*Math.PI/180;
  mapPositions[band*5+k+1]=[50+ringRadii[band]*Math.cos(rad),50+ringRadii[band]*Math.sin(rad)];
 }
+mapPositions[21]=[50,50];
+let mapCursor=1;
 let mapReveal=[];  // Newly earned destinations are highlighted when the cinematic ends.
 let mapZoomMode='fit';
-const meteorLevels=new Set([7,8,9,15,19]); // Missions 8, 9, 10, 16 and 20
-const worldTypes=['ocean','desert','storm','jungle','ice','lava','city','orbit','orbit','space','ocean','ice','storm','desert','station','orbit','storm','ocean','storm','void'];
-const bodyColors=[['#0a2e62','#187da0','#79e3de'],['#7d3020','#c67d48','#ffe0ac'],['#323968','#687bbb','#d8ecff'],['#0c4634','#238a74','#c1df96'],['#5687a3','#e2f5fd','#c4dcf5'],['#4a181c','#d86535','#ffc561'],['#172d54','#476ca6','#eaa1ff'],['#082e66','#2273ab','#cbeaff'],['#674f34','#b8a178','#ead9b5'],['#42365b','#ac678b','#ffdabb'],['#14477b','#49a2ce','#b1f0ee'],['#4e819b','#e2f6ff','#ffffff'],['#392c6e','#6765a5','#e2cbff'],['#87512f','#d59a62','#ffe3a2'],['#3f505c','#91a5a7','#e0eff1'],['#233e7e','#5969a2','#b9d7fa'],['#3a285a','#866cb9','#ffd8fa'],['#9d693c','#d9b97b','#fff1b0'],['#27366e','#5a85af','#d0f1ff'],['#21112d','#6e3a79','#fba2dd']];
+const meteorLevels=new Set([7,8,9,15,19,20]); // Missions 8, 9, 10, 16 and 20
+const worldTypes=['ocean','desert','storm','jungle','ice','lava','city','orbit','orbit','space','ocean','ice','storm','desert','station','orbit','storm','ocean','storm','void','sun'];
+const bodyColors=[['#0a2e62','#187da0','#79e3de'],['#7d3020','#c67d48','#ffe0ac'],['#323968','#687bbb','#d8ecff'],['#0c4634','#238a74','#c1df96'],['#5687a3','#e2f5fd','#c4dcf5'],['#4a181c','#d86535','#ffc561'],['#172d54','#476ca6','#eaa1ff'],['#082e66','#2273ab','#cbeaff'],['#674f34','#b8a178','#ead9b5'],['#42365b','#ac678b','#ffdabb'],['#14477b','#49a2ce','#b1f0ee'],['#4e819b','#e2f6ff','#ffffff'],['#392c6e','#6765a5','#e2cbff'],['#87512f','#d59a62','#ffe3a2'],['#3f505c','#91a5a7','#e0eff1'],['#233e7e','#5969a2','#b9d7fa'],['#3a285a','#866cb9','#ffd8fa'],['#9d693c','#d9b97b','#fff1b0'],['#27366e','#5a85af','#d0f1ff'],['#21112d','#6e3a79','#fba2dd'],['#571c09','#f58d2f','#fff1b8']];
 const endingScripts={
  dawn:{title:'ENDING A · THE DAWN ACCORD',body:'Omega’s armored wings open and release their captive pilots. In the sunrise, both sides lay down their weapons. The skies belong to everyone, and a new alliance begins.',label:'THE PEACEFUL ENDING',symbol:'☀'},
  storm:{title:'ENDING B · THE STORMBREAKER',body:'The storm crown shatters in a blinding flash. All of Omega’s lightning engines go dark. Across the world, people watch the storm clouds part. The squadrons return as heroes.',label:'THE HEROIC ENDING',symbol:'⚡'},
- void:{title:'ENDING C · THE BLACK STAR SECRET',body:'Deep inside the black star, you discover Omega’s true heart: a stolen beacon designed to connect every sky. You free the beacon, and the fortress becomes a shining new star of peace.',label:'THE SECRET ENDING',symbol:'✦'}
+ void:{title:'ENDING C · THE BLACK STAR SECRET',body:'Deep inside the black star, you discover Omega’s true heart: a stolen beacon designed to connect every sky. You free the beacon, and the fortress becomes a shining new star of peace.',label:'THE SECRET ENDING',symbol:'✦'},
+ helios:{title:'SECRET MISSION 21 · HELIOS LIBERATED',body:'All twenty worlds stand united. The Solar Titan fractures into harmless sparks and the sun is liberated. Your squadron has rescued the entire system.',label:'MASTER OF HELIOS',symbol:'☀'}
 };
 const OVERLAYS={home:'homeOverlay',map:'mapOverlay',scene:'sceneOverlay',clear:'endOverlay',gameover:'endOverlay',finish:'endOverlay',pause:'endOverlay'};
 let saved={unlocked:1,completed:[],bestScore:0,sound:false,endings:[]};
@@ -58,7 +62,7 @@ if(!saved.routeKeys||typeof saved.routeKeys!=='object')saved.routeKeys={};
 saved.checkpoints={};
 if(!Array.isArray(saved.completed))saved.completed=[];
 if(!Array.isArray(saved.endings))saved.endings=[];
-saved.completed=[...new Set(saved.completed.filter(n=>Number.isInteger(n)&&n>=1&&n<=20))];
+saved.completed=[...new Set(saved.completed.filter(n=>Number.isInteger(n)&&n>=1&&n<=21))];
 // In the first version, the unlocked level may be ahead of the last completed one.
 // Preserve that legitimate old progress when evaluating missions 1–10.
 let mapChapter=saved.completed.some(n=>n>10)?1:0;
@@ -102,8 +106,34 @@ function portraitSVG(from){const c=castFor(from),isRobot=c.kind==='robot';
  const human=`<path d="M11 99 Q15 75 35 75 L65 75 Q85 75 90 99Z" fill="${c.suit}" stroke="#c8e2ec" stroke-width="1.2"/><path d="M34 79 L50 90 L66 79 L59 72 H41Z" fill="#dceaf1" opacity=".75"/><path d="M36 71V82 L50 90 L64 82 V71" fill="${c.skin}"/><ellipse cx="50" cy="47" rx="23" ry="31" fill="${c.skin}" stroke="#e9cdb4" stroke-width="1"/><path d="M27 43 Q24 19 46 17 Q73 14 73 40 L67 35 Q51 29 34 40Z" fill="${c.hair}"/><path d="M36 47 L45 47 M55 47 L64 47" stroke="#203145" stroke-width="2.4" stroke-linecap="round"/><path d="M45 64 Q50 68 56 63" stroke="#793d46" stroke-width="1.8" fill="none"/><path d="M49 49 L46 57 H53" stroke="#a5715a" stroke-width="1.5" fill="none"/>${c.kind==='commander'?`<path d="M24 34 Q19 17 36 11 H65 Q80 16 77 34" fill="${c.helmet}" stroke="${c.glow}" stroke-width="2"/><path d="M25 37 L20 49 V64 L29 65" fill="none" stroke="${c.glow}" stroke-width="5"/><path d="M78 48 V64 L64 69" fill="none" stroke="#a5d5f0" stroke-width="4"/><circle cx="64" cy="69" r="3" fill="#9fffff"/>`:`<path d="M25 46 Q17 16 43 10 H58 Q82 16 76 47 L69 39 L65 25 Q50 17 33 27 L31 42Z" fill="${c.helmet}" stroke="#e5edfa" stroke-width="1.8"/><rect x="21" y="40" width="9" height="23" rx="4" fill="${c.helmet}"/><rect x="70" y="40" width="9" height="23" rx="4" fill="${c.helmet}"/><path d="M28 39 Q50 25 72 39 L66 49 Q50 39 34 49Z" fill="${c.glow}" opacity=".48"/><path d="M76 58 Q76 70 62 72" stroke="${c.glow}" stroke-width="3" fill="none"/><circle cx="62" cy="72" r="3" fill="#fff"/>`}`;
  return `<svg class="characterPortraitSvg" viewBox="0 0 100 100" role="img" aria-label="${c.name} illustrated portrait" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="11" fill="${c.bg}"/><path d="M0 79 L100 30 M-5 40L105 70" stroke="${c.glow}" stroke-width=".9" opacity=".21"/><circle cx="50" cy="45" r="41" fill="${c.glow}" opacity=".06"/>${isRobot?robot:human}<path d="M5 10V5H19 M81 5H95V19 M95 81V95H81 M19 95H5V81" stroke="${c.glow}" stroke-width="2.4" fill="none"/><circle cx="85" cy="14" r="3" fill="${c.glow}"/></svg>`;
 }
-function showPortrait(target,who){const node=$(target);if(node)node.innerHTML=portraitSVG(who)}
+
+function portraitRaster(from){
+ const c=castFor(from),cv=document.createElement('canvas');cv.width=160;cv.height=160;const q=cv.getContext('2d'),robot=c.kind==='robot',center=(x,y,r,col)=>{q.fillStyle=col;q.beginPath();q.arc(x,y,r,0,Math.PI*2);q.fill()};
+ const bg=q.createLinearGradient(0,0,160,160);bg.addColorStop(0,c.bg);bg.addColorStop(1,'#071322');q.fillStyle=bg;q.fillRect(0,0,160,160);
+ q.strokeStyle=c.glow;q.globalAlpha=.3;q.lineWidth=2;for(let i=0;i<7;i++){q.beginPath();q.moveTo(0,i*33);q.lineTo(160,i*33-37);q.stroke()}q.globalAlpha=1;
+ center(80,73,65,c.glow+'26');
+ if(robot){
+  q.fillStyle='#6b7f91';q.strokeStyle=c.glow;q.lineWidth=4;q.beginPath();q.moveTo(42,39);q.lineTo(58,22);q.lineTo(102,22);q.lineTo(119,39);q.lineTo(112,113);q.lineTo(80,138);q.lineTo(47,113);q.closePath();q.fill();q.stroke();
+  q.fillStyle='#1a2033';q.fillRect(52,64,56,30);q.fillStyle=c.glow;q.fillRect(57,72,18,8);q.fillRect(84,72,18,8);q.fillRect(63,113,35,5);center(41,87,10,c.glow);center(119,87,10,c.glow);
+ }else{
+  q.fillStyle=c.suit;q.beginPath();q.ellipse(80,157,72,40,0,0,Math.PI*2);q.fill();
+  q.fillStyle=c.skin;q.fillRect(69,106,22,30);
+  q.fillStyle=c.helmet;q.beginPath();q.ellipse(80,71,50,62,0,0,Math.PI*2);q.fill();
+  q.fillStyle=c.skin;q.beginPath();q.ellipse(80,85,33,40,0,0,Math.PI*2);q.fill();
+  q.fillStyle=c.hair;q.beginPath();q.ellipse(80,51,35,18,0,0,Math.PI*2);q.fill();
+  q.strokeStyle='#273044';q.lineWidth=3;q.lineCap='round';q.beginPath();q.moveTo(62,84);q.lineTo(71,84);q.moveTo(89,84);q.lineTo(98,84);q.stroke();
+  q.strokeStyle='#89514b';q.lineWidth=2;q.beginPath();q.arc(80,101,11,.22,Math.PI-.22);q.stroke();
+  q.strokeStyle=c.glow;q.lineWidth=4;q.beginPath();q.arc(80,78,47,Math.PI*1.1,Math.PI*1.9);q.stroke();
+  q.fillStyle='#193448';q.fillRect(28,80,13,34);q.fillRect(119,80,13,34);
+  q.strokeStyle=c.glow;q.beginPath();q.moveTo(127,102);q.lineTo(119,121);q.lineTo(102,126);q.stroke();center(102,126,5,c.glow);
+ }
+ q.strokeStyle=c.glow;q.lineWidth=3;q.strokeRect(5,5,150,150);return cv.toDataURL('image/png');
+}
+const portraitCache=new Map();
+function showPortrait(target,who){const el=$(target);if(!el)return;const c=castFor(who);let src=portraitCache.get(c.name);if(!src){src=portraitRaster(who);portraitCache.set(c.name,src);}const img=document.createElement('img');img.alt=c.name+' illustrated character portrait';img.className='characterPortraitImage';img.src=src;el.replaceChildren(img);}
+
 function sceneDialogue(s){const l=levels[s.mission]||levels[0],nextIds=routes[s.mission+1]||[];
+ if(s.mission===20&&s.kind==='approach')return [['NAVIGATION','All twenty worlds are secure. The twenty-first mission is Helios, the heart of the sun.'],['ALPHA-2','The Solar Titan is enormous. Every allied squadron is here to help!'],['SKYFIRE ONE','Engage the solar shields. We are going into the sun!']];
  switch(s.kind){
  case 'approach':return [
   ['FLIGHT COMMAND',`Skyfire One, mission ${s.mission+1}: ${l.name}. We are approaching ${l.zone}. ${l.desc}`],
@@ -166,6 +196,7 @@ function resumeCheckpoint(g){const s=saved.checkpoints[g.index+1];if(!s||s.index
 function toast(msg){$('toast').textContent=msg;$('toast').classList.add('on');toaster=2.2;}
 function setScreen(s){screen=s;for(let k of Object.keys(OVERLAYS))$(OVERLAYS[k]).classList.remove('show');if(OVERLAYS[s])$(OVERLAYS[s]).classList.add('show');$('hud').classList.toggle('visible',s==='play');$('touchControls').classList.toggle('playing',s==='play');$('orientationHint').classList.toggle('playing',s==='play');$('pauseBtn').style.display=(s==='play'||s==='pause')?'':'none';$('pauseBtn').textContent=s==='pause'?'▶ RESUME':'Ⅱ PAUSE';$('objectiveHud').style.display=(s==='play'&&game?.objective)?'block':'none';if(s!=='play')$('commsBox').classList.remove('visible');else if(commsTimer>0)$('commsBox').classList.add('visible');if(s==='scene')$('toast').classList.remove('on');}
 function isAvailable(mission){
+  if(mission===21)return Array.from({length:20},(_,i)=>i+1).every(n=>saved.completed.includes(n));
   if(mission===1||saved.completed.includes(mission))return true;
   if(mission===18)return Boolean(saved.routeKeys.beacon);
   if(mission===19)return Boolean(saved.routeKeys.relay);
@@ -176,16 +207,16 @@ function isAvailable(mission){
 }
 function makeMap(){
   const newPaths=mapReveal.filter(isAvailable);
-  $('mapTitle').textContent='THE HELIOS SYSTEM · 20 ORBITAL MISSIONS';
+  $('mapTitle').textContent='THE HELIOS SYSTEM · 20 WORLDS + SECRET SUN';
   $('chapterTabs').style.display='none';
   $('mapHint').textContent=newPaths.length
    ?'✦ NEW FLIGHT PATH'+(newPaths.length>1?'S':'')+' REVEALED: '+newPaths.map(n=>String(n).padStart(2,'0')+' '+levels[n-1].name).join('  ·  ')+'. Choose a glowing destination.'
-   :'☀ TWENTY WORLDS · ☄ METEOR BELT · Select an unlocked planet or a READY TO FLY mission below. Zoom in to explore the star system.';
+   :'☀ 20 WORLDS + SECRET HELIOS · Complete all 20 to unlock Mission 21. Touch a planet or use ARROWS + ENTER. Glowing lines show branching paths.';
   $('endingCount').textContent=`FINALES DISCOVERED: ${saved.endings.length} / 3`;
   // The whole system is always visible first, but unlocked missions remain
   // big and easy to tap through the accessible flight-selection row.
-  const ready=Array.from({length:20},(_,i)=>i+1).filter(n=>isAvailable(n)&&!saved.completed.includes(n));
-  const flightChoices=ready.length?ready:Array.from({length:20},(_,i)=>i+1).filter(n=>isAvailable(n)).slice(-3);
+  const ready=Array.from({length:21},(_,i)=>i+1).filter(n=>isAvailable(n)&&!saved.completed.includes(n));
+  const flightChoices=ready.length?ready:Array.from({length:21},(_,i)=>i+1).filter(n=>isAvailable(n)).slice(-3);
   const flights=$('flightTargets');flights.replaceChildren();
   const caption=document.createElement('span');caption.className='flightLabel';caption.textContent='✈ READY TO FLY';flights.append(caption);
   for(const n of flightChoices){const b=document.createElement('button');b.className='flightButton'+(newPaths.includes(n)?' newPathButton':'');
@@ -235,9 +266,9 @@ function makeMap(){
     const a=positions[n],b=positions[target],won=saved.completed.includes(n)&&saved.completed.includes(target),ready=isAvailable(target),justEarned=newPaths.includes(target);
     const ax=a[0]*10,ay=a[1]*10,bx=b[0]*10,by=b[1]*10;
     const mx=(ax+bx)/2,my=(ay+by)/2;
-    const bend=(n<=15&&target<=15?0:18)*((n+target)%2?1:-1);
+    const bend=(n<=15&&target<=15?0:18)*((n+target)%2?1:-1);const branching=(routes[n]||[]).length>1||target===21;
     const path=`M ${ax.toFixed(1)} ${ay.toFixed(1)} Q ${(mx+bend).toFixed(1)} ${(my-bend).toFixed(1)} ${bx.toFixed(1)} ${by.toFixed(1)}`;
-    svg+=`<path d="${path}" fill="none" stroke="${won?'#a4ffd3':ready?'#99d6ff':'#3b5478'}" stroke-width="${justEarned?4:ready?2.5:1.5}" stroke-dasharray="${ready?'7 7':'3 9'}" opacity="${ready?'.9':'.40'}" class="${justEarned?'newOrbitRoute':'orbitRoute'}"/>`;
+    svg+=`<path d="${path}" fill="none" stroke="${won?'#a4ffd3':branching?(ready?'#ffda88':'#946c94'):ready?'#99d6ff':'#3b5478'}" stroke-width="${justEarned?6:branching?4:ready?2.5:1.5}" stroke-dasharray="${ready?'7 7':'3 9'}" opacity="${ready?'1':branching?'.65':'.4'}" class="${branching?'branchRoute ':''}${justEarned?'newOrbitRoute':'orbitRoute'}"/>`;
     if(justEarned)svg+=`<circle r="5" fill="#f9edb8"><animateMotion dur="3.2s" repeatCount="indefinite" path="${path}"/></circle>`;
   }
   // Central sun, visibly larger than any waypoint, with animated atmosphere.
@@ -260,16 +291,35 @@ function makeMap(){
     b.title=`Mission ${id}: ${lev.name}${goal?' · '+goal.label+' (0/'+goal.target+')':''}${lev.boss?' · GIANT BOSS':''}${!available?' · LOCKED':''}`;
     b.setAttribute('aria-label',b.title);
     b.innerHTML=`<span class="planetNumber">${done?'✓':String(id).padStart(2,'0')}</span><span class="planetLabel">${lev.name}</span>${id>=16?'<span class="planetBoss">'+(id===16?'3 BEACONS':id===17?'3 RELAYS':id===18?'3 RESCUES':id===19?'3 TOWERS':'3 LOCKS')+'</span>':lev.boss?'<span class="planetBoss">BOSS</span>':''}`;
-    b.disabled=!available;b.onclick=()=>openMission(id-1);$('mapWorld').appendChild(b);
+    b.dataset.mission=String(id);b.disabled=!available;b.onclick=()=>openMission(id-1);$('mapWorld').appendChild(b);
   });
+  $('mapWorld').querySelectorAll('.heliosLevel').forEach(n=>n.remove());
+  const readySun=isAvailable(21),doneSun=saved.completed.includes(21),sun=document.createElement('button');sun.type='button';sun.dataset.mission='21';
+  sun.className='heliosLevel'+(readySun?' unlocked':' locked')+(doneSun?' done':'');sun.style.left='50%';sun.style.top='50%';sun.disabled=!readySun;
+  sun.title=readySun?'Mission 21: Helios · Heart of the Sun':`Mission 21 locked · ${saved.completed.filter(n=>n>=1&&n<=20).length}/20 missions completed`;
+  sun.setAttribute('aria-label',sun.title);sun.innerHTML=`<span class="sunNumber">${doneSun?'✓':'21'}</span><span class="sunLabel">${readySun?'HELIOS READY':'HELIOS LOCKED'}</span>`;
+  sun.onclick=()=>openMission(20);$('mapWorld').appendChild(sun);
   const world=$('mapWorld');world.classList.remove('mapArrive');void world.offsetWidth;world.classList.add('mapArrive');
 }
 function openMap(chapter, revealed=[]){
   // Leaving a mission retires all checkpoints. Level unlocks and scores remain saved.
   saved.checkpoints={};save();game=null;
   mapReveal=revealed.filter(isAvailable);
-  makeMap();setScreen('map');
-  configureMapZoom();
+  makeMap();setScreen('map');configureMapZoom();
+  const options=mapReveal.length?mapReveal:Array.from({length:21},(_,i)=>i+1).filter(n=>isAvailable(n)&&!saved.completed.includes(n));
+  setMapCursor(options.find(isAvailable)||(isAvailable(mapCursor)?mapCursor:1));
+}
+
+function setMapCursor(id,focus=false){if(!isAvailable(id))return;mapCursor=id;
+ $('mapWorld').querySelectorAll('[data-mission]').forEach(b=>{const active=Number(b.dataset.mission)===id;b.classList.toggle('mapSelected',active);b.setAttribute('aria-current',active?'true':'false')});
+ const node=$('mapWorld').querySelector('[data-mission="'+id+'"]'),status=$('mapSelectionStatus');
+ if(status)status.textContent=`SELECTED ${String(id).padStart(2,'0')} · ${levels[id-1].name.toUpperCase()} · ENTER TO LAUNCH`;
+ if(focus&&node){node.focus({preventScroll:true});if(mapZoomMode!=='fit')node.scrollIntoView({block:'nearest',inline:'nearest'});}
+}
+function navigateMap(direction){const origin=mapPositions[mapCursor]||mapPositions[1],options=Array.from({length:21},(_,i)=>i+1).filter(n=>isAvailable(n)&&n!==mapCursor);if(!options.length)return;
+ const [vx,vy]=direction==='ArrowLeft'?[-1,0]:direction==='ArrowRight'?[1,0]:direction==='ArrowUp'?[0,-1]:[0,1];
+ const c=options.map(id=>{const [x,y]=mapPositions[id],dx=x-origin[0],dy=y-origin[1],forward=dx*vx+dy*vy,lateral=Math.abs(dx*vy-dy*vx);return{id,score:forward>0?lateral*2+forward*.12+Math.hypot(dx,dy)*.2:Infinity}}).filter(o=>Number.isFinite(o.score));if(c.length){c.sort((a,b)=>a.score-b.score);setMapCursor(c[0].id,true)}
+ else setMapCursor(options[0],true);
 }
 function configureMapZoom(){
   const chart=$('levelMap'),world=$('mapWorld');
@@ -278,7 +328,7 @@ function configureMapZoom(){
   world.style.zoom=String(zoom);world.style.margin=fit?'0 auto':'0';world.classList.toggle('fitView',fit);chart.classList.toggle('fitMode',fit);
   $('fitMapBtn').textContent=fit?'＋ EXPLORE CLOSE UP':'◎ FIT ENTIRE SYSTEM';
   if(fit){chart.scrollLeft=0;chart.scrollTop=0;return;}
-  const focus=mapReveal.length?mapReveal:(()=>{const active=Array.from({length:20},(_,i)=>i+1).filter(n=>isAvailable(n)&&!saved.completed.includes(n));return active.length?[active[0]]:[1]})();
+  const focus=mapReveal.length?mapReveal:(()=>{const active=Array.from({length:21},(_,i)=>i+1).filter(n=>isAvailable(n)&&!saved.completed.includes(n));return active.length?[active[0]]:[1]})();
   const pts=focus.map(n=>mapPositions[n]);const x=pts.reduce((sum,v)=>sum+v[0],0)/pts.length/100;
   const y=pts.reduce((sum,v)=>sum+v[1],0)/pts.length/100;
   chart.scrollLeft=Math.max(0,worldSize()*x-chart.clientWidth/2);
@@ -304,7 +354,7 @@ function newGame(i){return{objective:campaignGoals[i+1]?{...campaignGoals[i+1],c
 function startLevel(i,restartFresh=false){if(restartFresh){saved.checkpoints={};save();}game=newGame(i);controls.aim=null;selected=i;flash=.18;const resumed=!restartFresh&&resumeCheckpoint(game);toast(resumed?'◈ RESUMING CHECKPOINT '+game.checkpointStage:meteorLevels.has(i)?'☄ METEOR FIELD · DODGE OR DESTROY':'MISSION '+(i+1)+': '+levels[i].name.toUpperCase());setScreen('play');updateHud();radio('FLIGHT COMMAND',resumed?'Welcome back, pilot. Rejoining from your last checkpoint.':'Skyfire One, launch authorized. Friendly Alpha squadron is flying with you.',true);}
 function updateHud(){if(!game)return;
  const ob=$('objectiveHud'),g=game.objective;
- ob.style.display=g?'block':'none';if(g)$('objectiveText').textContent=g.label+'  '+g.count+'/'+g.target+(g.count===g.target?'  ✓ COMPLETE':'');$('hpNum').textContent=Math.max(0,Math.ceil(game.hp))+'%';$('hpFill').style.width=clamp(game.hp,0,100)+'%';$('shieldStatus').textContent=[game.shield>0?'◆ SHIELD':'',game.rapid>0?'⚡ RAPID':'',game.spread>0?'✦ TRIPLE':'',game.overdrive>0?'🔥 OVERDRIVE':'',game.wingman>0?'✈ WINGMAN':''].filter(Boolean).slice(0,2).join(' · ');$('hudLevel').textContent=String(game.index+1).padStart(2,'0')+' / 20';$('scoreNum').textContent=game.score.toLocaleString();$('missileNum').textContent=game.missiles;$('threatNum').textContent=Math.round(Math.min(100,100*game.elapsed/levels[game.index].duration))+'%';$('checkpointTag').textContent=game.checkpointStage?'◈ CHECKPOINT '+game.checkpointStage+' ACTIVE':'◇ NEXT CHECKPOINT '+Math.round(levels[game.index].duration*.38)+'s';}
+ ob.style.display=g?'block':'none';if(g)$('objectiveText').textContent=g.label+'  '+g.count+'/'+g.target+(g.count===g.target?'  ✓ COMPLETE':'');$('hpNum').textContent=Math.max(0,Math.ceil(game.hp))+'%';$('hpFill').style.width=clamp(game.hp,0,100)+'%';$('shieldStatus').textContent=[game.shield>0?'◆ SHIELD':'',game.rapid>0?'⚡ RAPID':'',game.spread>0?'✦ TRIPLE':'',game.overdrive>0?'🔥 OVERDRIVE':'',game.wingman>0?'✈ WINGMAN':''].filter(Boolean).slice(0,2).join(' · ');$('hudLevel').textContent=String(game.index+1).padStart(2,'0')+' / 21';$('scoreNum').textContent=game.score.toLocaleString();$('missileNum').textContent=game.missiles;$('threatNum').textContent=Math.round(Math.min(100,100*game.elapsed/levels[game.index].duration))+'%';$('checkpointTag').textContent=game.checkpointStage?'◈ CHECKPOINT '+game.checkpointStage+' ACTIVE':'◇ NEXT CHECKPOINT '+Math.round(levels[game.index].duration*.38)+'s';}
 function showEnd(which,title,msg,primaryLabel,action,stars='✦ ✦ ✦'){$('endKicker').textContent=which==='gameover'?'JET LOST · MISSION FAILED':which==='finish'?'CAMPAIGN COMPLETE':'MISSION REPORT';$('endTitle').textContent=title;$('endText').textContent=msg;$('endPrimary').textContent=primaryLabel;$('resultStars').textContent=stars;endAction=action;$('routeChoices').classList.remove('show');$('routeChoices').replaceChildren();setScreen(which);}
 function showRouteChoices(i){
   const next=routes[i+1]||[],wrap=$('routeChoices');wrap.replaceChildren();
@@ -318,7 +368,7 @@ function showRouteChoices(i){
 function finishEnding(i){
   const ending=levels[i].ending,script=endingScripts[ending];
   showScene({kind:'ending',mission:i,title:script.title,text:script.body,kicker:'FINAL CINEMATIC · WATCH ONLY · SKIPPABLE',duration:10,
-  next:()=>openMap(1)});
+  next:()=>{if(ending!=='helios'&&isAvailable(21)&&!saved.completed.includes(21)){showScene({kind:'branch',mission:i,options:[21],title:'THE SUN HAS AWAKENED · HELIOS UNLOCKED',text:'All twenty missions are complete. Level 21 awaits inside the sun.',kicker:'SECRET SOLAR MISSION UNLOCKED',duration:7,next:()=>openMap(1,[21])})}else openMap(1);}});
 }
 function cleared(){
   if(!game||game.done)return;if(game.objective&&game.objective.count<game.objective.target)return;game.done=true;const i=game.index,id=i+1,lev=levels[i];
@@ -328,7 +378,7 @@ function cleared(){
   if(!saved.completed.includes(id))saved.completed.push(id);
   if(id===16)saved.routeKeys.beacon=true;
   if(id===17)saved.routeKeys.relay=true;
-  if(lev.ending&&!saved.endings.includes(lev.ending))saved.endings.push(lev.ending);
+  if(lev.ending&&lev.ending!=='helios'&&!saved.endings.includes(lev.ending))saved.endings.push(lev.ending);
   saved.checkpoints={};saved.bestScore=Math.max(saved.bestScore,game.score);save();audio(650,.22,'sine',.07,1.7);
   const nextIds=routes[id]||[];
   const next=()=>{
@@ -376,7 +426,7 @@ function collect(item){const g=game;
  switch(item.type){case 'heal':g.hp=Math.min(100,g.hp+30);toast('♥ HULL REPAIRED +30');break;case 'shield':g.shield=8;toast('◆ ENERGY SHIELD ACTIVE');break;case 'rapid':g.rapid=10;toast('⚡ RAPID FIRE UNLOCKED');break;case 'spread':g.spread=11;toast('✦ TRIPLE SHOT ACTIVE');break;case 'missile':g.missiles+=2;toast('🚀 TWO MISSILES COLLECTED');break;case 'points':g.score+=750;toast('★ BONUS 750 POINTS');break;case 'overdrive':g.overdrive=12;toast('🔥 OVERDRIVE LASERS ACTIVE');break;case 'wingman':g.wingman=12;toast('✈ ALLIED WINGMAN SUPPORT');break;case 'nova':g.foeShots=[];for(const e of g.enemies){e.hp=0;boom(e.x,e.y);}g.enemies=[];if(g.boss){g.boss.hp=Math.max(1,g.boss.hp-45);sparks(g.boss.x,g.boss.y,40,'#fff3ae',2);}g.score+=500;toast('☀ NOVA BLAST · SKY CLEARED');break;}audio(750,.2,'sine',.07,1.65);sparks(item.x,item.y,15,'#96ffe5');}
 function shoot(){const g=game;if(!g)return;const p=g.player;const sy=g.spread>0?[-95,0,95]:[0];for(let vy of sy)g.shots.push({x:p.x+22,y:p.y,vx:780,vy,damage:g.overdrive>0?3.5:2.2,r:4.5,kind:'laser'});g.fireCD=g.rapid>0?.11:.185;fx('laser');}
 function missile(){if(screen!=='play'||!game||game.missiles<1)return;game.missiles--;const p=game.player;game.shots.push({x:p.x+15,y:p.y,vx:520,vy:0,damage:22,r:9,kind:'missile',life:2.8});toast('🚀 MISSILE LAUNCHED');fx('missile');radio('ALPHA-2','Missile away! Tracking hostile target.');}
-function spawnBoss(){const g=game,lev=levels[g.index];g.bossSpawned=true;g.enemies=[];g.foeShots=[];const final=!!lev.ending,bossHp=final?({dawn:260,storm:330,void:400}[lev.ending]):85+g.index*20;g.boss={name:lev.boss,x:W+130,y:H*.5,r:final?80:75,hp:bossHp,maxHp:bossHp,time:0,fire:1.15,phase:0,form:lev.ending||'standard',type:[14,16,18,19].includes(g.index)?'planetRobot':'carrier',volley:0};checkpoint(3,true);fx('boss');radio('FLIGHT COMMAND','Critical threat! Giant enemy boss powering up!',true);showScene({kind:'bossWake',mission:g.index,boss:{...g.boss},title:lev.boss+' AWAKENS',
+function spawnBoss(){const g=game,lev=levels[g.index];g.bossSpawned=true;g.enemies=[];g.foeShots=[];const final=!!lev.ending,bossHp=final?({dawn:260,storm:330,void:400,helios:560}[lev.ending]):85+g.index*20;g.boss={name:lev.boss,x:W+130,y:H*.5,r:final?80:75,hp:bossHp,maxHp:bossHp,time:0,fire:1.15,phase:0,form:lev.ending||'standard',type:[14,16,18,19,20].includes(g.index)?'planetRobot':'carrier',volley:0};checkpoint(3,true);fx('boss');radio('FLIGHT COMMAND','Critical threat! Giant enemy boss powering up!',true);showScene({kind:'bossWake',mission:g.index,boss:{...g.boss},title:lev.boss+' AWAKENS',
  text:`WARNING: ${g.boss.type==='planetRobot'?'Planetary war robot':'Giant carrier fighter'} powering up.`,
  beats:['A giant silhouette rises from the darkness.','Armor plates unfold. Its core begins to glow.','The boss locks onto your fighter. Prepare to fight!'],
  kicker:'BOSS AWAKENING · WATCH ONLY',duration:6.2,
@@ -495,11 +545,11 @@ function sphere(cx,cy,r,idx,alpha=1){const pal=bodyColors[idx]||bodyColors[0];ct
 }
 const starfield=Array.from({length:280},(_,i)=>({x:(i*479.13)%W,y:(i*331.77)%H,r:.35+(i%8)/10,twinkle:i*.77}));
 const driftDust=Array.from({length:185},(_,i)=>({x:hash(i,1,3),y:hash(i,2,7),z:hash(i,3,11),v:.24+hash(i,4,13)*.65,w:hash(i,5,19)}));
-function paintBG(t,level){const idx=clamp(level|0,0,19),type=worldTypes[idx],space=['space','orbit','void','station'].includes(type),col=bodyColors[idx];
+function paintBG(t,level){const idx=clamp(level|0,0,20),type=worldTypes[idx],space=['space','orbit','void','station','sun'].includes(type),col=bodyColors[idx];
  const grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,space?'#020513':'#0a1934');grad.addColorStop(.38,space?'#070b20':type==='storm'?'#3f536b':'#316a93');grad.addColorStop(1,space?'#081020':'#9fc5cc');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
  if(space){ctx.save();ctx.globalAlpha=.88;ctx.drawImage(makeNebula(idx),-100+Math.sin(t*.014)*25,-95,W+200,H+140);ctx.restore();}
  for(const st of starfield){const sx=st.x,sy=(st.y+t*(space?2.3:.33)*(st.r+.3))%H;ctx.globalAlpha=(space?.30:.06)+.48*(.5+.5*Math.sin(t*.33+st.twinkle));ctx.fillStyle=space?'#eff7ff':'#c9eafb';ctx.fillRect(sx,sy,st.r*1.5,st.r*1.5)}ctx.globalAlpha=1;
- if(space){sphere(idx%2?790:735,idx%3?395:460,idx===19?275:idx%3?215:282,idx);sphere(117,124,idx%2?39:26,(idx+3)%20,.78);
+ if(space){sphere(idx%2?790:735,idx%3?395:460,idx===20?410:idx===19?275:idx%3?215:282,idx);sphere(117,124,idx%2?39:26,(idx+3)%20,.78);
  // Dust particles grow from a distant vanishing point, creating real flight depth.
  for(const d of driftDust){const z=(d.z+t*.024*d.v)%1.0,s=.15+z*2.2,x=480+(d.x-.5)*W*s*1.5,y=205+(d.y-.5)*H*s*1.5;if(x<0||x>W||y<0||y>H)continue;ctx.fillStyle=d.w>.5?'#b9ddff':'#e6c6e9';ctx.globalAlpha=.06+z*.35;ctx.beginPath();ctx.ellipse(x,y,.4+z*2,1+z*(meteorLevels.has(idx)?9:4),0,0,TAU);ctx.fill();}ctx.globalAlpha=1;
  if(meteorLevels.has(idx)){ctx.save();ctx.globalAlpha=.14;const dust=ctx.createRadialGradient(440,300,15,440,300,500);dust.addColorStop(0,'#a6a0b580');dust.addColorStop(.7,'#685f8060');dust.addColorStop(1,'#b7b0a400');ctx.fillStyle=dust;ctx.fillRect(0,0,W,H);ctx.restore();}
@@ -707,7 +757,7 @@ function screenPosition(event){const r=canvas.getBoundingClientRect(),sx=(event.
 canvas.addEventListener('pointerdown',e=>{if(screen!=='play')return;e.preventDefault();controls.dragging=true;controls.dragId=e.pointerId;controls.aim=screenPosition(e);canvas.setPointerCapture?.(e.pointerId);});
 canvas.addEventListener('pointermove',e=>{if(screen!=='play'||!controls.dragging||controls.dragId!==e.pointerId)return;controls.aim=screenPosition(e);});
 const releasePointer=e=>{if(controls.dragId===e.pointerId){controls.dragging=false;controls.aim=null;}};canvas.addEventListener('pointerup',releasePointer);canvas.addEventListener('pointercancel',releasePointer);
-window.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();controls.keys.add(e.key);if(e.repeat)return;if((e.key==='p'||e.key==='P'||e.key==='Escape')&&(screen==='play'||screen==='pause'))togglePause();if(e.key==='Enter'&&screen==='scene')skipScene();if(e.key===' '&&screen==='scene')skipScene();});window.addEventListener('keyup',e=>controls.keys.delete(e.key));window.addEventListener('blur',()=>{controls.keys.clear();controls.aim=null;if(screen==='play')togglePause();});
+window.addEventListener('keydown',e=>{if(screen==='map'){if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();if(!e.repeat)navigateMap(e.key);return;}if(e.key==='Enter'||e.key===' '){e.preventDefault();openMission(mapCursor-1);return;}}if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();controls.keys.add(e.key);if(e.repeat)return;if((e.key==='p'||e.key==='P'||e.key==='Escape')&&(screen==='play'||screen==='pause'))togglePause();if(e.key==='Enter'&&screen==='scene')skipScene();if(e.key===' '&&screen==='scene')skipScene();});window.addEventListener('keyup',e=>controls.keys.delete(e.key));window.addEventListener('blur',()=>{controls.keys.clear();controls.aim=null;if(screen==='play')togglePause();});
 function togglePause(){if(screen==='play'){showEnd('pause','MISSION PAUSED','Your jet is holding position. Breathe, then get back into the sky.','▶ RESUME',()=>setScreen('play'),'Ⅱ Ⅱ Ⅱ');$('endKicker').textContent='PAUSE MENU';}else if(screen==='pause')setScreen('play');}
 // Drag the orbital chart to pan on both mouse and touch; buttons still select levels.
 (()=>{const el=$('levelMap');let origin=null;el.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;origin={x:e.clientX,y:e.clientY,left:el.scrollLeft,top:el.scrollTop,id:e.pointerId};el.setPointerCapture?.(e.pointerId)});el.addEventListener('pointermove',e=>{if(!origin||origin.id!==e.pointerId)return;el.scrollLeft=origin.left-(e.clientX-origin.x);el.scrollTop=origin.top-(e.clientY-origin.y)});const finish=()=>{origin=null};el.addEventListener('pointerup',finish);el.addEventListener('pointercancel',finish)})();
