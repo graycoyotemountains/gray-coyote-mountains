@@ -31,12 +31,16 @@ const routes={1:[2],2:[3],3:[4],4:[5],5:[6],6:[7],7:[8],8:[9],9:[10],10:[11],11:
 // Five branching campaign missions. Objectives grant route keys, not merely elapsed time.
 const campaignGoals={16:{kind:'beacon',label:'COLLECT SIGNAL BEACONS',target:3,unlock:'DAWN ACCORD'},17:{kind:'relay',label:'DESTROY PLANET RELAYS',target:3,unlock:'STORMBREAK'},18:{kind:'rescue',label:'RESCUE ESCAPE PODS',target:3},19:{kind:'tower',label:'DESTROY STORM TOWERS',target:3},20:{kind:'reactor',label:'BREAK REACTOR LOCKS',target:3}};
 const specialTargets=new Set(['relay','tower','reactor']);
-const mapPositions={
-  1:[4.8,59],2:[10.3,37],3:[15.7,21],4:[21.3,37],5:[26.8,63],
-  6:[32.3,78],7:[37.8,55],8:[43.2,32],9:[48.8,20],10:[54.3,39],
-  11:[59.8,58],12:[65.5,33],13:[65.6,81],14:[71,32],15:[72.5,79],
-  16:[79.2,58],17:[85,55],18:[93,17],19:[93,49],20:[93,82]
-};
+// Four five-mission orbital rings, spiraling outward from the sun.
+const mapPositions={};
+const ringAngles=[[-100,-28,44,116,188],[188,116,44,-28,-100],[-100,-28,44,116,188],[188,116,44,-28,-100]];
+const ringRadii=[16,25,34,42];
+for(let band=0;band<4;band++)for(let k=0;k<5;k++){
+ const rad=ringAngles[band][k]*Math.PI/180;
+ mapPositions[band*5+k+1]=[50+ringRadii[band]*Math.cos(rad),50+ringRadii[band]*Math.sin(rad)];
+}
+let mapReveal=[];  // Newly earned destinations are highlighted when the cinematic ends.
+let mapZoomMode='auto';
 const meteorLevels=new Set([7,8,9,15,19]); // Missions 8, 9, 10, 16 and 20
 const worldTypes=['ocean','desert','storm','jungle','ice','lava','city','orbit','orbit','space','ocean','ice','storm','desert','station','orbit','storm','ocean','storm','void'];
 const bodyColors=[['#0a2e62','#187da0','#79e3de'],['#7d3020','#c67d48','#ffe0ac'],['#323968','#687bbb','#d8ecff'],['#0c4634','#238a74','#c1df96'],['#5687a3','#e2f5fd','#c4dcf5'],['#4a181c','#d86535','#ffc561'],['#172d54','#476ca6','#eaa1ff'],['#082e66','#2273ab','#cbeaff'],['#674f34','#b8a178','#ead9b5'],['#42365b','#ac678b','#ffdabb'],['#14477b','#49a2ce','#b1f0ee'],['#4e819b','#e2f6ff','#ffffff'],['#392c6e','#6765a5','#e2cbff'],['#87512f','#d59a62','#ffe3a2'],['#3f505c','#91a5a7','#e0eff1'],['#233e7e','#5969a2','#b9d7fa'],['#3a285a','#866cb9','#ffd8fa'],['#9d693c','#d9b97b','#fff1b0'],['#27366e','#5a85af','#d0f1ff'],['#21112d','#6e3a79','#fba2dd']];
@@ -106,36 +110,103 @@ function isAvailable(mission){
   return Object.entries(routes).some(([from,targets])=>targets.includes(mission)&&saved.completed.includes(Number(from)));
 }
 function makeMap(){
-  $('mapTitle').textContent='THE SOLAR SYSTEM · 20 MISSIONS';
+  const newPaths=mapReveal.filter(isAvailable);
+  $('mapTitle').textContent='THE HELIOS SYSTEM · 20 ORBITAL MISSIONS';
   $('chapterTabs').style.display='none';
-  $('mapHint').textContent='FINAL CAMPAIGN: 16 collect 3 beacons → unlock Dawn. 17 destroy 3 relays → unlock Storm. Complete both → unlock secret Black Star. Each finale has its own objective and giant boss. Tap or drag the chart.';
+  $('mapHint').textContent=newPaths.length
+   ?'✦ NEW FLIGHT PATH'+(newPaths.length>1?'S':'')+' REVEALED: '+newPaths.map(n=>String(n).padStart(2,'0')+' '+levels[n-1].name).join('  ·  ')+'. Choose a glowing destination.'
+   :'☀ FOLLOW THE ORBITS · ☄ CROSS THE METEOR BELT · Tap an unlocked planet. Earn mission objectives to open the three final routes. Drag to explore the star system.';
   $('endingCount').textContent=`FINALES DISCOVERED: ${saved.endings.length} / 3`;
-  const positions=mapPositions,ids=Array.from({length:20},(_,i)=>i+1);
-  let svg=`<defs><radialGradient id="sunGlow"><stop stop-color="#fff5c9"/><stop offset=".15" stop-color="#ffd596"/><stop offset=".4" stop-color="#ffc46d" stop-opacity=".6"/><stop offset="1" stop-color="#fda866" stop-opacity="0"/></radialGradient></defs>`;
-  // Orbit rings and a small sun, all on a single connected navigable chart.
-  for(const [rx,ry] of [[12,20],[25,34],[39,49],[53,64]])svg+=`<ellipse cx="49" cy="52" rx="${rx}" ry="${ry}" fill="none" stroke="#8fb4d5" stroke-width=".17" opacity=".22" stroke-dasharray=".8 1.1"/>`;
-  svg+='<circle cx="49" cy="52" r="9" fill="url(#sunGlow)" opacity=".65"/><circle cx="49" cy="52" r="1.35" fill="#fff5d6" opacity=".9"/>';
-  for(const n of ids){for(const target of routes[n]||[]){if(!positions[target])continue;
-    const a=positions[n],b=positions[target],won=saved.completed.includes(n)&&saved.completed.includes(target),ready=isAvailable(target);
-    const mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2-(Math.abs(a[1]-b[1])<5?3:0);
-    svg+=`<path d="M ${a[0]} ${a[1]} Q ${mx} ${my} ${b[0]} ${b[1]}" fill="none" stroke="${won?'#a2ffcf':ready?'#b2bdfa':'#4a6889'}" stroke-width=".22" stroke-dasharray=".8 .55" opacity="${ready?'.8':'.42'}" />`;
-  }}
-  $('routeLines').setAttribute('viewBox','0 0 100 100');$('routeLines').innerHTML=svg;
+  const ids=Array.from({length:20},(_,i)=>i+1),center=500;
+  const positions=mapPositions;
+  let svg=`<defs>
+   <radialGradient id="mapSun"><stop stop-color="#fffdf1"/><stop offset=".17" stop-color="#fff1b5"/><stop offset=".42" stop-color="#ffba52"/><stop offset=".79" stop-color="#fa582a"/><stop offset="1" stop-color="#b93213"/></radialGradient>
+   <radialGradient id="mapSunCorona"><stop stop-color="#ffd47b" stop-opacity=".7"/><stop offset=".3" stop-color="#fe9337" stop-opacity=".32"/><stop offset="1" stop-color="#fa6019" stop-opacity="0"/></radialGradient>
+   <radialGradient id="blueDust"><stop stop-color="#69b9ee" stop-opacity=".37"/><stop offset="1" stop-color="#69b9ee" stop-opacity="0"/></radialGradient>
+   <radialGradient id="purpleDust"><stop stop-color="#d780d6" stop-opacity=".31"/><stop offset="1" stop-color="#b365b4" stop-opacity="0"/></radialGradient>
+   <radialGradient id="sunFlare"><stop stop-color="#fff5cd" stop-opacity=".58"/><stop offset="1" stop-color="#ffe7ba" stop-opacity="0"/></radialGradient>
+  </defs>`;
+  // Stars and interstellar dust beyond the four orbital tracks.
+  for(let n=0;n<230;n++){
+    const x=(n*997.3+59*n*n)%990+5,y=(n*361.7+17*n*n)%990+5;
+    const rad=.6+(n%7===0?1.1:.25),alpha=(.21+(n%9)*.063).toFixed(2);
+    svg+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${rad}" fill="#d7efff" opacity="${alpha}"/>`;
+  }
+  for(const [x,y,rad,fill] of [[248,219,248,'blueDust'],[780,745,265,'purpleDust'],[174,686,200,'purpleDust'],[777,252,220,'blueDust'],[558,830,162,'blueDust']])
+    svg+=`<circle cx="${x}" cy="${y}" r="${rad}" fill="url(#${fill})"/>`;
+  // Soft orbital paths. The circular chart expands from the central star.
+  for(const r of [160,250,340,420]){
+    svg+=`<circle cx="500" cy="500" r="${r}" fill="none" stroke="#b5daf3" stroke-width="1.5" stroke-opacity=".26" stroke-dasharray="4 8"/>`;
+    svg+=`<circle cx="500" cy="500" r="${r+3}" fill="none" stroke="#48a7d5" stroke-width=".5" stroke-opacity=".13"/>`;
+  }
+  // The meteor belt is an actual dense field of individual jagged asteroids, not a simple ring.
+  svg+='<g id="mapMeteorBelt">';
+  for(let j=0;j<165;j++){
+    const angle=(j*.61803398875%1)*Math.PI*2, radius=294+(j%9-4)*3.4;
+    const x=500+Math.cos(angle)*radius,y=500+Math.sin(angle)*radius;
+    const r=1.25+(j%11)*.38;
+    const color=['#76859c','#aaa7a6','#555f80','#c1a99d','#e0c6a4'][j%5];
+    svg+=`<path d="M ${(x-r).toFixed(1)} ${(y-r*.4).toFixed(1)} l ${(r*.6).toFixed(1)} ${(-r*.9).toFixed(1)} l ${(r*1.5).toFixed(1)} ${(r*.4).toFixed(1)} l ${(r*.6).toFixed(1)} ${(r*1.25).toFixed(1)} l ${(-r*1.4).toFixed(1)} ${(r*.5).toFixed(1)} Z" fill="${color}" opacity="${(.36+j%5*.11).toFixed(2)}"/>`;
+  }
+  svg+='</g>';
+  // A few comets arc through the dust, deliberately separate from the selectable planets.
+  for(const [x,y,a] of [[150,245,-28],[845,640,152],[740,122,38]]){
+    svg+=`<g transform="translate(${x} ${y}) rotate(${a})"><path d="M -83 -3 Q -27 -10 0 0 Q -27 10 -83 3" fill="#69ddff" opacity=".26"/><circle cx="0" cy="0" r="4" fill="#d6fcff"/><circle cx="0" cy="0" r="10" fill="url(#blueDust)"/></g>`;
+  }
+  // Routes illuminate as they are unlocked. New branches have an extra pulse.
+  for(const n of ids)for(const target of routes[n]||[]){
+    if(!positions[target])continue;
+    const a=positions[n],b=positions[target],won=saved.completed.includes(n)&&saved.completed.includes(target),ready=isAvailable(target),justEarned=newPaths.includes(target);
+    const ax=a[0]*10,ay=a[1]*10,bx=b[0]*10,by=b[1]*10;
+    const mx=(ax+bx)/2,my=(ay+by)/2;
+    const bend=(n<=15&&target<=15?0:18)*((n+target)%2?1:-1);
+    const path=`M ${ax.toFixed(1)} ${ay.toFixed(1)} Q ${(mx+bend).toFixed(1)} ${(my-bend).toFixed(1)} ${bx.toFixed(1)} ${by.toFixed(1)}`;
+    svg+=`<path d="${path}" fill="none" stroke="${won?'#a4ffd3':ready?'#99d6ff':'#3b5478'}" stroke-width="${justEarned?4:ready?2.5:1.5}" stroke-dasharray="${ready?'7 7':'3 9'}" opacity="${ready?'.9':'.40'}" class="${justEarned?'newOrbitRoute':'orbitRoute'}"/>`;
+    if(justEarned)svg+=`<circle r="5" fill="#f9edb8"><animateMotion dur="3.2s" repeatCount="indefinite" path="${path}"/></circle>`;
+  }
+  // Central sun, visibly larger than any waypoint, with animated atmosphere.
+  svg+=`<circle cx="500" cy="500" r="125" fill="url(#mapSunCorona)" class="sunCorona"/>
+   <circle cx="500" cy="500" r="67" fill="url(#mapSun)" class="solarCore"/>
+   <circle cx="487" cy="476" r="21" fill="url(#sunFlare)" opacity=".54"/>
+   <circle cx="500" cy="500" r="73" fill="none" stroke="#ffd884" stroke-width="2" opacity=".6"/>
+   <text x="500" y="602" fill="#ffe5a8" text-anchor="middle" font-family="system-ui" font-size="20" font-weight="900" letter-spacing="4">HELIOS · THE SUN</text>
+   <text x="500" y="625" fill="#b7cadf" text-anchor="middle" font-family="system-ui" font-size="12" letter-spacing="3">SOLAR NAVIGATION CORE</text>
+   <text x="500" y="205" fill="#b7d1ec" opacity=".6" text-anchor="middle" font-family="monospace" font-size="13" letter-spacing="4">☄  METEOR BELT  ☄</text>`;
+  $('routeLines').setAttribute('viewBox','0 0 1000 1000');
+  $('routeLines').innerHTML=svg;
   $('mapWorld').querySelectorAll('.node').forEach(n=>n.remove());
-  ids.forEach(id=>{const lev=levels[id-1],b=document.createElement('button'),available=isAvailable(id),done=saved.completed.includes(id),final=!!lev.ending;
-    b.className='node solarPlanet'+(lev.boss?' boss':'')+(final?' final':'')+(done?' done':'')+(!available?' locked':'')+(available&&!done?' next':'');
+  ids.forEach(id=>{
+    const lev=levels[id-1],b=document.createElement('button'),available=isAvailable(id),done=saved.completed.includes(id),final=!!lev.ending;
+    b.className='node solarPlanet'+(lev.boss?' boss':'')+(final?' final':'')+(done?' done':'')+(!available?' locked':'')+(available&&!done?' next':'')+(newPaths.includes(id)?' earnedPath':'');
     b.style.left=positions[id][0]+'%';b.style.top=positions[id][1]+'%';
     b.style.setProperty('--sphere-base',bodyColors[id-1][0]);b.style.setProperty('--sphere-mid',bodyColors[id-1][1]);b.style.setProperty('--sphere-top',bodyColors[id-1][2]);
     const goal=campaignGoals[id];
-    b.title=`Mission ${id}: ${lev.name}${goal?' · '+goal.label+' (0/'+goal.target+')':''}${lev.boss?' · GIANT BOSS':''}${!available&&id>=18?' · NEED ROUTE OBJECTIVES':''}`;
-    b.setAttribute('aria-label',b.title+(!available?' · LOCKED':''));
-    b.innerHTML=`<span class="planetNumber">${done?'✓':id}</span><span class="planetLabel">${lev.name}</span>${id>=16?'<span class="planetBoss">'+(id===16?'3 BEACONS':id===17?'3 RELAYS':id===18?'3 RESCUES':id===19?'3 TOWERS':'3 LOCKS')+'</span>':lev.boss?'<span class="planetBoss">BOSS</span>':''}`;
+    b.title=`Mission ${id}: ${lev.name}${goal?' · '+goal.label+' (0/'+goal.target+')':''}${lev.boss?' · GIANT BOSS':''}${!available?' · LOCKED':''}`;
+    b.setAttribute('aria-label',b.title);
+    b.innerHTML=`<span class="planetNumber">${done?'✓':String(id).padStart(2,'0')}</span><span class="planetLabel">${lev.name}</span>${id>=16?'<span class="planetBoss">'+(id===16?'3 BEACONS':id===17?'3 RELAYS':id===18?'3 RESCUES':id===19?'3 TOWERS':'3 LOCKS')+'</span>':lev.boss?'<span class="planetBoss">BOSS</span>':''}`;
     b.disabled=!available;b.onclick=()=>openMission(id-1);$('mapWorld').appendChild(b);
   });
-  // Start near the first orbital waypoints, but don't reset scroll on every visit.
-  if(!$('mapWorld').dataset.visited){$('levelMap').scrollLeft=0;$('mapWorld').dataset.visited='true';}
+  const world=$('mapWorld');world.classList.remove('mapArrive');void world.offsetWidth;world.classList.add('mapArrive');
 }
-function openMap(chapter){makeMap();setScreen('map');}
+function openMap(chapter, revealed=[]){
+  mapReveal=revealed.filter(isAvailable);
+  makeMap();setScreen('map');
+  configureMapZoom();
+}
+function configureMapZoom(){
+  const chart=$('levelMap'),world=$('mapWorld');
+  const fit=mapZoomMode==='fit'||(mapZoomMode==='auto'&&chart.clientWidth>=850);
+  const zoom=fit?clamp(Math.min(chart.clientWidth,chart.clientHeight)/1020*.965,.23,1):1;
+  world.style.zoom=String(zoom);world.style.margin=fit?'0 auto':'0';
+  $('fitMapBtn').textContent=fit?'＋ EXPLORE CLOSE UP':'◎ FIT ENTIRE SYSTEM';
+  if(fit){chart.scrollLeft=0;chart.scrollTop=0;return;}
+  const focus=mapReveal.length?mapReveal:(()=>{const active=Array.from({length:20},(_,i)=>i+1).filter(n=>isAvailable(n)&&!saved.completed.includes(n));return active.length?[active[0]]:[1]})();
+  const pts=focus.map(n=>mapPositions[n]);const x=pts.reduce((sum,v)=>sum+v[0],0)/pts.length/100;
+  const y=pts.reduce((sum,v)=>sum+v[1],0)/pts.length/100;
+  chart.scrollLeft=Math.max(0,worldSize()*x-chart.clientWidth/2);
+  chart.scrollTop=Math.max(0,worldSize()*y-chart.clientHeight/2);
+}
+function worldSize(){return $('mapWorld').offsetWidth||1020;}
 function openMission(i){
  if(!isAvailable(i+1))return;selected=i;const l=levels[i];
  showScene({kind:'approach',mission:i, title:`MISSION ${String(i+1).padStart(2,'0')} · ${l.name.toUpperCase()}`,
@@ -187,30 +258,30 @@ function cleared(){
     if(id===10){showScene({kind:'chapter',mission:i,title:'A SIGNAL BEYOND THE SUNRISE',
  text:'Atlas Prime has fallen, but a hidden fleet has split the horizon into rival air routes.',
  beats:['Your formation leaves the ruined fortress.','A mysterious signal reveals ten undiscovered worlds.','The new campaign opens. Choose your next destination.'],
- kicker:'NEW CHAPTER · WATCH ONLY',duration:7.2,next:()=>openMission(10)});return;}
+ kicker:'NEW CHAPTER · WATCH ONLY',duration:7.2,next:()=>openMap(0,[11])});return;}
     if(nextIds.length>1){
  const options=nextIds.filter(isAvailable);
  showScene({kind:'branch',mission:i,options,title:'NEW FLIGHT PATHS UNLOCKED',
  text:'The orbital navigation computer projects new routes. Choose your next mission.',
  beats:['Your pilots reach a fork in the star routes.','The navigation officer illuminates earned destinations.','Choose a highlighted planet on the mission map.'],
- kicker:'BRANCHING STORY · WATCH ONLY',duration:6.5,next:()=>openMap()});return;
+ kicker:'BRANCHING STORY · WATCH ONLY',duration:6.5,next:()=>openMap(0,options)});return;
 }
     if(!nextIds.length){openMap(id>=11?1:0);return;}
     if(lev.boss){
  showScene({kind:'departure',mission:i,title:'THE GUARDIAN HAS FALLEN',
- text:`${lev.boss} has been defeated. Your wingmen regroup and set course for ${levels[nextIds[0]-1].zone}.`,
+ text:`${lev.boss} breaks apart! Your wingmen regroup. Mission ${nextIds[0]}: ${levels[nextIds[0]-1].name} is now visible on the solar map.`,
  beats:['The wreckage fades behind the squadron.','Your wingmen sweep in to join formation.','A new planet appears on the horizon.'],
- kicker:'AFTER THE BATTLE · WATCH ONLY',duration:5.2,next:()=>openMission(nextIds[0]-1)});return;
+ kicker:'AFTER THE BATTLE · WATCH ONLY',duration:5.2,next:()=>openMap(0,nextIds.filter(isAvailable))});return;
 }
     showScene({kind:'departure',mission:i,title:'MISSION SECURED · NEXT DESTINATION',
- text:`Your squadron departs ${lev.zone} for ${levels[nextIds[0]-1].zone}.`,
+ text:`Your squadron departs ${lev.zone}. Mission ${nextIds[0]}: ${levels[nextIds[0]-1].name} appears on the orbital chart. Choose it when the star map opens.`,
  beats:['Your fighter climbs away from the cleared battlefield.','Wingmen join your formation.','The next planet comes into view.'],
- kicker:'BETWEEN MISSIONS · WATCH ONLY',duration:4.7,next:()=>openMission(nextIds[0]-1)});
+ kicker:'BETWEEN MISSIONS · WATCH ONLY',duration:4.7,next:()=>openMap(0,nextIds.filter(isAvailable))});
   };
   const title=lev.ending?'THE BOSS OF BOSSES FALLS':id===10?'THE STORY CONTINUES':'SKY SECURED';
   const message=`Mission ${id} cleared · ${game.objective?'Objective '+game.objective.count+'/'+game.objective.target+' completed · ':''}${game.kills} enemy fighters destroyed · +${bonus.toLocaleString()} survival bonus. ${lev.ending?'You reached one of the three endings!':nextIds.length>1?'New branching routes unlocked. Choose where to fly next!':id===10?'The Fractured Horizon campaign is unlocked!':'Your next mission is ready.'}`;
-  showEnd('clear',title,message,lev.ending?'WATCH YOUR ENDING »':nextIds.length>1?'VIEW BRANCHING MAP »':'CONTINUE »',next,game.hp>70?'✦ ✦ ✦':game.hp>35?'✦ ✦ ☆':'✦ ☆ ☆');
-  showRouteChoices(i);
+  showEnd('clear',title,message,lev.ending?'WATCH YOUR ENDING »':nextIds.length>1?'WATCH BRANCH REVEAL »':'WATCH NEXT-ROUTE SCENE »',next,game.hp>70?'✦ ✦ ✦':game.hp>35?'✦ ✦ ☆':'✦ ☆ ☆');
+  // Destination selection happens on the full solar chart after its skippable cinematic.
 }
 function playerDown(){if(screen!=='play'||!game)return;const p=game.player;if(p.invul>0||game.shield>0)return;game.hp-=18+Math.min(game.index,12)*.55;p.invul=1.1;flash=.28;shake=10;audio(90,.27,'sawtooth',.11,.4);sparks(p.x,p.y,20,'#ff707b',5);if(game.hp<=0){game.hp=0;showEnd('gameover','JET DOWN',`You reached Mission ${game.index+1}. ${game.kills} enemy fighters were defeated. Give it another try.`, saved.checkpoints[game.index+1]?'↻ RETURN TO CHECKPOINT':'↻ RETRY MISSION',()=>startLevel(game.index),'✕ ✕ ✕');if(saved.checkpoints[game.index+1]){const wrap=$('routeChoices');const b=document.createElement('button');b.className='routePick';b.textContent='↻ RESTART WHOLE MISSION';b.onclick=()=>{delete saved.checkpoints[game.index+1];save();startLevel(game.index,true)};wrap.append(b);wrap.classList.add('show')}}}
 function sparks(x,y,n,color,speed=1){if(!game)return;for(let j=0;j<n;j++){let a=rand(0,TAU),s=rand(40,260)*speed;game.particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(.2,.8),max:1,r:rand(1.5,4.3),color});}}
@@ -490,10 +561,10 @@ function drawCinematic(){
    }
    if(p>.56)fly(480,430-(p-.56)*50,.48+(p-.56)*.39,false,-.04);
    tag(p<.32?'ARMOR FAILURE':p<.7?'REACTOR RUPTURE':'TARGET DESTROYED',480,67,'#ffdbac');
- }else if(k==='branch'||k==='chapter'){
+ }else if(k==='branch'||k==='chapter'||k==='starChart'){
    // Navigation officer's animated holographic route planner. Ships actively choose trajectories.
    ctx.save();ctx.fillStyle='#050d20a8';ctx.fillRect(0,22,W,435);
-   const opts=k==='chapter'?[11,12,13]:((s.options||[]).length?(s.options||[]).slice(0,4):[16,17]);
+   const opts=k==='starChart'?[1,2,3]:k==='chapter'?[11,12,13]:((s.options||[]).length?(s.options||[]).slice(0,4):[16,17]);
    const cx=475,cy=375,n=opts.length;
    glow(cx,cy,95,'#66ffff',.6);ctx.strokeStyle='#73ccee88';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,46,0,TAU);ctx.stroke();
    ctx.font='900 12px ui-monospace,monospace';ctx.textAlign='center';ctx.fillStyle='#bffaff';ctx.fillText('NAVIGATION',cx,cy-11);ctx.fillText('COMPUTER',cx,cy+9);
@@ -506,7 +577,7 @@ function drawCinematic(){
      if(light>.9){fly(px,py,.1+(.11*pulse),false,(j%2?-.2:.2));}
      tag('MISSION '+String(opts[j]).padStart(2,'0'),xx,yy-40);
    }
-   ctx.restore();tag(k==='chapter'?'UNEXPLORED STAR SYSTEM':'NEW PATHS EARNED',475,67,'#aaffd8');
+   ctx.restore();tag(k==='starChart'?'THE HELIOS SYSTEM':k==='chapter'?'UNEXPLORED STAR SYSTEM':'NEW PATHS EARNED',475,67,'#aaffd8');
  }else if(k==='departure'||k==='ending'){
    let formation=smooth(p/.6);for(let side of [-1,1]){
      let x=480+side*(330-formation*210)+Math.sin(t*1.3+side)*7,y=350-formation*75;
@@ -561,7 +632,7 @@ window.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','Arr
 function togglePause(){if(screen==='play'){showEnd('pause','MISSION PAUSED','Your jet is holding position. Breathe, then get back into the sky.','▶ RESUME',()=>setScreen('play'),'Ⅱ Ⅱ Ⅱ');$('endKicker').textContent='PAUSE MENU';}else if(screen==='pause')setScreen('play');}
 // Drag the orbital chart to pan on both mouse and touch; buttons still select levels.
 (()=>{const el=$('levelMap');let origin=null;el.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;origin={x:e.clientX,y:e.clientY,left:el.scrollLeft,top:el.scrollTop,id:e.pointerId};el.setPointerCapture?.(e.pointerId)});el.addEventListener('pointermove',e=>{if(!origin||origin.id!==e.pointerId)return;el.scrollLeft=origin.left-(e.clientX-origin.x);el.scrollTop=origin.top-(e.clientY-origin.y)});const finish=()=>{origin=null};el.addEventListener('pointerup',finish);el.addEventListener('pointercancel',finish)})();
-$('startBtn').onclick=()=>openMap();$('homeMapBtn').onclick=()=>openMap();$('chapterOne').onclick=()=>openMap(0);$('chapterTwo').onclick=()=>openMap(1);$('mapHomeBtn').onclick=()=>setScreen('home');$('skipSceneBtn').onclick=skipScene;$('endPrimary').onclick=()=>endAction&&endAction();$('endMap').onclick=()=>openMap();$('pauseBtn').onclick=togglePause;$('touchMissile').onclick=missile;
+$('startBtn').onclick=()=>showScene({kind:'starChart',title:'THE HELIOS SYSTEM COMES INTO VIEW',kicker:'FLIGHT COMMAND · STAR CHART UNFOLDING',text:'Beyond the sun, twenty destinations wait among glittering dust clouds and meteor belts. Your squadron plots its first approach.',beats:['The fleet enters the solar system.','A golden sun appears through clouds of drifting meteors.','Twenty orbital mission signals light up. Choose your next flight path.'],duration:7,next:()=>openMap(0,[1])});$('homeMapBtn').onclick=()=>openMap();$('chapterOne').onclick=()=>openMap(0);$('chapterTwo').onclick=()=>openMap(1);$('fitMapBtn').onclick=()=>{mapZoomMode=$('fitMapBtn').textContent.includes('EXPLORE')?'detail':'fit';configureMapZoom();};$('mapHomeBtn').onclick=()=>setScreen('home');$('skipSceneBtn').onclick=skipScene;$('endPrimary').onclick=()=>endAction&&endAction();$('endMap').onclick=()=>openMap();$('pauseBtn').onclick=togglePause;$('touchMissile').onclick=missile;
 $('soundBtn').onclick=()=>{soundOn=!soundOn;saved.sound=soundOn;save();musicTime=0;if(!soundOn){try{speechSynthesis.cancel()}catch(e){}}else makeSound();$('soundBtn').textContent=soundOn?'♫ AUDIO ON':'♪ AUDIO OFF';audio(590,.12,'sine',.055,1.4);};$('soundBtn').textContent=soundOn?'♫ AUDIO ON':'♪ AUDIO OFF';
 window.addEventListener('resize',resize);resize();requestAnimationFrame(frame);
 })();
