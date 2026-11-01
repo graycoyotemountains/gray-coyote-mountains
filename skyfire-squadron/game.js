@@ -342,7 +342,7 @@ function showScene(s){
  scene={kind:'approach',mission:selected,duration:6.5,elapsed:0,...s};sceneEnd=0;scene.dialogue=sceneDialogue(scene);
  if(soundOn&&window.SkyfireVoices?.availableNow()){let position=0;scene.voiceBreaks=scene.dialogue.map(([,line])=>{position+=Math.max(3.2,1.1+line.trim().split(/\s+/).length/3.3);return position;});scene.duration=Math.max(scene.duration,position+.25);}
  setScreen('scene');$('sceneTitle').textContent=scene.title;
- showSceneLine(0);$('sceneKicker').textContent=scene.kicker||'CINEMATIC • WATCH ONLY';
+ showSceneLine(0);scene.lastBeat=0;$('sceneKicker').textContent=scene.kicker||'CINEMATIC • WATCH ONLY';
  $('sceneProgress').style.width='0';
  audio(scene.kind==='bossWake'?100:scene.kind==='bossBreak'?185:440,.25,'triangle',.06,.6);
 }
