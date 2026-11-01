@@ -85,8 +85,72 @@ function fx(kind){if(!soundOn)return;switch(kind){
  }}
 const melodies={planet:[0,3,7,10,7,3,5,2],space:[0,5,7,12,10,7,3,5],boss:[0,1,5,1,7,5,3,1]};
 function musicTick(){if(!soundOn||!['play','scene'].includes(screen)){musicTime=0;return}const c=makeSound();if(!c||c.state!=='running')return;const mode=game?.boss&&screen==='play'?'boss':game&&['orbit','space','void','station'].includes(worldTypes[game.index])?'space':'planet';const interval=mode==='boss'?.23:.29;if(!musicTime||musicTime<c.currentTime-.25){musicTime=c.currentTime+.045;musicStep=0}let iterations=0;while(musicTime<c.currentTime+.16&&iterations++<3){const seq=melodies[mode],n=musicStep%8,root=mode==='boss'?98:mode==='space'?110:131;const pitch=root*Math.pow(2,seq[n]/12);note(pitch*2,.16,.012,'triangle',musicTime);if(n%2===0)note(root/2,.22,.017,'sine',musicTime);if(n===0||n===4)note(root/4,.20,.028,'triangle',musicTime);musicTime+=interval;musicStep++}}
+// Original vector portraits are bundled inside the game: no image downloads or external requests.
+const CAST={
+ 'FLIGHT COMMAND':{name:'COMMANDER VALE',role:'FLIGHT COMMAND',bg:'#103b57',suit:'#557d99',skin:'#cf997a',hair:'#273148',helmet:'#26394e',glow:'#9eeeff',kind:'commander'},
+ 'ALPHA-2':{name:'PILOT JUNO',role:'ALPHA-2 · WING LEADER',bg:'#173a59',suit:'#278bb3',skin:'#e2aa84',hair:'#663927',helmet:'#d8a557',glow:'#9afaff',kind:'pilot'},
+ 'ALPHA-3':{name:'PILOT REX',role:'ALPHA-3 · SUPPORT',bg:'#123c43',suit:'#3c9c85',skin:'#9d664f',hair:'#1c2933',helmet:'#36a28e',glow:'#b5fff0',kind:'pilot'},
+ 'SKYFIRE ONE':{name:'SKYFIRE ONE',role:'SQUADRON LEADER',bg:'#1a3553',suit:'#527bb2',skin:'#c69171',hair:'#30334d',helmet:'#b2cbec',glow:'#c3efff',kind:'pilot'},
+ 'NAVIGATION':{name:'NAVIGATOR IRIS',role:'GALACTIC NAVIGATION',bg:'#42335a',suit:'#7369b9',skin:'#d6a07c',hair:'#32274a',helmet:'#7a6fb1',glow:'#c9b6ff',kind:'nav'},
+ 'ENEMY COMMANDER':{name:'OVERLORD VEX',role:'ENEMY COMMANDER',bg:'#501e31',suit:'#832c42',skin:'#a76e65',hair:'#281c2f',helmet:'#622238',glow:'#ff839c',kind:'enemy'},
+ 'ENEMY BOSS':{name:'THE WAR MACHINE',role:'BOSS TRANSMISSION',bg:'#371e4d',suit:'#68325e',skin:'#a06e88',hair:'#27152e',helmet:'#7a365f',glow:'#ff627b',kind:'robot'}
+};
+function castFor(from){const name=String(from||'').toUpperCase();if(name.includes('BOSS')||name.includes('OMEGA')||name.includes('SENTINEL'))return CAST['ENEMY BOSS'];if(name.includes('ENEMY'))return CAST['ENEMY COMMANDER'];if(name.includes('ALPHA-2'))return CAST['ALPHA-2'];if(name.includes('ALPHA-3'))return CAST['ALPHA-3'];if(name.includes('NAVIGAT'))return CAST.NAVIGATION;if(name.includes('SKYFIRE'))return CAST['SKYFIRE ONE'];return CAST['FLIGHT COMMAND']}
+function portraitSVG(from){const c=castFor(from),isRobot=c.kind==='robot';
+ const robot=`<path d="M22 34 L29 21 H71 L78 34 L73 68 L61 81 H39 L27 68Z" fill="#66778a" stroke="#b6b7c5" stroke-width="2"/><path d="M29 39 H71 L68 57 H32Z" fill="#1a1a32"/><path d="M33 46 H47 L44 50 H32Z M53 46 H67 L68 50 H56Z" fill="${c.glow}"/><path d="M35 65 H65 L59 75 H41Z" fill="#242038" stroke="#d5bbd0"/><path d="M39 68 H61" stroke="${c.glow}" stroke-width="3"/><circle cx="22" cy="52" r="7" fill="#793a57" stroke="${c.glow}"/><circle cx="78" cy="52" r="7" fill="#793a57" stroke="${c.glow}"/><path d="M35 17H65M42 12H58" stroke="${c.glow}" stroke-width="3"/>`;
+ const human=`<path d="M11 99 Q15 75 35 75 L65 75 Q85 75 90 99Z" fill="${c.suit}" stroke="#c8e2ec" stroke-width="1.2"/><path d="M34 79 L50 90 L66 79 L59 72 H41Z" fill="#dceaf1" opacity=".75"/><path d="M36 71V82 L50 90 L64 82 V71" fill="${c.skin}"/><ellipse cx="50" cy="47" rx="23" ry="31" fill="${c.skin}" stroke="#e9cdb4" stroke-width="1"/><path d="M27 43 Q24 19 46 17 Q73 14 73 40 L67 35 Q51 29 34 40Z" fill="${c.hair}"/><path d="M36 47 L45 47 M55 47 L64 47" stroke="#203145" stroke-width="2.4" stroke-linecap="round"/><path d="M45 64 Q50 68 56 63" stroke="#793d46" stroke-width="1.8" fill="none"/><path d="M49 49 L46 57 H53" stroke="#a5715a" stroke-width="1.5" fill="none"/>${c.kind==='commander'?`<path d="M24 34 Q19 17 36 11 H65 Q80 16 77 34" fill="${c.helmet}" stroke="${c.glow}" stroke-width="2"/><path d="M25 37 L20 49 V64 L29 65" fill="none" stroke="${c.glow}" stroke-width="5"/><path d="M78 48 V64 L64 69" fill="none" stroke="#a5d5f0" stroke-width="4"/><circle cx="64" cy="69" r="3" fill="#9fffff"/>`:`<path d="M25 46 Q17 16 43 10 H58 Q82 16 76 47 L69 39 L65 25 Q50 17 33 27 L31 42Z" fill="${c.helmet}" stroke="#e5edfa" stroke-width="1.8"/><rect x="21" y="40" width="9" height="23" rx="4" fill="${c.helmet}"/><rect x="70" y="40" width="9" height="23" rx="4" fill="${c.helmet}"/><path d="M28 39 Q50 25 72 39 L66 49 Q50 39 34 49Z" fill="${c.glow}" opacity=".48"/><path d="M76 58 Q76 70 62 72" stroke="${c.glow}" stroke-width="3" fill="none"/><circle cx="62" cy="72" r="3" fill="#fff"/>`}`;
+ return `<svg class="characterPortraitSvg" viewBox="0 0 100 100" role="img" aria-label="${c.name} illustrated portrait" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="11" fill="${c.bg}"/><path d="M0 79 L100 30 M-5 40L105 70" stroke="${c.glow}" stroke-width=".9" opacity=".21"/><circle cx="50" cy="45" r="41" fill="${c.glow}" opacity=".06"/>${isRobot?robot:human}<path d="M5 10V5H19 M81 5H95V19 M95 81V95H81 M19 95H5V81" stroke="${c.glow}" stroke-width="2.4" fill="none"/><circle cx="85" cy="14" r="3" fill="${c.glow}"/></svg>`;
+}
+function showPortrait(target,who){const node=$(target);if(node)node.innerHTML=portraitSVG(who)}
+function sceneDialogue(s){const l=levels[s.mission]||levels[0],nextIds=routes[s.mission+1]||[];
+ switch(s.kind){
+ case 'approach':return [
+  ['FLIGHT COMMAND',`Skyfire One, mission ${s.mission+1}: ${l.name}. We are approaching ${l.zone}. ${l.desc}`],
+  ['ALPHA-2',`Juno here. I can see the planet ahead. I'm moving to your left wing.`],
+  ['SKYFIRE ONE',`Copy, Juno. Prepare for our descent. I'm taking us in!`]
+ ];
+ case 'bossWake':return [
+  ['FLIGHT COMMAND',`Warning! ${l.boss||'A gigantic enemy'} is awakening directly ahead.`],
+  ['ENEMY BOSS',`You have entered my territory, Skyfire One. Your squadron will fall!`],
+  ['ALPHA-3',`Rex here! Its weapons are charging. Get ready to dodge!`]
+ ];
+ case 'bossBreak':return [
+  ['ALPHA-2',`Direct hit! ${l.boss||'The giant enemy'} is breaking apart!`],
+  ['ENEMY BOSS',`Impossible... systems failing... reactor critical!`],
+  ['SKYFIRE ONE',`Everyone clear the wreckage! We've won this battle!`]
+ ];
+ case 'branch':return [
+  ['NAVIGATION',`Navigator Iris here. You earned new flight paths. I'm projecting them onto your solar-system map.`],
+  ['ALPHA-2',`We can take either route. Which planet do you want to visit next, leader?`],
+  ['SKYFIRE ONE',`I see ${s.options?.length||nextIds.length} available destinations. Let's choose our path!`]
+ ];
+ case 'starChart':return [
+  ['NAVIGATION',`Skyfire One, look ahead. The Helios System is coming into view.`],
+  ['FLIGHT COMMAND',`Twenty missions are scattered among planets, meteor belts and clouds of space dust.`],
+  ['SKYFIRE ONE',`Chart received. I'll choose our first destination.`]
+ ];
+ case 'chapter':return [
+  ['FLIGHT COMMAND',`We defeated Atlas Prime, but a new enemy fleet has awakened beyond the sun.`],
+  ['NAVIGATION',`I'm detecting ten additional worlds. The next campaign is now available.`],
+  ['ALPHA-3',`Then let's keep going. Alpha-3 is right behind you!`]
+ ];
+ case 'departure':return [
+  ['ALPHA-3',`The mission is secure. I'm rejoining the formation now.`],
+  ['NAVIGATION',`The next destination is ${nextIds.length?'Mission '+nextIds[0]+', '+(levels[nextIds[0]-1]?.name||'unknown'):'marked on your map'}. Your route is ready.`],
+  ['SKYFIRE ONE',`Thanks, squadron. Show me the map and we'll decide where to fly next.`]
+ ];
+ case 'ending':return [
+  ['FLIGHT COMMAND',`Skyfire One, you've defeated the Boss of Bosses! The fleet is safe.`],
+  ['ALPHA-2',`We made it! Look at all those friendly ships coming home.`],
+  ['SKYFIRE ONE',`This is our victory, squadron. Now let's explore the other endings!`]
+ ];
+ default:return [['FLIGHT COMMAND',s.text||'Incoming transmission.'],['ALPHA-2',`Copy that. We're with you, Skyfire One.`]];
+ }
+}
+function showSceneLine(n){if(!scene)return;const lines=scene.dialogue||[];if(!lines.length)return;const [who,line]=lines[clamp(n,0,lines.length-1)];const c=castFor(who);$('sceneText').textContent=line;$('sceneSpeaker').textContent=c.name;$('sceneCallsign').textContent=c.role;showPortrait('scenePortrait',who);}
+
 function radio(from,message,important=false){if(screen!=='play'&&!important)return;if(!important&&game&&game.elapsed-lastRadio<3)return;if(important){commsQueue=[];}else if(commsTimer>1){commsQueue.push({from,message});if(commsQueue.length>3)commsQueue.shift();return}
- radioSource=from;radioText=message;commsTimer=4.5;lastRadio=game?.elapsed||0;$('commsSource').textContent='◉ '+from.toUpperCase()+' · LIVE RADIO';$('commsText').textContent=message;$('commsBox').classList.add('visible');fx('comms');
+ radioSource=from;radioText=message;commsTimer=4.5;lastRadio=game?.elapsed||0;const c=castFor(from);$('commsSource').textContent='◉ '+c.role+' · LIVE RADIO';$('commsName').textContent=c.name;$('commsText').textContent=message;showPortrait('commsPortrait',from);$('commsBox').classList.add('visible');fx('comms');
  // Spoken radio dialogue is optional and subject to the browser's speech support.
  if(soundOn&&'speechSynthesis' in window&&typeof SpeechSynthesisUtterance!=='undefined'){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(message);u.rate=1.15;u.pitch=from.includes('ENEMY')?.64:from.includes('COMMAND')?.86:1.16;u.volume=.58;speechSynthesis.speak(u)}catch(e){}}
 }
@@ -226,9 +290,9 @@ function openMission(i){
   duration:7.2,next:()=>startLevel(i)});
 }
 function showScene(s){
- scene={kind:'approach',mission:selected,duration:6.5,elapsed:0,...s};sceneEnd=0;
+ scene={kind:'approach',mission:selected,duration:6.5,elapsed:0,...s};sceneEnd=0;scene.dialogue=sceneDialogue(scene);
  setScreen('scene');$('sceneTitle').textContent=scene.title;
- $('sceneText').textContent=scene.text;$('sceneKicker').textContent=scene.kicker||'CINEMATIC • WATCH ONLY';
+ showSceneLine(0);$('sceneKicker').textContent=scene.kicker||'CINEMATIC • WATCH ONLY';
  $('sceneProgress').style.width='0';
  audio(scene.kind==='bossWake'?100:scene.kind==='bossBreak'?185:440,.25,'triangle',.06,.6);
 }
@@ -335,8 +399,8 @@ function completeObjectiveTarget(t){
 function tick(dt){musicTick();radioTick(dt);worldTime+=dt;flash=Math.max(0,flash-dt);shake=Math.max(0,shake-35*dt);if(toaster>0){toaster-=dt;if(toaster<=0)$('toast').classList.remove('on');}if(screen==='scene'){
  if(!scene)return;scene.elapsed+=dt;let f=clamp(scene.elapsed/scene.duration,0,1);
  $('sceneProgress').style.width=(f*100).toFixed(1)+'%';
- if(scene.beats?.length){const stage=Math.min(scene.beats.length-1,Math.floor(f*scene.beats.length));
-  if(scene.lastBeat!==stage){scene.lastBeat=stage;$('sceneText').textContent=scene.beats[stage];}}
+ if(scene.dialogue?.length){const stage=Math.min(scene.dialogue.length-1,Math.floor(f*scene.dialogue.length));
+  if(scene.lastBeat!==stage){scene.lastBeat=stage;showSceneLine(stage);}}
  if(f>=1)skipScene();return;
 }
 if(screen!=='play'||!game)return;const g=game,p=g.player,l=levels[g.index];g.elapsed+=dt;if(!g.bossSpawned){if(g.elapsed>=l.duration*.38&&g.checkpointStage<1)checkpoint(1);if(g.elapsed>=l.duration*.74&&g.checkpointStage<2)checkpoint(2);}p.invul=Math.max(0,p.invul-dt);g.shield=Math.max(0,g.shield-dt);g.rapid=Math.max(0,g.rapid-dt);g.spread=Math.max(0,g.spread-dt);g.overdrive=Math.max(0,g.overdrive-dt);g.wingman=Math.max(0,g.wingman-dt);g.wingCD=Math.max(0,g.wingCD-dt);g.comboTimer=Math.max(0,g.comboTimer-dt);g.fireCD=Math.max(0,g.fireCD-dt);
