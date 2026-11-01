@@ -65,7 +65,7 @@ const clouds=Array.from({length:18},()=>({x:rand(0,W),y:rand(0,H),r:rand(45,140)
 const terrain=Array.from({length:18},(_,i)=>({x:i*65,y:rand(0,1)}));
 function audio(freq=330,dur=.07,type='sine',volume=.035,slide=1){if(!soundOn)return;try{soundCtx=soundCtx||new (window.AudioContext||window.webkitAudioContext)();if(soundCtx.state==='suspended')soundCtx.resume();const osc=soundCtx.createOscillator(),gain=soundCtx.createGain();osc.type=type;osc.frequency.setValueAtTime(freq,soundCtx.currentTime);osc.frequency.exponentialRampToValueAtTime(Math.max(30,freq*slide),soundCtx.currentTime+dur);gain.gain.setValueAtTime(volume,soundCtx.currentTime);gain.gain.exponentialRampToValueAtTime(.0001,soundCtx.currentTime+dur);osc.connect(gain);gain.connect(soundCtx.destination);osc.start();osc.stop(soundCtx.currentTime+dur);}catch(e){}}
 function toast(msg){$('toast').textContent=msg;$('toast').classList.add('on');toaster=2.2;}
-function setScreen(s){screen=s;for(let k of Object.keys(OVERLAYS))$(OVERLAYS[k]).classList.remove('show');if(OVERLAYS[s])$(OVERLAYS[s]).classList.add('show');$('hud').classList.toggle('visible',s==='play');$('touchControls').classList.toggle('playing',s==='play');$('orientationHint').classList.toggle('playing',s==='play');$('pauseBtn').style.display=(s==='play'||s==='pause')?'':'none';$('pauseBtn').textContent=s==='pause'?'▶ RESUME':'Ⅱ PAUSE';}
+function setScreen(s){screen=s;for(let k of Object.keys(OVERLAYS))$(OVERLAYS[k]).classList.remove('show');if(OVERLAYS[s])$(OVERLAYS[s]).classList.add('show');$('hud').classList.toggle('visible',s==='play');$('touchControls').classList.toggle('playing',s==='play');$('orientationHint').classList.toggle('playing',s==='play');$('pauseBtn').style.display=(s==='play'||s==='pause')?'':'none';$('pauseBtn').textContent=s==='pause'?'▶ RESUME':'Ⅱ PAUSE';$('objectiveHud').style.display=(s==='play'&&game?.objective)?'block':'none';if(s==='scene')$('toast').classList.remove('on');}
 function isAvailable(mission){
   if(mission===1||saved.completed.includes(mission))return true;
   if(mission===18)return Boolean(saved.routeKeys.beacon);
@@ -106,8 +106,20 @@ function makeMap(){
   if(!$('mapWorld').dataset.visited){$('levelMap').scrollLeft=0;$('mapWorld').dataset.visited='true';}
 }
 function openMap(chapter){makeMap();setScreen('map');}
-function openMission(i){if(!isAvailable(i+1))return;selected=i;const l=levels[i];showScene({title:`MISSION ${String(i+1).padStart(2,'0')} · ${l.name.toUpperCase()}`,text:l.desc+' '+l.extra,kicker:`INCOMING TRANSMISSION · ${l.zone.toUpperCase()}`,duration:6.9,next:()=>startLevel(i)});}
-function showScene(s){scene=s;sceneEnd=0;setScreen('scene');$('sceneTitle').textContent=s.title;$('sceneText').textContent=s.text;$('sceneKicker').textContent=s.kicker||'CINEMATIC • WATCH ONLY';$('sceneProgress').style.width='0';}
+function openMission(i){
+ if(!isAvailable(i+1))return;selected=i;const l=levels[i];
+ showScene({kind:'approach',mission:i, title:`MISSION ${String(i+1).padStart(2,'0')} · ${l.name.toUpperCase()}`,
+  text:l.desc+' '+l.extra, kicker:`FLIGHT APPROACH · ${l.zone.toUpperCase()}`,
+  beats:['The squadron approaches '+l.zone+'.','Wing pilots break formation and scout ahead.','Your fighter dives toward the mission zone.'],
+  duration:7.2,next:()=>startLevel(i)});
+}
+function showScene(s){
+ scene={kind:'approach',mission:selected,duration:6.5,elapsed:0,...s};sceneEnd=0;
+ setScreen('scene');$('sceneTitle').textContent=scene.title;
+ $('sceneText').textContent=scene.text;$('sceneKicker').textContent=scene.kicker||'CINEMATIC • WATCH ONLY';
+ $('sceneProgress').style.width='0';
+ audio(scene.kind==='bossWake'?100:scene.kind==='bossBreak'?185:440,.25,'triangle',.06,.6);
+}
 function skipScene(){if(screen!=='scene'||!scene)return;let n=scene.next;scene=null;sceneEnd=0; if(n)n();}
 function newGame(i){return{objective:campaignGoals[i+1]?{...campaignGoals[i+1],count:0,spawnCD:3,spawned:0}:null,groundTargets:[],index:i,score:0,hp:100,shield:0,rapid:0,spread:0,overdrive:0,wingman:0,wingCD:0,missiles:2,meteors:[],meteorTimer:1.8,elapsed:0,spawnTimer:1,pickupTimer:4,fireCD:0,boss:null,bossSpawned:false,player:{x:150,y:300,r:18,invul:1.7},enemies:[],shots:[],foeShots:[],pickups:[],particles:[],explosions:[],kills:0,combo:0,comboTimer:0,done:false,waveNum:0};}
 function startLevel(i){game=newGame(i);controls.aim=null;selected=i;flash=.18;toast(meteorLevels.has(i)?'☄ METEOR FIELD · DODGE OR DESTROY':'MISSION '+(i+1)+': '+levels[i].name.toUpperCase());setScreen('play');updateHud();}
@@ -126,11 +138,11 @@ function showRouteChoices(i){
 }
 function finishEnding(i){
   const ending=levels[i].ending,script=endingScripts[ending];
-  showScene({title:script.title,text:script.body,kicker:'FINAL CINEMATIC · WATCH ONLY · SKIPPABLE',duration:10,
+  showScene({kind:'ending',mission:i,title:script.title,text:script.body,kicker:'FINAL CINEMATIC · WATCH ONLY · SKIPPABLE',duration:10,
   next:()=>showEnd('finish',script.label,`The Boss of Bosses has fallen. You unlocked ${saved.endings.length} of 3 finales. Final score: ${game.score.toLocaleString()}. Replay from the mission map to discover the others.`, 'EXPLORE OTHER ENDINGS',()=>openMap(1),'★ ★ ★ ★ ★')});
 }
 function cleared(){
-  if(!game||game.done)return;game.done=true;const i=game.index,id=i+1,lev=levels[i];
+  if(!game||game.done)return;if(game.objective&&game.objective.count<game.objective.target)return;game.done=true;const i=game.index,id=i+1,lev=levels[i];
   const bonus=Math.round(game.hp)*30+game.missiles*150;game.score+=bonus;
   if(id<=10)saved.unlocked=Math.max(saved.unlocked,Math.min(10,id+1));
   if(game.objective&&game.objective.count<game.objective.target)return;
@@ -142,11 +154,28 @@ function cleared(){
   const nextIds=routes[id]||[];
   const next=()=>{
     if(lev.ending){finishEnding(i);return;}
-    if(id===10){showScene({title:'A SIGNAL BEYOND THE SUNRISE',text:'Atlas Prime has fallen, but new transmissions reach the squadron. A hidden fleet has split the horizon into rival air routes. The next campaign begins now!',kicker:'CHAPTER II CINEMATIC · WATCH ONLY',duration:7,next:()=>openMission(10)});return;}
-    if(nextIds.length>1){openMap(id>=11?1:0);return;}
+    if(id===10){showScene({kind:'chapter',mission:i,title:'A SIGNAL BEYOND THE SUNRISE',
+ text:'Atlas Prime has fallen, but a hidden fleet has split the horizon into rival air routes.',
+ beats:['Your formation leaves the ruined fortress.','A mysterious signal reveals ten undiscovered worlds.','The new campaign opens. Choose your next destination.'],
+ kicker:'NEW CHAPTER · WATCH ONLY',duration:7.2,next:()=>openMission(10)});return;}
+    if(nextIds.length>1){
+ const options=nextIds.filter(isAvailable);
+ showScene({kind:'branch',mission:i,options,title:'NEW FLIGHT PATHS UNLOCKED',
+ text:'The orbital navigation computer projects new routes. Choose your next mission.',
+ beats:['Your pilots reach a fork in the star routes.','The navigation officer illuminates earned destinations.','Choose a highlighted planet on the mission map.'],
+ kicker:'BRANCHING STORY · WATCH ONLY',duration:6.5,next:()=>openMap()});return;
+}
     if(!nextIds.length){openMap(id>=11?1:0);return;}
-    if(lev.boss){showScene({title:'THE GUARDIAN HAS FALLEN',text:`${lev.boss} is defeated. The next sky route is clear. Destination: ${levels[nextIds[0]-1].zone}.`,kicker:'VICTORY CINEMATIC · WATCH ONLY',duration:5.7,next:()=>openMission(nextIds[0]-1)});return;}
-    openMission(nextIds[0]-1);
+    if(lev.boss){
+ showScene({kind:'departure',mission:i,title:'THE GUARDIAN HAS FALLEN',
+ text:`${lev.boss} has been defeated. Your wingmen regroup and set course for ${levels[nextIds[0]-1].zone}.`,
+ beats:['The wreckage fades behind the squadron.','Your wingmen sweep in to join formation.','A new planet appears on the horizon.'],
+ kicker:'AFTER THE BATTLE · WATCH ONLY',duration:5.2,next:()=>openMission(nextIds[0]-1)});return;
+}
+    showScene({kind:'departure',mission:i,title:'MISSION SECURED · NEXT DESTINATION',
+ text:`Your squadron departs ${lev.zone} for ${levels[nextIds[0]-1].zone}.`,
+ beats:['Your fighter climbs away from the cleared battlefield.','Wingmen join your formation.','The next planet comes into view.'],
+ kicker:'BETWEEN MISSIONS · WATCH ONLY',duration:4.7,next:()=>openMission(nextIds[0]-1)});
   };
   const title=lev.ending?'THE BOSS OF BOSSES FALLS':id===10?'THE STORY CONTINUES':'SKY SECURED';
   const message=`Mission ${id} cleared · ${game.objective?'Objective '+game.objective.count+'/'+game.objective.target+' completed · ':''}${game.kills} enemy fighters destroyed · +${bonus.toLocaleString()} survival bonus. ${lev.ending?'You reached one of the three endings!':nextIds.length>1?'New branching routes unlocked. Choose where to fly next!':id===10?'The Fractured Horizon campaign is unlocked!':'Your next mission is ready.'}`;
@@ -167,7 +196,11 @@ function collect(item){const g=game;
  switch(item.type){case 'heal':g.hp=Math.min(100,g.hp+30);toast('♥ HULL REPAIRED +30');break;case 'shield':g.shield=8;toast('◆ ENERGY SHIELD ACTIVE');break;case 'rapid':g.rapid=10;toast('⚡ RAPID FIRE UNLOCKED');break;case 'spread':g.spread=11;toast('✦ TRIPLE SHOT ACTIVE');break;case 'missile':g.missiles+=2;toast('🚀 TWO MISSILES COLLECTED');break;case 'points':g.score+=750;toast('★ BONUS 750 POINTS');break;case 'overdrive':g.overdrive=12;toast('🔥 OVERDRIVE LASERS ACTIVE');break;case 'wingman':g.wingman=12;toast('✈ ALLIED WINGMAN SUPPORT');break;case 'nova':g.foeShots=[];for(const e of g.enemies){e.hp=0;boom(e.x,e.y);}g.enemies=[];if(g.boss){g.boss.hp=Math.max(1,g.boss.hp-45);sparks(g.boss.x,g.boss.y,40,'#fff3ae',2);}g.score+=500;toast('☀ NOVA BLAST · SKY CLEARED');break;}audio(750,.2,'sine',.07,1.65);sparks(item.x,item.y,15,'#96ffe5');}
 function shoot(){const g=game;if(!g)return;const p=g.player;const sy=g.spread>0?[-95,0,95]:[0];for(let vy of sy)g.shots.push({x:p.x+22,y:p.y,vx:780,vy,damage:g.overdrive>0?3.5:2.2,r:4.5,kind:'laser'});g.fireCD=g.rapid>0?.11:.185;audio(g.spread>0?620:460,.06,'triangle',.019,.6);}
 function missile(){if(screen!=='play'||!game||game.missiles<1)return;game.missiles--;const p=game.player;game.shots.push({x:p.x+15,y:p.y,vx:520,vy:0,damage:22,r:9,kind:'missile',life:2.8});toast('🚀 MISSILE LAUNCHED');audio(140,.25,'sawtooth',.06,2);}
-function spawnBoss(){const g=game,lev=levels[g.index];g.bossSpawned=true;g.enemies=[];g.foeShots=[];const final=!!lev.ending,bossHp=final?({dawn:260,storm:330,void:400}[lev.ending]):85+g.index*20;g.boss={name:lev.boss,x:W+130,y:H*.5,r:final?80:75,hp:bossHp,maxHp:bossHp,time:0,fire:1.15,phase:0,form:lev.ending||'standard',type:[14,16,18,19].includes(g.index)?'planetRobot':'carrier',volley:0};showScene({title:lev.boss+' APPROACHES',text:`WARNING: Giant ${g.boss.type==='planetRobot'?'planetary war robot':'carrier fighter'} detected. Its armor is reinforced, but your missiles can tear through it. ${lev.ending?'This is NEXUS OMEGA, the Boss of Bosses! Its chosen form determines your ending.':'This is your moment, pilot!'}`,kicker:'BOSS ENCOUNTER · WATCH ONLY',duration:3.8,next:()=>{setScreen('play');toast('⚠ BOSS BATTLE: '+lev.boss);}});audio(110,.7,'sawtooth',.07,.45);}
+function spawnBoss(){const g=game,lev=levels[g.index];g.bossSpawned=true;g.enemies=[];g.foeShots=[];const final=!!lev.ending,bossHp=final?({dawn:260,storm:330,void:400}[lev.ending]):85+g.index*20;g.boss={name:lev.boss,x:W+130,y:H*.5,r:final?80:75,hp:bossHp,maxHp:bossHp,time:0,fire:1.15,phase:0,form:lev.ending||'standard',type:[14,16,18,19].includes(g.index)?'planetRobot':'carrier',volley:0};showScene({kind:'bossWake',mission:g.index,boss:{...g.boss},title:lev.boss+' AWAKENS',
+ text:`WARNING: ${g.boss.type==='planetRobot'?'Planetary war robot':'Giant carrier fighter'} powering up.`,
+ beats:['A giant silhouette rises from the darkness.','Armor plates unfold. Its core begins to glow.','The boss locks onto your fighter. Prepare to fight!'],
+ kicker:'BOSS AWAKENING · WATCH ONLY',duration:6.2,
+ next:()=>{setScreen('play');toast('⚠ BOSS BATTLE: '+lev.boss);}});audio(110,.7,'sawtooth',.07,.45);}
 function killEnemy(e){let g=game;g.score+=e.points;g.kills++;g.combo++;g.comboTimer=4;boom(e.x,e.y,e.type==='bomber');if(Math.random()<.10)spawnPickup(e.x,e.y);}
 function spawnObjective(){
  const g=game,o=g?.objective;if(!o||o.count>=o.target)return;
@@ -187,7 +220,13 @@ function completeObjectiveTarget(t){
  t.dead=true;game.objective.count=Math.min(game.objective.target,game.objective.count+1);game.score+=900;
  boom(t.x,t.y,true,t.type==='tower'?'#97ebff':'#ffb17e');toast('⚙ '+game.objective.label+'  '+game.objective.count+'/3');updateHud();
 }
-function tick(dt){worldTime+=dt;flash=Math.max(0,flash-dt);shake=Math.max(0,shake-35*dt);if(toaster>0){toaster-=dt;if(toaster<=0)$('toast').classList.remove('on');}if(screen==='scene'){if(!sceneEnd)sceneEnd=performance.now();let f=(performance.now()-sceneEnd)/(scene.duration*1000);$('sceneProgress').style.width=clamp(f*100,0,100)+'%';if(f>=1)skipScene();return;}
+function tick(dt){worldTime+=dt;flash=Math.max(0,flash-dt);shake=Math.max(0,shake-35*dt);if(toaster>0){toaster-=dt;if(toaster<=0)$('toast').classList.remove('on');}if(screen==='scene'){
+ if(!scene)return;scene.elapsed+=dt;let f=clamp(scene.elapsed/scene.duration,0,1);
+ $('sceneProgress').style.width=(f*100).toFixed(1)+'%';
+ if(scene.beats?.length){const stage=Math.min(scene.beats.length-1,Math.floor(f*scene.beats.length));
+  if(scene.lastBeat!==stage){scene.lastBeat=stage;$('sceneText').textContent=scene.beats[stage];}}
+ if(f>=1)skipScene();return;
+}
 if(screen!=='play'||!game)return;const g=game,p=g.player,l=levels[g.index];g.elapsed+=dt;p.invul=Math.max(0,p.invul-dt);g.shield=Math.max(0,g.shield-dt);g.rapid=Math.max(0,g.rapid-dt);g.spread=Math.max(0,g.spread-dt);g.overdrive=Math.max(0,g.overdrive-dt);g.wingman=Math.max(0,g.wingman-dt);g.wingCD=Math.max(0,g.wingCD-dt);g.comboTimer=Math.max(0,g.comboTimer-dt);g.fireCD=Math.max(0,g.fireCD-dt);
 let my=(controls.keys.has('ArrowRight')||controls.keys.has('d')?1:0)-(controls.keys.has('ArrowLeft')||controls.keys.has('a')?1:0),mx=(controls.keys.has('ArrowUp')||controls.keys.has('w')?1:0)-(controls.keys.has('ArrowDown')||controls.keys.has('s')?1:0);const len=Math.hypot(mx,my)||1;p.x+=mx/len*380*dt;p.y+=my/len*380*dt;if(controls.aim){p.x+=(controls.aim.x-p.x)*Math.min(1,dt*10);p.y+=(controls.aim.y-p.y)*Math.min(1,dt*10);}p.x=clamp(p.x,50,630);p.y=clamp(p.y,54,H-50);
 if(g.fireCD<=0)shoot();if(g.wingman>0&&g.wingCD<=0){g.shots.push({x:p.x-20,y:p.y-29,vx:780,vy:-65,damage:2.2,r:5,kind:'laser'});g.shots.push({x:p.x-20,y:p.y+29,vx:780,vy:65,damage:2.2,r:5,kind:'laser'});g.wingCD=.30;}if(controls.keys.has('x')||controls.keys.has('X')){if(!controls.missileHeld){missile();controls.missileHeld=true;}}else controls.missileHeld=false;
@@ -218,7 +257,12 @@ const b=g.boss;if(b){b.time+=dt;b.x+=(790-b.x)*Math.min(1,dt*1.2);b.y=H/2+Math.s
 }if(dist(b,p)<b.r+p.r&&p.invul<=0)playerDown();}
 for(const s of g.shots){s.x+=s.vx*dt;s.y+=s.vy*dt;if(s.kind==='missile'){s.life-=dt;const targets=[...g.enemies,...g.groundTargets];if(g.boss)targets.push(g.boss);const target=targets.filter(t=>t.x>s.x-120).sort((a,b)=>dist(s,a)-dist(s,b))[0];if(target){const turn=Math.atan2(target.y-s.y,target.x-s.x);s.vx=Math.cos(turn)*540;s.vy=Math.sin(turn)*540;}}if(s.x>W+40||s.y<-40||s.y>H+40||s.life<0)s.dead=true;for(const e of g.enemies){if(!s.dead&&dist(s,e)<e.r+s.r){e.hp-=s.damage;s.dead=true;if(s.kind==='missile')boom(s.x,s.y,true);else sparks(s.x,s.y,3,'#bfffff');if(e.hp<=0)killEnemy(e);break;}}for(const rock of g.meteors){if(!s.dead&&!rock.dead&&dist(s,rock)<rock.r+s.r){rock.hp-=s.damage;s.dead=true;if(rock.hp<=0){rock.dead=true;g.score+=110;boom(rock.x,rock.y,false,'#f6cfb0')}else sparks(rock.x,rock.y,5,'#ffd1aa');break;}}
 for(const o of g.groundTargets){if(!s.dead&&!o.dead&&dist(s,o)<o.r+s.r){o.hp-=s.damage;s.dead=true;if(s.kind==='missile')boom(s.x,s.y,true);else sparks(s.x,s.y,4,'#9fffe8');if(o.hp<=0)completeObjectiveTarget(o);break;}}
-if(g.boss&&!s.dead&&dist(s,g.boss)<g.boss.r*.72+s.r){g.boss.hp-=s.damage;s.dead=true;if(s.kind==='missile')boom(s.x,s.y,true);else sparks(s.x,s.y,4,'#dffaff');if(g.boss.hp<=0){boom(g.boss.x,g.boss.y,true,'#ffcb6d');g.score+=5000;g.boss=null;cleared();return;}}}g.groundTargets=g.groundTargets.filter(t=>!t.dead);g.meteors=g.meteors.filter(t=>!t.dead);g.shots=g.shots.filter(s=>!s.dead);
+if(g.boss&&!s.dead&&dist(s,g.boss)<g.boss.r*.72+s.r){g.boss.hp-=s.damage;s.dead=true;if(s.kind==='missile')boom(s.x,s.y,true);else sparks(s.x,s.y,4,'#dffaff');if(g.boss.hp<=0){
+ const fallen={...g.boss};boom(g.boss.x,g.boss.y,true,'#ffcb6d');g.score+=5000;g.boss=null;
+ showScene({kind:'bossBreak',mission:g.index,boss:fallen,title:fallen.name+' BREAKS APART',
+  text:'The giant enemy has been defeated. Its armor collapses and its engines break apart.',
+  beats:['Your final strike cracks the armored shell.','Its reactor erupts; wings and armor plates fly apart.','The wreck falls away, and the squadron flies through.'],
+  kicker:'BOSS DEFEATED · WATCH ONLY',duration:6.3,next:()=>cleared()});return;}}}g.groundTargets=g.groundTargets.filter(t=>!t.dead);g.meteors=g.meteors.filter(t=>!t.dead);g.shots=g.shots.filter(s=>!s.dead);
 for(const s of g.foeShots){s.x+=s.vx*dt;s.y+=s.vy*dt;if(dist(s,p)<s.r+p.r){s.dead=true;playerDown();}}g.foeShots=g.foeShots.filter(s=>!s.dead&&s.x>-30&&s.y>-20&&s.y<H+20);
 for(const item of g.pickups){item.x-=(item.goal?145:104)*dt;item.phase+=dt*3;if(dist(item,p)<item.r+p.r+(item.goal?7:0)){item.dead=true;collect(item);}}g.pickups=g.pickups.filter(x=>!x.dead&&x.x>-30);
 for(const q of g.particles){q.x+=q.vx*dt;q.y+=q.vy*dt;q.life-=dt;q.vx*=Math.max(.1,1-1.2*dt);q.vy*=Math.max(.1,1-1.2*dt);}g.particles=g.particles.filter(q=>q.life>0);for(const e of g.explosions)e.t+=dt;g.explosions=g.explosions.filter(x=>x.t<x.life);if(g.hp<=0)return;updateHud();}
@@ -334,27 +378,121 @@ polygon([[-57,-15],[-25,-23],[0,-41],[25,-23],[57,-15],[39,37],[-39,37]],body,'#
 ctx.fillStyle='#ff9db2';ctx.fillRect(-22,-15,44,12);ctx.fillStyle='#b6fcff';ctx.beginPath();ctx.arc(0,14,13,0,TAU);ctx.fill();
 if(t.type!=='relay'){ctx.strokeStyle='#8bd9ff';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(0,-42);ctx.lineTo(0,-105);ctx.stroke();}
 ctx.restore();}
-function drawPlanetRobotBoss(b,p,s){ctx.save();ctx.translate(p.x,p.y+83);ctx.scale(s*.89,s*.89);const w=b.form==='storm'?'#85d9ff':b.form==='void'?'#e9a2ff':'#ffb78b';ctx.shadowColor=w;ctx.shadowBlur=24;
+function drawPlanetRobotBoss(b,p,s,cinematic=false,awake=1){ctx.save();ctx.translate(p.x,p.y+83);ctx.scale(s*.89,s*.89);const w=b.form==='storm'?'#85d9ff':b.form==='void'?'#e9a2ff':'#ffb78b';ctx.shadowColor=w;ctx.shadowBlur=24;
 // Two enormous piston legs, articulated arms and a luminous reactor core.
 for(const side of [-1,1]){polygon([[side*26,12],[side*62,42],[side*73,134],[side*43,149],[side*24,72]],'#46506c',w,4);polygon([[side*48,-70],[side*90,-66],[side*130,-8],[side*106,45],[side*78,24],[side*86,-17]],'#59627c',w,4);}
 polygon([[-80,-112],[0,-142],[80,-112],[70,35],[0,66],[-70,35]],'#343b58',w,5);
-polygon([[-44,-156],[0,-189],[44,-156],[37,-121],[-37,-121]],'#5b6d86',w,4);ctx.fillStyle=w;ctx.fillRect(-27,-150,54,12);
-const core=ctx.createRadialGradient(0,-41,4,0,-41,47);core.addColorStop(0,'#fff');core.addColorStop(.35,w);core.addColorStop(1,'#17223f');ctx.fillStyle=core;ctx.beginPath();ctx.arc(0,-41,40,0,TAU);ctx.fill();ctx.restore();
+polygon([[-44,-156],[0,-189],[44,-156],[37,-121],[-37,-121]],'#5b6d86',w,4);ctx.fillStyle=w;ctx.globalAlpha=.08+awake*.92;ctx.fillRect(-27,-150,54,12);ctx.globalAlpha=1;
+const core=ctx.createRadialGradient(0,-41,4,0,-41,47);core.addColorStop(0,'#fff');core.addColorStop(.35,w);core.addColorStop(1,'#17223f');ctx.fillStyle=core;ctx.globalAlpha=.12+awake*.88;ctx.beginPath();ctx.arc(0,-41,40,0,TAU);ctx.fill();ctx.globalAlpha=1;ctx.restore();
+if(cinematic)return;
 rounded(625,107,288,16,7,'#230d2ede');rounded(629,111,280*clamp(b.hp/b.maxHp,0,1),8,5,w);ctx.fillStyle='#fff8ed';ctx.font='900 17px system-ui';ctx.textAlign='center';ctx.fillText('⚠ '+b.name+' · WAR ROBOT ⚠',769,96);ctx.textAlign='left';}
-function drawRearBoss(b){const p=project(b.x,b.y),s=Math.max(.8,p.s*1.8);if(b.type==='planetRobot')return drawPlanetRobotBoss(b,p,s);ctx.save();ctx.translate(p.x,p.y);ctx.scale(s,s);
+function drawRearBoss(b,cinematic=false,awake=1){const p=project(b.x,b.y),s=Math.max(.8,p.s*1.8);if(b.type==='planetRobot')return drawPlanetRobotBoss(b,p,s,cinematic,awake);ctx.save();ctx.translate(p.x,p.y);ctx.scale(s,s);
  const hue=b.form==='dawn'?'#ffd799':b.form==='storm'?'#9ee7ff':b.form==='void'?'#ed9aff':'#ff98ae';
  ctx.shadowBlur=26;ctx.shadowColor=hue;polygon([[-20,-100],[0,-124],[20,-100],[45,-15],[137,28],[130,62],[40,43],[25,98],[-25,98],[-40,43],[-130,62],[-137,28],[-45,-15]],'#262a43',hue,3);
  polygon([[-42,5],[-124,45],[-27,37]],'#8a566c','#ffbd9f',2);polygon([[42,5],[124,45],[27,37]],'#8a566c','#ffbd9f',2);
- const core=ctx.createRadialGradient(0,-20,4,0,-20,52);core.addColorStop(0,'#fff');core.addColorStop(.3,hue);core.addColorStop(1,'#6b274b');ctx.fillStyle=core;ctx.beginPath();ctx.ellipse(0,-20,31,48,0,0,TAU);ctx.fill();ctx.restore();
+ const core=ctx.createRadialGradient(0,-20,4,0,-20,52);core.addColorStop(0,'#fff');core.addColorStop(.3,hue);core.addColorStop(1,'#6b274b');ctx.fillStyle=core;ctx.globalAlpha=.15+.85*awake;ctx.beginPath();ctx.ellipse(0,-20,31,48,0,0,TAU);ctx.fill();ctx.globalAlpha=1;ctx.restore();
+ if(cinematic)return;
  rounded(625,107,288,16,7,'#230d2ede');rounded(629,111,280*clamp(b.hp/b.maxHp,0,1),8,5,hue);ctx.fillStyle='#fff8ed';ctx.font='900 17px system-ui';ctx.textAlign='center';ctx.fillText('⚠ '+b.name+' ⚠',769,96);ctx.textAlign='left';}
 function drawJet(x,y,scaleJet=1,enemy=false,type='fighter',tilt=0){ctx.save();ctx.translate(x,y);ctx.rotate(tilt);ctx.scale(scaleJet,scaleJet);if(enemy)ctx.scale(-1,1);const body=enemy?'#f69eaa':'#a2f2ff',dark=enemy?'#7a2749':'#28679e',wing=enemy?'#e96b81':'#56b1e8';ctx.shadowBlur=enemy?11:20;ctx.shadowColor=enemy?'#f65a80':'#54c9ff';polygon([[-31,0],[-13,-7],[13,-8],[33,0],[13,8],[-13,7]],body,'#e6ffff',1);polygon([[-10,-4],[-24,-25],[3,-19],[12,-6]],wing,dark,1.2);polygon([[-10,4],[-24,25],[3,19],[12,6]],wing,dark,1.2);polygon([[-25,-5],[-36,-15],[-14,-9]],dark);polygon([[-25,5],[-36,15],[-14,9]],dark);polygon([[3,-5],[18,-3],[25,0],[18,3],[3,5]],enemy?'#47223d':'#224f78','#ecffff',.8);ctx.shadowBlur=0;ctx.fillStyle=enemy?'#ff9d44':'#51ffff';ctx.beginPath();ctx.ellipse(-32,0,rand(4,9),3.3,0,0,TAU);ctx.fill();if(type==='bomber'){ctx.fillStyle=dark;ctx.fillRect(-8,-21,12,42);}if(type==='ace'){ctx.strokeStyle='#ffe3a8';ctx.lineWidth=2;ctx.strokeRect(-6,-7,18,14);}ctx.restore();}
 function drawBoss(b){ctx.save();ctx.translate(b.x,b.y);if(b.form!=='standard'){const hue=b.form==='dawn'?'#ffd88b':b.form==='storm'?'#9edaff':'#e19aff';ctx.save();ctx.rotate(b.time*(b.form==='void'?-.55:.35));ctx.strokeStyle=hue;ctx.globalAlpha=.8;ctx.shadowColor=hue;ctx.shadowBlur=17;ctx.lineWidth=3;for(let k=0;k<3;k++){ctx.beginPath();ctx.ellipse(0,0,100+k*13,49+k*11,k*.55,0,TAU);ctx.stroke();}ctx.restore();} ctx.rotate(Math.sin(b.time*1.1)*.05);ctx.shadowBlur=28;ctx.shadowColor='#f15d93';polygon([[-96,0],[-40,-27],[7,-41],[65,-29],[101,0],[65,29],[7,41],[-40,27]],'#672f53','#ffb1b4',3);polygon([[-24,-17],[-55,-86],[20,-60],[47,-24]],'#8c4568','#ffa2a7',2);polygon([[-24,17],[-55,86],[20,60],[47,24]],'#8c4568','#ffa2a7',2);polygon([[-33,0],[21,-24],[76,0],[21,24]],'#d66d84','#ffe1b2',2);ctx.shadowBlur=15;ctx.fillStyle='#e8fcff';ctx.beginPath();ctx.ellipse(39,0,24,9,0,0,TAU);ctx.fill();ctx.fillStyle='#fc5776';for(let i of [-1,1]){ctx.beginPath();ctx.ellipse(-75,i*19,12,6,0,0,TAU);ctx.fill();}ctx.restore();rounded(625,112,288,16,7,'#240f2ded');rounded(629,116,280*clamp(b.hp/b.maxHp,0,1),8,5,'#ff6e8c');ctx.fillStyle='#fff1e6';ctx.font='900 17px system-ui';ctx.textAlign='center';ctx.fillText('⚠ '+b.name+' ⚠',769,102);}
+// Storyboard engine: every cinematic shows moving on-screen actors, never static gameplay.
+function drawCinematic(){
+ if(!scene)return;
+ const s=scene,k=s.kind||'approach',t=s.elapsed,d=s.duration,p=clamp(t/d,0,1);
+ const smooth=x=>{x=clamp(x,0,1);return x*x*(3-2*x)};
+ const fly=(x,y,z,enemy=false,bank=0)=>drawRearJet(x,y,z,enemy,bank);
+ const glow=(x,y,r,color,a=1)=>{ctx.save();ctx.globalAlpha=a;let g=ctx.createRadialGradient(x,y,2,x,y,r);g.addColorStop(0,color);g.addColorStop(1,'#00000000');ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2);ctx.restore()};
+ const beam=(x,y,tx,ty,c,w=3)=>{ctx.save();ctx.strokeStyle=c;ctx.lineWidth=w;ctx.shadowColor=c;ctx.shadowBlur=12;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(tx,ty);ctx.stroke();ctx.restore()};
+ const tag=(str,x,y,color='#c7f6ff')=>{ctx.save();ctx.font='900 14px ui-monospace,monospace';ctx.textAlign='center';ctx.fillStyle='#02182adb';ctx.fillRect(x-82,y-17,164,28);ctx.strokeStyle='#7ad7f777';ctx.strokeRect(x-82,y-17,164,28);ctx.fillStyle=color;ctx.fillText(str,x,y+2);ctx.restore()};
+ if(k==='approach'){
+   // Actor 1: the player leaves formation, accelerating and banking down toward the surface.
+   let step=smooth(p),jitter=Math.sin(t*3)*3;
+   for(let side of [-1,1]){
+     let breakAway=smooth((p-.31)/.42),bx=480+side*(70+breakAway*330),by=215+breakAway*120;
+     fly(bx,by,Math.max(.2,.52-breakAway*.22),false,side*breakAway*.26);
+     if(p<.8){beam(bx-3,by+27,bx-3-side*10,by+35+breakAway*65,'#7ae6ff7a',2)}
+   }
+   fly(480+Math.sin(t*2)*12,280+step*166+jitter,.35+step*.77,false,Math.sin(t*1.4)*.045);
+   if(p>.46){for(let a=0;a<5;a++){let z=((p-.46)*3+a*.19)%1;ctx.strokeStyle=`rgba(183,238,255,${.09+z*.3})`;ctx.lineWidth=1+z*2;ctx.beginPath();ctx.moveTo(480+(a-2)*35*z,180+z*310);ctx.lineTo(480+(a-2)*49*z,210+z*320);ctx.stroke();}}
+   tag(p<.35?'SQUADRON FORMATION':p<.7?'BREAKING FORMATION':'APPROACHING SURFACE',480,66);
+   // Actor 2: opposing fighters race past as the squadron intercepts.
+   if(p>.18&&p<.64){let z=(p-.18)/.46;fly(850-500*z,220+110*z,.24+z*.24,true,-.12);fly(130+530*z,255+45*z,.16+z*.18,true,.12)}
+ }else if(k==='bossWake'){
+   const b=s.boss||{name:'UNKNOWN',type:'carrier',form:'standard',hp:1,maxHp:1},rise=smooth(p/.58),awake=smooth((p-.27)/.58),turn=Math.sin(t*1.2)*.035;
+   ctx.save();ctx.translate(0,(1-rise)*160);
+   if(b.type==='planetRobot'){
+     ctx.save();ctx.translate(480,326);ctx.rotate(turn*awake);ctx.translate(-480,-326);
+     const actor={...b,form:b.form||'standard',hp:1,maxHp:1};drawPlanetRobotBoss(actor,{x:480,y:205},1.0,true,awake);
+     ctx.restore();
+     for(let side of [-1,1]){
+       const xx=480+side*145,yy=169-(1-awake)*23;
+       beam(xx,yy,xx+side*(18+awake*34),yy-24-awake*45,`rgba(255,128,171,${.12+awake*.84})`,2+awake*3);
+     }
+   }else{
+     let fake={...b,x:480,y:300,hp:1,maxHp:1};
+     drawRearBoss(fake,true,awake);
+     for(let side of [-1,1]){glow(480+side*(70+awake*68),334,40+awake*45,awake>.7?'#ff9baaff':'#495765ff',awake*.7);}
+   }ctx.restore();
+   if(p>.42){glow(480,284,64+Math.sin(t*9)*22,'#faacc0',awake*.55);if(p>.79){for(let j=0;j<15;j++){let a=j*TAU/15+t*.6;beam(480+Math.cos(a)*55,284+Math.sin(a)*55,480+Math.cos(a)*83,284+Math.sin(a)*83,'#ffc4d05e',2)}}}
+   if(p>.62){fly(480+Math.sin(t*2)*20,512,.51,false,.07);}
+   tag(p<.32?'BOSS SIGNAL DETECTED':p<.7?'REACTOR ACTIVATING':'WEAPON SYSTEMS ONLINE',480,66,p>.7?'#ffc4a5':'#c7f6ff');
+ }else if(k==='bossBreak'){
+   const b=s.boss||{name:'UNKNOWN',type:'carrier',form:'standard',hp:1,maxHp:1},hurt=smooth(p/.45),fall=smooth((p-.42)/.55);
+   ctx.save();ctx.translate(0,fall*440);ctx.translate(480,320);ctx.rotate((fall*.18+Math.sin(t*6)*.018)*hurt);ctx.translate(-480,-320);
+   if(b.type==='planetRobot')drawPlanetRobotBoss(b,{x:480,y:190},1.0,true,Math.max(0,1-hurt));
+   else drawRearBoss({...b,x:480,y:300},true,Math.max(0,1-hurt));
+   // Successive armor break-up: shards move outward, rotating and tumbling into the horizon.
+   for(let j=0;j<22;j++){
+     let angle=j*2.399;let travel=Math.max(0,p-.12)*((j%5)*19+110);
+     let x=480+Math.cos(angle)*travel, y=294+Math.sin(angle)*travel+(p*p)*160;
+     ctx.save();ctx.translate(x,y);ctx.rotate(angle+t*(j%2?2.1:-2.4));ctx.globalAlpha=Math.max(0,1-p*.9);
+     polygon([[0,-7-j%5],[6+j%5,5],[-5,8]],j%3?'#d2bac1':'#efb783','#ffe1c6',1.5);ctx.restore();
+   }
+   ctx.restore();
+   for(let j=0;j<7;j++){
+     let start=(j*.116+.13),tt=(p-start)*2.8;
+     if(tt>0&&tt<1.6){let x=480+Math.sin(j*5)*100,y=300+Math.cos(j*9)*83+tt*90;
+      glow(x,y,25+tt*80,'#ffad65',Math.min(.85,tt*1.8)*(1-tt/1.6));
+      ctx.strokeStyle=`rgba(255,216,156,${Math.max(0,1-tt*.65)})`;ctx.lineWidth=4;ctx.beginPath();ctx.arc(x,y,tt*83,0,TAU);ctx.stroke();}
+   }
+   if(p>.56)fly(480,430-(p-.56)*50,.48+(p-.56)*.39,false,-.04);
+   tag(p<.32?'ARMOR FAILURE':p<.7?'REACTOR RUPTURE':'TARGET DESTROYED',480,67,'#ffdbac');
+ }else if(k==='branch'||k==='chapter'){
+   // Navigation officer's animated holographic route planner. Ships actively choose trajectories.
+   ctx.save();ctx.fillStyle='#050d20a8';ctx.fillRect(0,22,W,435);
+   const opts=k==='chapter'?[11,12,13]:((s.options||[]).length?(s.options||[]).slice(0,4):[16,17]);
+   const cx=475,cy=375,n=opts.length;
+   glow(cx,cy,95,'#66ffff',.6);ctx.strokeStyle='#73ccee88';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,46,0,TAU);ctx.stroke();
+   ctx.font='900 12px ui-monospace,monospace';ctx.textAlign='center';ctx.fillStyle='#bffaff';ctx.fillText('NAVIGATION',cx,cy-11);ctx.fillText('COMPUTER',cx,cy+9);
+   for(let j=0;j<n;j++){
+     const xx=190+(n===1?285:j*570/Math.max(1,n-1)),yy=160+Math.sin(j*2.9)*36;
+     const light=smooth((p-j*.12)/.3),pulse=(p*2+.13*j)%1;
+     beam(cx,cy,xx,yy,'rgba(108,231,249,'+(.08+light*.65)+')',2+light);
+     if(light>0){glow(xx,yy,40,'#55d9ee',light*.6);ctx.save();ctx.strokeStyle='#a0efff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(xx,yy,27+Math.sin(t*4+j)*2,0,TAU);ctx.stroke();ctx.fillStyle=['#a4d5f9','#e4ba9b','#b0e69f','#e1b3ff'][j];ctx.beginPath();ctx.arc(xx,yy,16,0,TAU);ctx.fill();ctx.restore()}
+     let px=cx+(xx-cx)*pulse,py=cy+(yy-cy)*pulse;
+     if(light>.9){fly(px,py,.1+(.11*pulse),false,(j%2?-.2:.2));}
+     tag('MISSION '+String(opts[j]).padStart(2,'0'),xx,yy-40);
+   }
+   ctx.restore();tag(k==='chapter'?'UNEXPLORED STAR SYSTEM':'NEW PATHS EARNED',475,67,'#aaffd8');
+ }else if(k==='departure'||k==='ending'){
+   let formation=smooth(p/.6);for(let side of [-1,1]){
+     let x=480+side*(330-formation*210)+Math.sin(t*1.3+side)*7,y=350-formation*75;
+     fly(x,y,.40+formation*.17,false,side*.15*(1-formation));
+     if(k==='ending'){for(let j=0;j<10;j++){let xx=x+Math.sin(j*13+t)*90,yy=y-50-Math.cos(j*8+t)*70;glow(xx,yy,9,'#ffeca0',.3+Math.sin(t+j)*.2)}}
+   }
+   fly(480,422-smooth(p)*80,.84+.1*Math.sin(t),false,Math.sin(t*1.4)*.04);
+   if(p>.38){let travel=smooth((p-.38)/.55);beam(480,400,480,400+travel*310,'#8deefc70',2)}
+   tag(k==='ending'?'THE SKIES ARE FREE':p<.65?'REGROUPING WINGMEN':'DESTINATION LOCKED',480,65,'#beffe5');
+ }else{
+   fly(480,415,.9,false);
+ }
+}
 function render(dt){
  ctx.save();ctx.setTransform(canvas.width/vw,0,0,canvas.height/vh,0,0);ctx.fillStyle='#071021';ctx.fillRect(0,0,vw,vh);ctx.restore();
  ctx.save();ctx.beginPath();ctx.rect(0,0,W,H);ctx.clip();if(shake>0&&screen==='play')ctx.translate(rand(-shake,shake),rand(-shake,shake));
  let lev=game?game.index:selected;paintBG(worldTime,lev);
  if(screen==='home'||screen==='map'){drawRearJet(486,505,1.5,false,Math.sin(worldTime)*.05);}
- if(screen==='scene'){drawRearJet(486,504,1.48,false);drawRearJet(620+Math.sin(worldTime)*30,288,.42,true);drawRearJet(335,245,.32,true);ctx.fillStyle='#eaffff77';ctx.font='bold 13px monospace';ctx.fillText('◈ ORBITAL TRANSMISSION ACTIVE',28,43)}
+ if(screen==='scene'){drawCinematic();}
  if(game&&['play','pause','clear','gameover','finish'].includes(screen)){
   const g=game;const objects=[];
   if(meteorLevels.has(g.index)){
